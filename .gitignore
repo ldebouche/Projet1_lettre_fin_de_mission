@@ -1,0 +1,77 @@
+# ------------------------------
+# Node.js
+# ------------------------------
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------
+# Build output
+# ------------------------------
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+# ------------------------------
+# Angular cache
+# ------------------------------
+.angular/cache/
+
+# ------------------------------
+# Backend TypeScript build
+# ------------------------------
+*.js
+*.js.map
+
+# ------------------------------
+# Logs
+# ------------------------------
+logs/
+*.log
+libpeerconnection.log
+testem.log
+connect.lock
+
+# ------------------------------
+# Coverage reports
+# ------------------------------
+coverage/
+
+# ------------------------------
+# Environment files
+# ------------------------------
+.env
+.env.*.local
+
+# ------------------------------
+# IDEs and editors
+# ------------------------------
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ------------------------------
+# Miscellaneous
+# ------------------------------
+.sass-cache/
+typings/
+.history/
+
+# ------------------------------
+# System files
+# ------------------------------
+.DS_Store
+Thumbs.db
