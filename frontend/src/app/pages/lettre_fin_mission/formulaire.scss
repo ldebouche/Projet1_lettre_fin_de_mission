@@ -1,0 +1,130 @@
+
+/* Variables charte */
+:root {
+  --c-dark: #47413c;
+  --c-blue: #72bfcc;
+  --c-petrol: #447a87;
+  --c-sand: #786e54;
+  --c-light: #ebe3d5;
+}
+
+/* Layout global */
+.page {
+  padding: 24px;
+  background: #fafafa;
+  color: var(--c-dark);
+  font-family: var(--font-body, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif);
+}
+
+.titlebar {
+  background: var(--c-petrol);
+  color: #fff;
+  padding: 18px 24px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    letter-spacing: .3px;
+    font-family: var(--font-title, inherit);
+    font-weight: 700;
+  }
+}
+
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+/* Cartouches */
+.block {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fff;
+  padding: 16px;
+
+  legend {
+    font-weight: 700;
+    color: var(--c-dark);
+    padding: 0 6px;
+  }
+
+  .titre {
+    text-decoration: underline;
+  }
+  .note {
+    text-decoration: none;
+    font-weight: 400;
+    font-size: .85rem;
+    color: #c13;
+    margin-left: .5rem;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  &.disabled { opacity: .55; }
+}
+
+.grid3 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  &.inline {
+    grid-column: 1 / -1;
+  }
+}
+
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.area {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #bbb;
+  padding: 10px 12px;
+  min-height: 110px;
+  background: #fff;
+}
+
+.checklist {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.actions {
+  display: flex; justify-content: flex-end;
+}
+
+.btn {
+  background: var(--c-blue);
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover { filter: brightness(0.95); }
+}

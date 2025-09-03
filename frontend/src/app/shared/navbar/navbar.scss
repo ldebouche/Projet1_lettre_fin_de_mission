@@ -1,0 +1,69 @@
+// Couleurs issues de ta charte
+$color-dark: #47413c;
+$color-blue: #72bfcc;
+$color-petrol: #447a87;
+$color-sand: #786e54;
+$color-light: #ebe3d5;
+
+.navbar {
+  color: $color-light;
+  font-family: 'Pluto', sans-serif;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  position: relative;
+  top: 0;
+  z-index: 1000;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    .logo {
+      height: 40px;
+      margin-right: 10px;
+    }
+  }
+
+  .title {
+      font-family: 'Neou', sans-serif;
+      font-size: 1.3rem;
+      color: $color-blue;
+    }
+
+  .links {
+    display: flex;
+    gap: 1.5rem;
+
+    a {
+      color: $color-light;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+
+      &:hover,
+      &.active {
+        color: $color-blue;
+      }
+    }
+
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+
+  .menu-btn {
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: none;
+    @media (max-width: 768px) {
+      display: block;
+    }
+  }
+}

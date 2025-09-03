@@ -1,0 +1,318 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
+
+  <!-- ===== CHIFFRES CLÉS ===== -->
+  <fieldset class="block">
+    <legend>
+      <span class="titre">CHIFFRES CLÉS</span>
+    </legend>
+
+    <!-- Progression du chiffre -->
+    <div class="row" [formGroup]="f.chiffresCles.controls.progressionChiffre">
+      <label class="checkline">
+        <input type="checkbox" formControlName="enabled" />
+        <span>Progression du chiffre</span>
+      </label>
+      <textarea class="area"
+                formControlName="commentaire"
+                [disabled]="!f.chiffresCles.controls.progressionChiffre.controls.enabled.value"
+                rows="4"></textarea>
+    </div>
+
+    <!-- Taux de marge -->
+    <div class="row" [formGroup]="f.chiffresCles.controls.tauxMarge">
+      <label class="checkline">
+        <input type="checkbox" formControlName="enabled" />
+        <span>Taux de marge</span>
+      </label>
+      <textarea class="area"
+                formControlName="commentaire"
+                [disabled]="!f.chiffresCles.controls.tauxMarge.controls.enabled.value"
+                rows="4"></textarea>
+    </div>
+  </fieldset>
+
+  <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.evolutionCharges.controls.masquerSection" />
+      <span class="titre">ÉVOLUTION DES CHARGES EXTERNES ET AUTRES ACHATS</span>
+      <small class="note">(Cocher la case pour ne pas présenter cette partie dans la lettre de fin de mission)</small>
+    </legend>
+
+    <div class="grid2" [class.disabled]="f.evolutionCharges.controls.masquerSection.value">
+      <label>Montant de variation minimum
+        <input type="number" step="0.01" class="inputNumber"
+                [disabled]="f.evolutionCharges.controls.masquerSection.value"
+                [formControl]="f.evolutionCharges.controls.montantVariationMin">
+      </label>
+
+      <div class="row" [formGroup]="f.evolutionCharges.controls.variation">
+        <label class="checkline">
+          <input type="checkbox" formControlName="enabled"
+                  [disabled]="f.evolutionCharges.controls.masquerSection.value"/>
+          <span>Variation</span>
+        </label>
+        <textarea class="area"
+                  formControlName="commentaire"
+                  [disabled]="f.evolutionCharges.controls.masquerSection.value
+                              || !f.evolutionCharges.controls.variation.controls.enabled.value"
+                  rows="4"></textarea>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- ===== CHARGES DE PERSONNEL ===== -->
+  <fieldset class="block">
+    <legend>
+      <span class="titre">CHARGES DE PERSONNEL</span>
+    </legend>
+
+    <div class="grid3">
+      <div>
+        <label>Nombre d'heures rémunérées - N
+          <input type="number" step="0.01" class="inputNumber" [formControl]="f.chargesPersonnel.controls.heuresRemunN">
+        </label>
+      </div>
+      <div>
+        <label>Nombre d'heures rémunérées - N-1
+          <input type="number" step="0.01" class="inputNumber" [formControl]="f.chargesPersonnel.controls.heuresRemunN1">
+        </label>
+      </div>
+      <label class="checkline inline">
+        <input type="checkbox" [formControl]="f.chargesPersonnel.controls.annexeCotisationsEnabled">
+        <span>Annexe “Tableau des cotisations de travailleurs non-salariés provisionnelles pour l’année suivante”</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- ===== INVESTISSEMENTS ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.investissement.controls.masquerSection" />
+      <span class="titre">INVESTISSEMENTS</span>
+    </legend>
+    <div [formGroup]="f.investissement">
+      <textarea class="area"
+                formControlName="commentaire"
+                rows="4"></textarea>
+    </div>
+    <div class="grid3">
+      <div>
+        <label>Dotations aux amortisssements - N
+          <input type="number" step="0.01" class="inputNumber" [formControl]="f.investissement.controls.dotAmortissN">
+        </label>
+      </div>
+      <div>
+        <label>Dotations aux amortisssements - N+1
+          <input type="number" step="0.01" class="inputNumber" [formControl]="f.investissement.controls.dotAmortissN1">
+        </label>
+      </div>
+      <div>
+        <label>Dotations aux amortisssements - N+2
+          <input type="number" step="0.01" class="inputNumber" [formControl]="f.investissement.controls.dotAmortissN2">
+        </label>
+      </div>
+      <label class="checkline inline">
+        <input type="checkbox" [formControl]="f.investissement.controls.immobilisationEnabled" />
+        <span>Cocher la case + F5, si sur l'exercice N+1, une immobilisation a été acquise sur l'exercice pour corriger les valeurs de N+1 et N+2</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- ===== IMPÔT SUR LES SOCIÉTÉS TABLEAU ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.impotSocietesTab.controls.masquerSection" />
+      <span class="titre">IMPÔT SUR LES SOCIÉTÉS</span>
+      <small class="note">(Cocher la case pour présenter cette partie dans la lettre de fin de mission)</small>
+    </legend>
+  </fieldset>
+
+  <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.acomptesImpotSocietesN1Tab.controls.masquerSection" />
+      <span class="titre">ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1</span>
+      <small class="note">(Cocher la case pour afficher les acomptes N+1 dans la lettre de fin de mission)</small>
+    </legend>
+  </fieldset>
+
+  <!-- ===== IMPÔT SUR LES SOCIÉTÉS COMMENTAIRE ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.impotSocietesCom.controls.masquerSection" />
+      <span class="titre">IMPÔT SUR LES SOCIÉTÉS</span>
+      <small class="note">(Cocher la case pour saisir un commentaire libre)</small>
+    </legend>
+
+    <div [formGroup]="f.impotSocietesCom">
+      <textarea class="area"
+                formControlName="commentaire"
+                [disabled]="!f.impotSocietesCom.controls.masquerSection.value"
+                rows="4"></textarea>
+    </div>
+  </fieldset>
+
+  <!-- ===== INFORMATION FISCALE ===== -->
+  <fieldset class="block">
+    <legend>
+      <span class="titre">INFORMATION FISCALE</span>
+    </legend>
+      <div class="checklist"
+          formArrayName="informationFiscale"
+          *ngIf="infoFiscale && infoFiscale.length">
+        <label *ngFor="let ctrl of infoFiscale.controls; let i = index" class="checkline">
+          <input type="checkbox" [formControlName]="i" />
+          <span>{{ informations_fiscales[i] }}</span>
+        </label>
+      </div>
+  </fieldset>
+
+  <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
+  <fieldset class="block">
+    <legend class="titre">PROJET D’AFFECTATION DU RÉSULTAT</legend>
+    <table class="table" [formGroup]="f.projetResultat">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-n">N</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Résultat de l’exercice</td>
+          <td><input type="number" formControlName="resultatExercice" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Affectations</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Réserve légale</td>
+          <td><input type="number" formControlName="reserveLegale" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Réserve ordinaire</td>
+          <td><input type="number" formControlName="reserveOrdinaire" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Report à nouveau</td>
+          <td><input type="number" formControlName="reportNouveau" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Dividendes et/ou fonds associatifs</td>
+          <td><input type="number" formControlName="dividendes" step="0.01" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <!-- ===== TABLEAU D’AUTOFINANCEMENT ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.tableauAutofinancement.controls.enabled" />
+      <span class="titre">TABLEAU D’AUTOFINANCEMENT</span>
+      <small class="note">(Décocher cette case dans les associations non fiscalisées)</small>
+    </legend>
+  </fieldset>
+
+  <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.estimationAutof.controls.enabled" />
+      <span class="titre">ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D’UNE HYPOTHÈSE DE MAINTIEN DU RÉSULTAT ACTUEL</span>
+    </legend>
+    <table class="table" [formGroup]="f.estimationAutof">
+      <thead>
+        <tr>
+          <th></th>
+          <th>N+1</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Résultat de l’exercice</td>
+          <td><input type="number" class="inputNumber" formControlName="resultatExercice" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Dotations aux amortissements</td>
+          <td><input type="number" class="inputNumber" formControlName="dotations" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Remboursements emprunts</td>
+          <td><input type="number" class="inputNumber" formControlName="remboursements" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>Dividendes</td>
+          <td><input type="number" class="inputNumber" formControlName="dividendes" step="0.01" /></td>
+        </tr>
+        <tr>
+          <td>= Capacité d’autofinancement net</td>
+          <td><input type="number" class="inputNumber" formControlName="capaciteNet" step="0.01" /></td>
+        </tr>
+      </tbody>
+    </table>
+    <label class="checkline">
+      <input type="checkbox" [formControl]="f.estimationAutof.controls.majDocEvalEnabled" />
+      <span class="titre">MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE</span>
+    </label>
+    <label class="checkline">
+      <input type="checkbox" [formControl]="f.estimationAutof.controls.protectionSocialeEnabled" />
+      <span class="titre">PROTECTION SOCIALE</span>
+    </label>
+  </fieldset>
+
+  <!-- ===== FAITS MARQUANTS ===== -->
+  <fieldset class="block">
+    <legend>
+      <input type="checkbox" [formControl]="f.faitsMarquants.controls.enabled" />
+      <span class="titre">FAITS MARQUANTS DE L’EXERCICE</span>
+    </legend>
+    <div [formGroup]="f.faitsMarquants">
+      <textarea class="area" rows="4" formControlName="commentaire"></textarea>
+      <label class="checkline">
+        <input type="checkbox" formControlName="commentairesRevision" />
+        <span>Afficher les commentaires du dossier de révision qui ont un indicateur "points importants"</span>
+      </label>
+      <label class="checkline">
+        <input type="checkbox" formControlName="justificationsDemandes" />
+        <span>Nous avons pris bonne note des justifications apportées à nos demandes d’explications concernant les apports financiers effectués.</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- ===== LES PERSPECTIVES ===== -->
+  <fieldset class="block">
+    <legend><span class="titre">LES PERSPECTIVES</span></legend>
+    <div [formGroup]="f.perspectives">
+      <label class="checkline">
+        <input type="checkbox" formControlName="mesuresEnabled" />
+        <span>Mesures à prendre et plan d’action à mettre en œuvre</span>
+      </label>
+      <textarea class="area" rows="4" formControlName="commentaire"></textarea>
+    </div>
+  </fieldset>
+
+  <!-- ===== SIGNATAIRE ===== -->
+  <fieldset class="block">
+    <legend><span class="titre">SIGNATAIRE</span></legend>
+    <table class="table" [formGroup]="f.signataire">
+      <tr>
+        <td>Nom de l’Expert</td>
+        <td><input type="text" formControlName="nomExpert" /></td>
+        <td>Nom du Réviseur</td>
+        <td><input type="text" formControlName="nomReviseur" /></td>
+      </tr>
+      <tr>
+        <td>Qualité</td>
+        <td><input type="text" formControlName="qualiteExpert" /></td>
+        <td>Qualité</td>
+        <td><input type="text" formControlName="qualiteReviseur" /></td>
+      </tr>
+    </table>
+  </fieldset>
+
+  <div class="actions">
+    <button class="btn" type="submit">Enregistrer</button>
+  </div>
+</form>
