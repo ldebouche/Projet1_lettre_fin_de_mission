@@ -1,13 +1,15 @@
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { BtnToTextareaComponent } from '../../shared/bouton-textarea/bouton-textarea';
 
 @Component({
   selector: 'app-formulaire',
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    BtnToTextareaComponent
   ],
   templateUrl: './formulaire.html',
   styleUrls: ['./formulaire.scss']
@@ -15,6 +17,14 @@ import { CommonModule } from '@angular/common';
 export class FormulaireComponent {
   form: FormGroup;
 
+  showTextarea = false;
+  commentaire = '';
+
+  onGenerateClick() {
+    this.showTextarea = true;
+    this.commentaire = 'Texte par défaut (modifiable après)...';
+  }
+  
   informations_fiscales = [
     'Rénovation et taux réduit de TVA',
     "Prestataire sous-traitant : l’attestation de vigilance",
@@ -34,11 +44,9 @@ export class FormulaireComponent {
       // ===== CHIFFRES CLÉS =====
       chiffresCles: this.fb.group({
         progressionChiffre: this.fb.group({
-          enabled: [false],
           commentaire: ['']
         }),
         tauxMarge: this.fb.group({
-          enabled: [false],
           commentaire: ['']
         })
       }),
@@ -48,7 +56,6 @@ export class FormulaireComponent {
         masquerSection: [false],
         montantVariationMin: [0.00],
         variation: this.fb.group({
-          enabled: [false],
           commentaire: ['']
         })
       }),
@@ -70,17 +77,17 @@ export class FormulaireComponent {
         immobilisationEnabled: [false]
       }),
 
-      // ===== IMPÔT SUR LES SOCIÉTÉS TABLEAU =====
+      // ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) =====
       impotSocietesTab: this.fb.group({
         masquerSection: [false],
       }),
 
-      // ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 TABLEAU =====
+      // ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 (TABLEAU) =====
       acomptesImpotSocietesN1Tab: this.fb.group({
         masquerSection: [false],
       }),
 
-      // ===== IMPÔT SUR LES SOCIÉTÉS COMMENTAIRE =====
+      // ===== IMPÔT SUR LES SOCIÉTÉS (COMMENTAIRE) =====
       impotSocietesCom: this.fb.group({
         masquerSection: [false],
         commentaire: ['']
@@ -112,9 +119,17 @@ export class FormulaireComponent {
         dotations: [0.00],
         remboursements: [0.00],
         dividendes: [0.00],
-        capaciteNet: [0.00],
-        majDocEvalEnabled: [false],
-        protectionSocialeEnabled: [false]
+        capaciteNet: [0.00]
+      }),
+
+      // ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE =====
+      majDocEval: this.fb.group({
+        enabled: [false]
+      }),
+
+      // ===== PROTECTION SOCIALE =====
+      protecSociale: this.fb.group({
+        enabled: [false]
       }),
 
       // ===== FAITS MARQUANTS DE L'EXERCICE =====
@@ -127,7 +142,6 @@ export class FormulaireComponent {
 
       // ===== LES PERSPECTIVES =====
       perspectives: this.fb.group({
-        mesuresEnabled: [false],
         commentaire: ['']
       }),
 

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './shared/navbar/navbar';
 import { FormulaireComponent } from './pages/lettre_fin_mission/formulaire';
+import { BtnToTextareaComponent } from './shared/bouton-textarea/bouton-textarea';
 
 @Component({
   selector: 'app-root',
@@ -9,7 +10,8 @@ import { FormulaireComponent } from './pages/lettre_fin_mission/formulaire';
   imports: [
     RouterOutlet, 
     NavbarComponent,
-    FormulaireComponent
+    FormulaireComponent,
+    BtnToTextareaComponent
   ],
   template: `
     <app-navbar></app-navbar>
