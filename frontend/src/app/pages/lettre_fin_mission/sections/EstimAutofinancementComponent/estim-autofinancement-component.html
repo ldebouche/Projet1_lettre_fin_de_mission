@@ -1,0 +1,38 @@
+<fieldset class="block" [formGroup]="group">
+    <legend>
+        <label class="clickable">
+        <input type="checkbox" formControlName="enabled" />
+        <span class="titre">ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D’UNE HYPOTHESE DE MAINTIEN DU RESULTAT ACTUEL</span>
+        </label>
+    </legend>
+    <table class="table">
+        <thead>
+        <tr>
+            <th></th>
+            <th>N+1</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Résultat de l’exercice</td>
+            <td><input type="number" class="inputNumber" formControlName="resultatExercice" step="0.01" /></td>
+        </tr>
+        <tr>
+            <td>Dotations aux amortissements</td>
+            <td><input type="number" class="inputNumber" formControlName="dotations" step="0.01" /></td>
+        </tr>
+        <tr>
+            <td>Remboursements emprunts</td>
+            <td><input type="number" class="inputNumber" formControlName="remboursements" step="0.01" /></td>
+        </tr>
+        <tr>
+            <td>Dividendes</td>
+            <td><input type="number" class="inputNumber" formControlName="dividendes" step="0.01" /></td>
+        </tr>
+        <tr class="row-capaAutof">
+            <td>= Capacité d’autofinancement net</td>
+            <td><input type="number" class="inputNumber" formControlName="capaciteNet" step="0.01" /></td>
+        </tr>
+        </tbody>
+    </table>
+</fieldset>

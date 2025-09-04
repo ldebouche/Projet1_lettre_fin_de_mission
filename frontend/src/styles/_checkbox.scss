@@ -1,0 +1,27 @@
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-dark);
+  margin: .75rem 0;
+
+  span {
+    color: var(--color-blue-petrol);
+  }
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--color-blue-light);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform .15s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}

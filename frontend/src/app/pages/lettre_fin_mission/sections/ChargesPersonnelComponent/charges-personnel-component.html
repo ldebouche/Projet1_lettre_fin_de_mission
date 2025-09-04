@@ -1,0 +1,25 @@
+  <fieldset class="block" [formGroup]="group">
+    <legend>
+      <span class="titre">CHARGES DE PERSONNEL</span>
+    </legend>
+    <table class="table" >
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-n">N</th>
+          <th class="col-n1">N-1</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Nombre d'heures rémunérées</td>
+          <td><input type="number" step="0.01" class="inputNumber" formControlName="heuresRemunN"></td>
+          <td><input type="number" step="0.01" class="inputNumber" formControlName="heuresRemunN1"></td>
+        </tr>
+      </tbody>
+    </table>
+    <label class="checkline inline">
+      <input type="checkbox" formControlName="annexeCotisationsEnabled">
+      <span>Annexe “Tableau des cotisations de travailleurs non-salariés provisionnelles pour l’année suivante”</span>
+    </label>
+  </fieldset>

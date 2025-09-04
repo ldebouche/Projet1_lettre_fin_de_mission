@@ -1,0 +1,28 @@
+.page {
+  padding: 32px;
+  background: var(--color-light);
+  color: var(--color-dark);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.grid2, .grid3 {
+  display: grid;
+  gap: 20px;
+}
+.grid2 { grid-template-columns: 1fr; }
+.grid3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }

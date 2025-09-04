@@ -1,0 +1,17 @@
+<fieldset class="block" [formGroup]="group">
+    <legend>
+        <label class="clickable">
+        <input type="checkbox" formControlName="enabled" />
+        <span class="titre">FAITS MARQUANTS DE L’EXERCICE</span>
+        </label>
+    </legend>
+    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+    <label class="checkline">
+        <input type="checkbox" formControlName="commentairesRevision"/>
+        <span>Afficher les commentaires du dossier de révision qui ont un indicateur "points importants"</span>
+    </label>
+    <label class="checkline">
+        <input type="checkbox" formControlName="justificationsDemandes"/>
+        <span>Nous avons pris bonne note des justifications apportées à nos demandes d’explications concernant les apports financiers effectués.</span>
+    </label>
+</fieldset>

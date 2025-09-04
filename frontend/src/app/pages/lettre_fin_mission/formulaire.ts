@@ -1,7 +1,22 @@
 import { Component } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BtnToTextareaComponent } from '../../shared/bouton-textarea/bouton-textarea';
+import { ChiffresClesComponent } from './sections/ChiffresClesComponent/chiffres-cles-component';
+import { EvolutionChargesComponent } from './sections/EvolutionChargesComponent/evolution-charges-component';
+import { ChargesPersonnelComponent } from './sections/ChargesPersonnelComponent/charges-personnel-component';
+import { InvestissementComponent } from './sections/InvestissementComponent/investissement-component';
+import { ImpotSocietesTabComponent } from './sections/ImpotSocietesTabComponent/impot-societes-tab-component';
+import { AcompteImpotComponent } from './sections/AcompteImpotComponent/acompte-impot-component';
+import { ImpotSocieteCommComponent } from './sections/ImpotSocieteCommComponent/impot-societe-comm-component';
+import { InfoFiscaleComponent } from './sections/InfoFiscaleComponent/info-fiscale-component';
+import { ProjetAffectResultatComponent } from './sections/ProjetAffectResultatComponent/projet-affect-resultat-component';
+import { TabAutofinancementComponent } from './sections/TabAutofinancementComponent/tab-autofinancement-component';
+import { EstimAutofinancementComponent } from './sections/EstimAutofinancementComponent/estim-autofinancement-component';
+import { MAJDocUniqueEvalComponent } from './sections/MAJDocUniqueEvalComponent/majdoc-unique-eval-component';
+import { ProtecSocialeComponent } from './sections/ProtecSocialeComponent/protec-sociale-component';
+import { FaitsMarquantsComponent } from './sections/FaitsMarquantsComponent/faits-marquants-component';
+import { PerspectivesComponent } from './sections/PerspectivesComponent/perspectives-component';
+import { SignataireComponent } from './sections/SignataireComponent/signataire-component';
 
 @Component({
   selector: 'app-formulaire',
@@ -9,16 +24,30 @@ import { BtnToTextareaComponent } from '../../shared/bouton-textarea/bouton-text
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    BtnToTextareaComponent
+    ChiffresClesComponent,
+    EvolutionChargesComponent,
+    ChargesPersonnelComponent,
+    InvestissementComponent,
+    ImpotSocietesTabComponent,
+    AcompteImpotComponent,
+    ImpotSocieteCommComponent,
+    InfoFiscaleComponent,
+    ProjetAffectResultatComponent,
+    TabAutofinancementComponent,
+    EstimAutofinancementComponent,
+    MAJDocUniqueEvalComponent,
+    ProtecSocialeComponent,
+    FaitsMarquantsComponent,
+    PerspectivesComponent,
+    SignataireComponent
   ],
   templateUrl: './formulaire.html',
   styleUrls: ['./formulaire.scss']
 })
 export class FormulaireComponent {
-  form: FormGroup;
-
   showTextarea = false;
   commentaire = '';
+  form!: FormGroup;
 
   onGenerateClick() {
     this.showTextarea = true;
@@ -27,8 +56,8 @@ export class FormulaireComponent {
   
   informations_fiscales = [
     'Rénovation et taux réduit de TVA',
-    "Prestataire sous-traitant : l’attestation de vigilance",
-    'Utilisation de une ou plusieurs caisses enregistreuses / système info de caisse',
+    "Prestataire sous-traitant : l\'attestation de vigilence",
+    'Utilisation de une ou plusieurs caisses enregistreuses ou d\'un système informatique de caisse',
     'Créances irrécouvrables',
     'Rupture dans une séquence de numérotation de facturation',
     'Perte de la moitié de capital social',
@@ -36,11 +65,18 @@ export class FormulaireComponent {
     'Obligation FEC (pour les comptabilités externes)',
     'Obligation des entreprises individuelles',
     'Déclaration de revenus : obligation du gérant de transmettre les documents aux associés',
-    'Non affiliation à la médecine du travail'
+    'Non affiliation à la médecine du travail',
+    'Retard dépot déclaration fiscale : retard dépot documents',
+    'Retard dépot déclaration fiscale : retard règlement honoraires',
+    'Réduction d\'impôt frais de comptabilité'
   ];
 
   constructor(private fb: FormBuilder) {
-    this.form = this.fb.group({
+    this.form = this.buildForm();
+  }
+
+  private buildForm(): FormGroup {
+    return this.fb.group({
       // ===== CHIFFRES CLÉS =====
       chiffresCles: this.fb.group({
         progressionChiffre: this.fb.group({

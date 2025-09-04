@@ -1,12 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-  --color-dark: #47413c;
-  --color-blue-light: #72bfcc;
-  --color-blue-petrol: #447a87;
-  --color-sand: #786e54;
-  --color-light: #ebe3d5;
-
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-title: 'Inter', system-ui, sans-serif;
-}
+@use 'styles/variables';
+@use 'styles/layout';
+@use 'styles/form';
+@use 'styles/inputs';
+@use 'styles/checkbox';
+@use 'styles/table';
+@use 'styles/button';
+@use 'styles/actions';

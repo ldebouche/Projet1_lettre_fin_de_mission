@@ -1,0 +1,16 @@
+.btn {
+  background: linear-gradient(135deg, var(--color-blue-light), var(--color-blue-petrol));
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px 26px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .3px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  transition: all .25s ease;
+
+  &:hover { transform: translateY(-2px); }
+  &:active { transform: scale(.96); }
+}

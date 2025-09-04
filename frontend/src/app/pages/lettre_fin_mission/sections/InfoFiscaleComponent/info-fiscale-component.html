@@ -1,0 +1,10 @@
+<fieldset class="block" *ngIf="formArray && items.length">
+  <legend class="titre">INFORMATION FISCALE</legend>
+
+  <div class="checklist">
+    <label class="checkline" *ngFor="let ctrl of formArray.controls; let i = index">
+      <input type="checkbox" [formControl]="formArray.at(i)" />
+      <span>{{ items[i] }}</span>
+    </label>
+  </div>
+</fieldset>

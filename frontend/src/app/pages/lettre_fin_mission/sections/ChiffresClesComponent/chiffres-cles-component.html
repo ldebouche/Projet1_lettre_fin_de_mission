@@ -1,0 +1,13 @@
+<fieldset class="block" [formGroup]="group">
+  <legend><span class="titre">CHIFFRES CLES</span></legend>
+
+  <div [formGroup]="progressionChiffre">
+    <label class="checkline"><span>• Progression du chiffre</span></label>
+    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+  </div>
+
+  <div [formGroup]="tauxMarge">
+    <label class="checkline"><span>• Taux de marge</span></label>
+    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+  </div>
+</fieldset>

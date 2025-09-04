@@ -1,0 +1,31 @@
+<fieldset class="block" [formGroup]="group">
+    <legend>
+      <label class="clickable">
+        <input type="checkbox" formControlName="masquerSection" />
+        <span class="titre">INVESTISSEMENTS</span>
+      </label>
+    </legend>
+    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+    <table class="table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-n">N</th>
+          <th class="col-n1">N+1</th>
+          <th class="col-n2">N+2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Dotations aux amortisssements</td>
+          <td><input type="number" step="0.01" class="inputNumber" formControlName="dotAmortissN"></td>
+          <td><input type="number" step="0.01" class="inputNumber" formControlName="dotAmortissN1"></td>
+          <td><input type="number" step="0.01" class="inputNumber" formControlName="dotAmortissN2"></td>
+        </tr>
+      </tbody>
+    </table>
+    <label class="checkline inline">
+      <input type="checkbox" formControlName="immobilisationEnabled" />
+      <span>Cocher la case + F5, si sur l'exercice N+1, une immobilisation a été acquise sur l'exercice pour corriger les valeurs de N+1 et N+2</span>
+    </label>
+  </fieldset>
