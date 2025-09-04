@@ -2,6 +2,8 @@ import { Component, Input, forwardRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 
+import { AiService } from '../../services/ai-service';
+
 @Component({
   selector: 'bouton-textarea',
   standalone: true,
@@ -18,10 +20,14 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   buttonLabel = 'Générer commentaire';
   /** Valeur initiale injectée au moment du clic si vide */
   @Input() defaultText = 'Texte par défaut (modifiable)…';
-
+  @Input() selector = true; // true: commentaire, false: analyse
   value = '';
   disabled = false;
   private touched = false;
+
+  loading = false;
+
+  constructor(private ai: AiService) {}
 
   get showTextarea() { return (this.value ?? '').trim().length > 0; }
 
@@ -36,13 +42,66 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   registerOnTouched(fn: () => void): void { this.onTouched = fn; }
   setDisabledState(isDisabled: boolean): void { this.disabled = isDisabled; }
 
-  handleClick() {
+  handleClick(selector: boolean) {
     if (this.disabled) return;
     if (!this.value) {
-      this.value = this.defaultText;
+      if (selector) {
+        this.onGenerateComment();
+      }
+      else {
+        this.onGenerateAnalyse();
+      }
+
       this.onChange(this.value);
       this.markTouched();
     }
+  }
+
+  onGenerateComment() {
+    this.loading = true;
+
+    this.ai.generateComment(
+      "Rédige un commentaire professionnel et concis sur nos résultats.",
+      { clientNom: "Entreprise ACME", 
+        siren: "123456789", 
+        ca: 420000, 
+        marge: 0.18 
+      },
+      "auto",
+      true 
+    ).subscribe({
+      next: (text) => {
+        this.value = text && text.trim() ? text : this.defaultText;
+        this.onChange(this.value);
+        this.markTouched();
+        this.loading = false;   
+      }
+    });
+  }
+
+  onGenerateAnalyse() {
+    this.loading = true;
+
+    this.ai.pipelineAnalyse(
+      {
+        secteur: "BTP",
+        periode: { from: "2023", to: "2024" },
+        donneesInternes: {
+          clientNom: "Entreprise ACME",
+          siren: "123456789",
+          ca: 420000,
+          marge: 0.18
+        },
+        redactCloud: true
+      }
+    ).subscribe({
+      next: (text) => {
+        this.value = text && text.trim() ? text : this.defaultText;
+        this.onChange(this.value);
+        this.markTouched();
+        this.loading = false;   
+      }
+    });
   }
 
   handleInput(val: string) {

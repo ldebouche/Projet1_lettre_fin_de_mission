@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+
 import { ChiffresClesComponent } from './sections/ChiffresClesComponent/chiffres-cles-component';
 import { EvolutionChargesComponent } from './sections/EvolutionChargesComponent/evolution-charges-component';
 import { ChargesPersonnelComponent } from './sections/ChargesPersonnelComponent/charges-personnel-component';
@@ -48,11 +49,6 @@ export class FormulaireComponent {
   showTextarea = false;
   commentaire = '';
   form!: FormGroup;
-
-  onGenerateClick() {
-    this.showTextarea = true;
-    this.commentaire = 'Texte par défaut (modifiable après)...';
-  }
   
   informations_fiscales = [
     'Rénovation et taux réduit de TVA',

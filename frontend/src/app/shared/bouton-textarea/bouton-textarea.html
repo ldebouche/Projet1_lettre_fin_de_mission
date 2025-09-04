@@ -1,20 +1,19 @@
-<div class="btn-to-textarea" [class.is-disabled]="disabled">
-  <button
-    *ngIf="!showTextarea"
+<div *ngIf="!showTextarea">
+  <button 
     type="button"
     class="btn"
-    (click)="handleClick()"
-    [disabled]="disabled">
-    {{ buttonLabel }}
+    [disabled]="disabled || loading"
+    (click)="handleClick(selector)">
+    {{ loading ? 'Génération en cours…' : buttonLabel }}
   </button>
+</div>
 
-  <textarea
-    *ngIf="showTextarea"
+<div *ngIf="showTextarea">
+  <textarea 
+    rows="4" 
     class="area"
-    [disabled]="disabled"
     [value]="value"
     (input)="handleInput(($any($event.target)).value)"
-    (blur)="handleBlur()"
-    rows="4">
+    (blur)="handleBlur()">
   </textarea>
 </div>

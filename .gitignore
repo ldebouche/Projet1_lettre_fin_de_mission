@@ -5,6 +5,8 @@ node_modules/
 npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+yarn.lock
+pnpm-lock.yaml
 
 # ------------------------------
 # Build output
@@ -22,8 +24,8 @@ bazel-out/
 # ------------------------------
 # Backend TypeScript build
 # ------------------------------
-*.js
 *.js.map
+backend/dist/
 
 # ------------------------------
 # Logs
@@ -44,6 +46,7 @@ coverage/
 # ------------------------------
 .env
 .env.*.local
+src/environments/environment*.ts
 
 # ------------------------------
 # IDEs and editors
