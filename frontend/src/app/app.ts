@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router } from '@angular/router';
 import { NavbarComponent } from './shared/navbar/navbar';
-import { FormulaireComponent } from './pages/lettre_fin_mission/formulaire';
+import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-root',
@@ -9,14 +10,20 @@ import { FormulaireComponent } from './pages/lettre_fin_mission/formulaire';
   imports: [
     RouterOutlet, 
     NavbarComponent,
-    FormulaireComponent
+    CommonModule
   ],
   template: `
-    <app-navbar></app-navbar>
+    <app-navbar *ngIf="showNavbar"></app-navbar>
     <main class="p-6">
-      <app-formulaire></app-formulaire>
       <router-outlet></router-outlet>
     </main>
   `
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor(private router: Router) {}
+
+  get showNavbar() {
+    // cache la navbar uniquement si on est sur /login
+    return this.router.url !== '/login';
+  }
+}

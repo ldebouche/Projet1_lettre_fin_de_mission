@@ -1,0 +1,25 @@
+<h2>Veuillez rentrer les données</h2>
+<form (ngSubmit)="onSubmit()" class="stack" [formGroup]="form">
+    <div class="form-group">
+    <label for="folderNumber">Numéro de dossier</label>
+    <input
+        type="text"
+        id="folderNumber"
+        name="folderNumber"
+        required
+        class="form-control"
+    />
+    <label for="EndDate">Date de clôture</label>
+    <input
+        type="text"
+        id="EndDate"
+        name="EndDate"
+        required
+        class="form-control"
+    />
+    </div>
+
+    <div class="actions">
+        <button class="btn" type="submit">Enregistrer</button>
+    </div>
+</form>
