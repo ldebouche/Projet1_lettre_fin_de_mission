@@ -7,13 +7,19 @@ export class AiService {
   private http = inject(HttpClient);
   baseUrl = 'http://localhost:4000';
 
-  generateComment(consigne: string, contexte: any, route: 'local'|'cloud'|'auto', containsSensitive: boolean) {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/api/generate-comment`, {
-      consigne, contexte, route, containsSensitive
-    }).pipe(map(r => r.text));
+  generateComment(contexte: any) {
+    return this.http.post<{ text: string }>(`${this.baseUrl}/api/generate-comment`, { contexte }).pipe(map(r => r.text));
   }
 
-  pipelineAnalyse(payload: any) {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/api/pipeline/analyse`, payload).pipe(map(r => r.text));
+  pipelineAnalyse(contexte: any) {
+    return this.http.post<{ text: string }>(`${this.baseUrl}/api/pipeline/analyse`, contexte).pipe(map(r => r.text));
+  }
+
+  testDb(nom: any) {
+    return this.http.post<{ text: string }>(`${this.baseUrl}/api/testDb`, { contexte: { nom } }).pipe(map(r => r.text));
+  }
+
+  getClientNom(code_client: any) {
+    return this.http.get<string>(`${this.baseUrl}/api/testDb/${code_client}`);
   }
 }

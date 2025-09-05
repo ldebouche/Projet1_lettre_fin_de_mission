@@ -27,6 +27,9 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
 
   loading = false;
 
+  code_client = '';
+  errorMessage = '';
+
   constructor(private ai: AiService) {}
 
   get showTextarea() { return (this.value ?? '').trim().length > 0; }
@@ -46,7 +49,7 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     if (this.disabled) return;
     if (!this.value) {
       if (selector) {
-        this.onGenerateComment();
+        this.onTestDb();
       }
       else {
         this.onGenerateAnalyse();
@@ -61,14 +64,11 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     this.loading = true;
 
     this.ai.generateComment(
-      "Rédige un commentaire professionnel et concis sur nos résultats.",
       { clientNom: "Entreprise ACME", 
         siren: "123456789", 
         ca: 420000, 
         marge: 0.18 
-      },
-      "auto",
-      true 
+      }
     ).subscribe({
       next: (text) => {
         this.value = text && text.trim() ? text : this.defaultText;
@@ -102,6 +102,35 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
         this.loading = false;   
       }
     });
+  }
+
+  onTestDb() {
+    this.loading = true;
+
+    this.ai.getClientNom("AC0001").subscribe({
+      next: (data) => {
+        this.code_client = data;
+        this.ai.testDb(this.code_client).subscribe({
+          next: (text) => {
+            this.value = text && text.trim() ? text : this.defaultText;
+            this.onChange(this.value);
+            this.markTouched();
+            this.loading = false;   
+          },
+          error: (err) => {
+            console.error(err);
+            this.errorMessage = 'Erreur lors de la génération du texte';
+            this.loading = false;
+          }
+        }); 
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage = 'Impossible de charger le client';
+      }
+    });
+
+    
   }
 
   handleInput(val: string) {

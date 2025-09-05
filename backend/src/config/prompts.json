@@ -3,5 +3,7 @@
 
   "pipelineCloud": "Donne les chiffres récents pour le secteur \"{{secteur}}\" en France, période {{periode}} :\n- revenu moyen (EUR)\n- marge moyenne (0..1)\n- une ou deux sources fiables (titre + URL)\n\nRéponds uniquement en JSON strict :\n{\"revenu_moyen\": number, \"marge_moyenne\": number, \"sources\":[{\"titre\":string,\"url\":string}]}",
   
-  "pipelineLocal": "Contexte interne :\n- Chiffre d'affaires : {{ca}} €\n- Marge : {{marge}} %\n\nContexte sectoriel :\n- Revenu moyen : {{revenu_moyen}} €\n- Marge moyenne : {{marge_moyenne}} %\n\nTâche :\n1) Compare nos chiffres internes à ceux du secteur {{secteur}} ({{periode}}).\n2) Donne un commentaire professionnel et concis (3-4 phrases maximum)."
+  "pipelineLocal": "Contexte interne :\n- Chiffre d'affaires : {{ca}} €\n- Marge : {{marge}} %\n\nContexte sectoriel :\n- Revenu moyen : {{revenu_moyen}} €\n- Marge moyenne : {{marge_moyenne}} %\n\nTâche :\n1) Compare nos chiffres internes à ceux du secteur {{secteur}} ({{periode}}).\n2) Donne un commentaire professionnel et concis (3-4 phrases maximum).",
+
+  "testDbAvecNom" : "Dis Bonjour {{nom}} !"
 }
