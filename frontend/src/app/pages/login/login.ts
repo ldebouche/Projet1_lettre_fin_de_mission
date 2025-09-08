@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 import { DbService } from '../../services/db-service';
 
@@ -19,7 +20,8 @@ export class LoginComponent {
 
   constructor(
     private fb: FormBuilder,
-    private db: DbService
+    private db: DbService,
+    private router: Router
   ) {
     this.form = this.buildForm();
   }
@@ -42,6 +44,7 @@ export class LoginComponent {
       next: (data) => {
         console.log('Dossier trouvé :', data);
         this.errorMessage = '';
+        this.router.navigate(['/formulaire']);
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);

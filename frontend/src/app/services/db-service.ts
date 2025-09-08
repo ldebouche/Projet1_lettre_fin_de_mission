@@ -18,6 +18,6 @@ export class DbService {
   }
 
   VerifDossier(code_client: any, dateFinEx: Date) {
-    return this.http.get<{ code_client: any, dateFinEx: Date }>(`${this.baseUrl}/api/verifDossier/${code_client}/${dateFinEx}`);
+    return this.http.get<{ code_client: any, dateFinEx: Date }>(`${this.baseUrl}/api/db/verifDossier/${code_client}/${dateFinEx}`);
   }
 }
