@@ -1,9 +1,30 @@
 {
-  "generateComment": "Analyse financière du client {{clientNom}} (SIREN {{siren}}) :\n\n- Chiffre d'affaires : {{ca}} €\n- Marge : {{marge}} %\n\nÉcris un commentaire professionnel, clair et concis sur ces résultats.",
-
   "pipelineCloud": "Donne les chiffres récents pour le secteur \"{{secteur}}\" en France, période {{periode}} :\n- revenu moyen (EUR)\n- marge moyenne (0..1)\n- une ou deux sources fiables (titre + URL)\n\nRéponds uniquement en JSON strict :\n{\"revenu_moyen\": number, \"marge_moyenne\": number, \"sources\":[{\"titre\":string,\"url\":string}]}",
   
   "pipelineLocal": "Contexte interne :\n- Chiffre d'affaires : {{ca}} €\n- Marge : {{marge}} %\n\nContexte sectoriel :\n- Revenu moyen : {{revenu_moyen}} €\n- Marge moyenne : {{marge_moyenne}} %\n\nTâche :\n1) Compare nos chiffres internes à ceux du secteur {{secteur}} ({{periode}}).\n2) Donne un commentaire professionnel et concis (3-4 phrases maximum).",
 
-  "testDbAvecNom" : "Dis Bonjour {{nom}} !"
+  "testDbAvecNom" : "Dis Bonjour {{nom}} !",
+
+  "generateComment" : {
+    "CA" : {
+      "petite_variation_positive": "Analyse la variation du chiffre d'affaires entre {{anneeN1}} et {{anneeN}} :\\n\\n- Chiffre d'affaires {{anneeN1}} : {{caN1}} EUR\\n- Chiffre d'affaires {{anneeN}} : {{caN}} EUR\\n- Variation : {{variation}} (positive, faible)\\n\\nFais une comparaison simple du CA de cette année par rapport à l'année dernière.\\n\\nRéponds uniquement en JSON strict :\\n{\\n  \\\"resume\\\": string\\n}",
+
+      "petite_variation_negative": "Analyse la variation du chiffre d'affaires entre {{anneeN1}} et {{anneeN}} :\\n\\n- Chiffre d'affaires {{anneeN1}} : {{caN1}} EUR\\n- Chiffre d'affaires {{anneeN}} : {{caN}} EUR\\n- Variation : {{variation}} (négative, faible)\\n\\nFais une comparaison simple du CA de cette année par rapport à l'année dernière.\\n\\nRéponds uniquement en JSON strict :\\n{\\n  \\\"resume\\\": string\\n}",
+
+      "grosse_variation_positive": "Analyse la variation du chiffre d'affaires entre {{anneeN1}} et {{anneeN}} :\\n\\n- Chiffre d'affaires {{anneeN1}} : {{caN1}} EUR\\n- Chiffre d'affaires {{anneeN}} : {{caN}} EUR\\n- Variation : {{variation}} (positive, forte)\\n\\nFais une comparaison entre les deux années puis donne les détails de cette variation à travers deux facteurs principaux :\\n- évolution des tarifs (augmentation/diminution)\\n- évolution des ventes de produits (augmentation/diminution)\\n\\nRéponds uniquement en JSON strict :\\n{\\n  \\\"resume\\\": string,\\n  \\\"facteurs\\\": {\\n    \\\"tarifs\\\": string,\\n    \\\"ventes\\\": string\\n  }\\n}",
+
+      "grosse_variation_negative": "Analyse la variation du chiffre d'affaires entre {{anneeN1}} et {{anneeN}} :\\n\\n- Chiffre d'affaires {{anneeN1}} : {{caN1}} EUR\\n- Chiffre d'affaires {{anneeN}} : {{caN}} EUR\\n- Variation : {{variation}} (négative, forte)\\n\\nFais une comparaison entre les deux années puis donne les détails de cette variation à travers deux facteurs principaux :\\n- évolution des tarifs (augmentation/diminution)\\n- évolution des ventes de produits (augmentation/diminution)\\n\\nRéponds uniquement en JSON strict :\\n{\\n  \\\"resume\\\": string,\\n  \\\"facteurs\\\": {\\n    \\\"tarifs\\\": string,\\n    \\\"ventes\\\": string\\n  }\\n}"
+    }
+    ,
+    "margeBrute" : {
+      "positif" : {
+        "petiteVariation" : "à remplir",
+        "grosseVariation" : "à remplir"
+      },
+      "negatif" : {
+        "petiteVariation" : "à remplir",
+        "grosseVariation" : "à remplir"
+      }
+    }
+  }
 }

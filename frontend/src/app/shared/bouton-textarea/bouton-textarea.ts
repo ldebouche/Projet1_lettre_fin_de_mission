@@ -22,6 +22,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   /** Valeur initiale injectée au moment du clic si vide */
   @Input() defaultText = 'Texte par défaut (modifiable)…';
   @Input() selector = true; // true: commentaire, false: analyse
+  @Input() categorie ='';
+
   value = '';
   disabled = false;
   private touched = false;
@@ -49,11 +51,11 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   registerOnTouched(fn: () => void): void { this.onTouched = fn; }
   setDisabledState(isDisabled: boolean): void { this.disabled = isDisabled; }
 
-  handleClick(selector: boolean) {
+  handleClick() {
     if (this.disabled) return;
     if (!this.value) {
-      if (selector) {
-        this.onTestDb();
+      if (this.selector) {
+        this.onGenerateComment();
       }
       else {
         this.onGenerateAnalyse();
@@ -68,10 +70,11 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     this.loading = true;
 
     this.ai.generateComment(
-      { clientNom: "Entreprise ACME", 
-        siren: "123456789", 
-        ca: 420000, 
-        marge: 0.18 
+      { 
+        anneeN: 2024, 
+        anneeN1: 2023, 
+        caN: 500000, 
+        caN1: 499000
       }
     ).subscribe({
       next: (text) => {

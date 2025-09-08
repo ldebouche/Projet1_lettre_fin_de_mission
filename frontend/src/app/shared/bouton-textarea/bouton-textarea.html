@@ -3,7 +3,7 @@
     type="button"
     class="btn"
     [disabled]="disabled || loading"
-    (click)="handleClick(selector)">
+    (click)="handleClick()">
     {{ loading ? 'Génération en cours…' : buttonLabel }}
   </button>
 </div>

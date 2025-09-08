@@ -8,7 +8,7 @@ export class AiService {
   baseUrl = 'http://localhost:4000';
 
   generateComment(contexte: any) {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/api/generate-comment`, { contexte }).pipe(map(r => r.text));
+    return this.http.post<{ text: string }>(`${this.baseUrl}/api/ai/generate-comment`, { contexte }).pipe(map(r => r.text));
   }
 
   pipelineAnalyse(contexte: any) {
