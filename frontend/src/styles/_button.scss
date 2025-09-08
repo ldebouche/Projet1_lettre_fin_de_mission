@@ -14,3 +14,28 @@
   &:hover { transform: translateY(-2px); }
   &:active { transform: scale(.96); }
 }
+
+.login-page{
+  .btn {
+    padding: 0.8rem;
+    width: 100%;
+    border: none;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--color-blue-petrol), var(--color-blue-light));
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-body);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}

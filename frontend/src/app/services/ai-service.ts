@@ -14,12 +14,4 @@ export class AiService {
   pipelineAnalyse(contexte: any) {
     return this.http.post<{ text: string }>(`${this.baseUrl}/api/pipeline/analyse`, contexte).pipe(map(r => r.text));
   }
-
-  testDb(nom: any) {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/api/testDb`, { contexte: { nom } }).pipe(map(r => r.text));
-  }
-
-  getClientNom(code_client: any) {
-    return this.http.get<string>(`${this.baseUrl}/api/testDb/${code_client}`);
-  }
 }

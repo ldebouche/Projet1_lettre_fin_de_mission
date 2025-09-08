@@ -1,25 +1,30 @@
-<h2>Veuillez rentrer les données</h2>
-<form (ngSubmit)="onSubmit()" class="stack" [formGroup]="form">
-    <div class="form-group">
-    <label for="folderNumber">Numéro de dossier</label>
-    <input
-        type="text"
-        id="folderNumber"
-        name="folderNumber"
-        required
-        class="form-control"
-    />
-    <label for="EndDate">Date de clôture</label>
-    <input
-        type="text"
-        id="EndDate"
-        name="EndDate"
-        required
-        class="form-control"
-    />
-    </div>
+<div class="login-page">
+  <div class="login-card">
+    <h2>Lettre de fin de mission</h2>
+    <form (ngSubmit)="onSubmit()" [formGroup]="form">
+      <div *ngIf="errorMessage" class="error-formulaire">
+        {{ errorMessage }}
+      </div>
 
-    <div class="actions">
-        <button class="btn" type="submit">Enregistrer</button>
-    </div>
-</form>
+      <label>
+        <span>Code client</span>
+        <input type="text" formControlName="code_client" />
+      </label>
+      <div *ngIf="form.get('code_client')?.invalid && form.get('code_client')?.touched" class="error-formulaire">
+        Le code client est requis
+      </div>
+
+      <label>
+        <span>Date de clôture</span>
+        <input type="date" formControlName="dateFinEx" />
+      </label>
+      <div *ngIf="form.get('dateFinEx')?.invalid && form.get('dateFinEx')?.touched" class="error-formulaire">
+        La date de clôture est requise
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="submit">Se connecter</button>
+      </div>
+    </form>
+  </div>
+</div>

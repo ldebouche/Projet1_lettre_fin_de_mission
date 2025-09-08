@@ -3,17 +3,17 @@ import cors from "cors";
 import dotenv from "dotenv";
 import axios from 'axios';
 import fs from 'fs';
+import dbRoutes from './routes/dbRoutes.js';
 
-import { poolPromise, sql } from './db.js';
+import { poolPromise, sql } from './config/db.js';
 
 dotenv.config();
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-app.get("/ping", (_req, res) => {
-  res.send('pong');
-});
+app.use('api/db', dbRoutes)
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
@@ -139,3 +139,4 @@ app.get('/api/testDb/:code_client', async (req, res) => {
     res.status(500).json({ error: 'Erreur SQL' });
   }
 });
+

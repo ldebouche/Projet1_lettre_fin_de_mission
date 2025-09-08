@@ -47,3 +47,25 @@ form {
   display: flex;
   align-items: center;
 }
+
+.login-page {
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-dark);
+
+    span {
+      margin-bottom: 0.4rem;
+    }
+  }
+}
+

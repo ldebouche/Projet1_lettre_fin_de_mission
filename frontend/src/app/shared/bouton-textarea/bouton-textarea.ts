@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 
 import { AiService } from '../../services/ai-service';
+import { DbService } from '../../services/db-service';
 
 @Component({
   selector: 'bouton-textarea',
@@ -30,7 +31,10 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   code_client = '';
   errorMessage = '';
 
-  constructor(private ai: AiService) {}
+  constructor(
+    private ai: AiService, 
+    private db: DbService
+  ) {}
 
   get showTextarea() { return (this.value ?? '').trim().length > 0; }
 
@@ -107,10 +111,10 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   onTestDb() {
     this.loading = true;
 
-    this.ai.getClientNom("AC0001").subscribe({
+    this.db.getClientNom("AC0001").subscribe({
       next: (data) => {
         this.code_client = data;
-        this.ai.testDb(this.code_client).subscribe({
+        this.db.testDb(this.code_client).subscribe({
           next: (text) => {
             this.value = text && text.trim() ? text : this.defaultText;
             this.onChange(this.value);

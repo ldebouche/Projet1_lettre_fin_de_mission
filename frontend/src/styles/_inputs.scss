@@ -26,3 +26,25 @@
   resize: vertical;
   width: -webkit-fill-available;
 }
+
+.login-page {
+  input[type="text"],
+  input[type="date"] {
+    padding: 0.8rem;
+    border: 1px solid var(--color-sand);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: #fff;
+
+    &:focus {
+      border-color: var(--color-blue-petrol);
+      box-shadow: 0 0 0 3px rgba(68, 122, 135, 0.25);
+      outline: none;
+    }
+
+    &.ng-invalid.ng-touched {
+      border-color: var(--color-dark);
+    }
+  }
+}
