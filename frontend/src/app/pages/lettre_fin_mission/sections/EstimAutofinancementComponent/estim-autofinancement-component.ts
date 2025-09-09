@@ -1,4 +1,4 @@
-import { Component , Input} from '@angular/core';
+import { Component , Input } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -13,4 +13,14 @@ import { CommonModule } from '@angular/common';
 })
 export class EstimAutofinancementComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() resEx = 0;
+
+  get capaAutfinance(): number {
+    return (
+      this.resEx +
+      (this.group.get('dotations')?.value || 0) -
+      (this.group.get('remboursements')?.value || 0) -
+      (this.group.get('dividendes')?.value || 0)
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -14,10 +14,11 @@ import { ProjetAffectResultatComponent } from './sections/ProjetAffectResultatCo
 import { TabAutofinancementComponent } from './sections/TabAutofinancementComponent/tab-autofinancement-component';
 import { EstimAutofinancementComponent } from './sections/EstimAutofinancementComponent/estim-autofinancement-component';
 import { MAJDocUniqueEvalComponent } from './sections/MAJDocUniqueEvalComponent/majdoc-unique-eval-component';
-import { ProtecSocialeComponent } from './sections/ProtecSocialeComponent/protec-sociale-component';
 import { FaitsMarquantsComponent } from './sections/FaitsMarquantsComponent/faits-marquants-component';
 import { PerspectivesComponent } from './sections/PerspectivesComponent/perspectives-component';
 import { SignataireComponent } from './sections/SignataireComponent/signataire-component';
+
+import { DbService } from '../../services/db-service';
 
 @Component({
   selector: 'app-formulaire',
@@ -37,7 +38,6 @@ import { SignataireComponent } from './sections/SignataireComponent/signataire-c
     TabAutofinancementComponent,
     EstimAutofinancementComponent,
     MAJDocUniqueEvalComponent,
-    ProtecSocialeComponent,
     FaitsMarquantsComponent,
     PerspectivesComponent,
     SignataireComponent
@@ -45,30 +45,73 @@ import { SignataireComponent } from './sections/SignataireComponent/signataire-c
   templateUrl: './formulaire.html',
   styleUrls: ['./formulaire.scss']
 })
-export class FormulaireComponent {
+export class FormulaireComponent implements OnInit {
   showTextarea = false;
   commentaire = '';
   form!: FormGroup;
+  loading = false;
+
+  anneeN1Existe = true;
+  ei = false;
+
+  signataire = {
+    nomExpert: '',
+    prenomExpert: '',
+    nomReviseur: '',
+    prenomReviseur: ''
+  };
+
+  resEx = 0;
   
   informations_fiscales = [
-    'Rénovation et taux réduit de TVA',
-    "Prestataire sous-traitant : l\'attestation de vigilence",
-    'Utilisation de une ou plusieurs caisses enregistreuses ou d\'un système informatique de caisse',
-    'Créances irrécouvrables',
-    'Rupture dans une séquence de numérotation de facturation',
-    'Perte de la moitié de capital social',
-    'Comptes courants débiteurs',
-    'Obligation FEC (pour les comptabilités externes)',
-    'Obligation des entreprises individuelles',
-    'Déclaration de revenus : obligation du gérant de transmettre les documents aux associés',
-    'Non affiliation à la médecine du travail',
-    'Retard dépot déclaration fiscale : retard dépot documents',
-    'Retard dépot déclaration fiscale : retard règlement honoraires',
-    'Réduction d\'impôt frais de comptabilité'
-  ];
+      'Rénovation et taux réduit de TVA',
+      "Prestataire sous-traitant : l\'attestation de vigilence",
+      'Utilisation de une ou plusieurs caisses enregistreuses ou d\'un système informatique de caisse',
+      'Créances irrécouvrables',
+      'Rupture dans une séquence de numérotation de facturation',
+      'Perte de la moitié de capital social',
+      'Comptes courants débiteurs',
+      'Obligation FEC (pour les comptabilités externes)',
+      'Obligation des entreprises individuelles',
+      'Déclaration de revenus : obligation du gérant de transmettre les documents aux associés',
+      'Non affiliation à la médecine du travail',
+      'Retard dépot déclaration fiscale : retard dépot documents',
+      'Retard dépot déclaration fiscale : retard règlement honoraires',
+      'Réduction d\'impôt frais de comptabilité',
+      'Protection sociale'
+    ];
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private db: DbService
+  ) {
     this.form = this.buildForm();
+  }
+
+  ngOnInit(): void {
+    this.db.GetDossierInfos().subscribe({
+      next: (data: any) => {
+        this.anneeN1Existe = data.anneeN1Existe;
+        this.ei = data.ei;
+        this.resEx = data.resEx;
+        this.signataire = data.signataire;
+        
+        this.form.patchValue({
+          signataire: {
+            nomExpert: this.signataire.nomExpert + " " + this.signataire.prenomExpert,
+            qualiteExpert: 'Expert-Comptable',
+            nomReviseur: this.signataire.nomReviseur + " " + this.signataire.prenomReviseur,
+            qualiteReviseur: 'Chef de groupe'
+          }
+        });
+        
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors de la vérification du dossier :', err);
+        this.loading = false;
+      }
+    });
   }
 
   private buildForm(): FormGroup {
@@ -87,9 +130,9 @@ export class FormulaireComponent {
       evolutionCharges: this.fb.group({
         masquerSection: [false],
         montantVariationMin: [0.00],
-        variation: this.fb.group({
-          commentaire: ['']
-        })
+        montantVariationMinPourcentage: [0.00],
+        montantMinAffiché: [0.00],
+        commentaire: ['']
       }),
 
       // ===== CHARGES DE PERSONNEL =====
@@ -159,11 +202,6 @@ export class FormulaireComponent {
         enabled: [false]
       }),
 
-      // ===== PROTECTION SOCIALE =====
-      protecSociale: this.fb.group({
-        enabled: [false]
-      }),
-
       // ===== FAITS MARQUANTS DE L'EXERCICE =====
       faitsMarquants: this.fb.group({
         enabled: [false],
@@ -179,10 +217,10 @@ export class FormulaireComponent {
 
       // ===== SIGNATAIRE =====
       signataire: this.fb.group({
-        nomExpert: [''],
-        qualiteExpert: [''],
-        nomReviseur: [''],
-        qualiteReviseur: ['']
+        nomExpert: [this.signataire?.nomExpert],
+        qualiteExpert: ['Expert-Comptable'],
+        nomReviseur: [this.signataire?.nomReviseur],
+        qualiteReviseur: ['Chef de groupe']
       })
     });
   }

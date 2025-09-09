@@ -41,8 +41,8 @@ export class LoginComponent {
   verifDossier() {
     this.db.VerifDossier(this.form.value.code_client, this.form.value.dateFinEx)
     .subscribe({
-      next: (data) => {
-        console.log('Dossier trouvé :', data);
+      next: (res) => {
+        localStorage.setItem('token', res.token);
         this.errorMessage = '';
         this.router.navigate(['/formulaire']);
       },

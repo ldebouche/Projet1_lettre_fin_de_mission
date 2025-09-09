@@ -10,7 +10,7 @@ export function fillTemplate(template, variables) {
 }
 
 export function pickCAPrompt(variation) {
-  const seuil = 0.05;
+  const seuil = 0.1;
   if (variation >= 0) {
     return variation < seuil
       ? prompts.generateComment.CA.petite_variation_positive

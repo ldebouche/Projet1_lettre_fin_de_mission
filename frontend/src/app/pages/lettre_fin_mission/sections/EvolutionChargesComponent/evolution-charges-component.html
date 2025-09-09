@@ -7,17 +7,27 @@
       </label>
     </legend>
 
-    <div class="grid2">
-      <label class="checkline">
-        <span>Montant de variation minimum</span>
-        <input type="number" step="0.01" class="inputNumber"
-                formControlName="montantVariationMin">
-      </label>
-      <div [formGroup]="variation">
+      <table class="table" >
+        <tbody>
+          <tr>
+            <td>Montant de variation minimum</td>
+            <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMin"></td>
+          </tr>
+          <tr>
+            <td>Montant de variation minimum en pourcentage</td>
+            <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMinPourcentage"></td>
+          </tr>
+          <tr>
+            <td>Montant minimum à afficher</td>
+            <td><input type="number" step="0.01" class="inputNumber" formControlName="montantMinAffiché"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div>
         <label class="checkline">
           <span>• Variation</span>
         </label>
         <bouton-textarea formControlName="commentaire"></bouton-textarea>
       </div>
-    </div>
+
   </fieldset>

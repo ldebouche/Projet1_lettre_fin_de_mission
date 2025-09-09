@@ -15,7 +15,7 @@
         <tbody>
         <tr>
             <td>Résultat de l’exercice</td>
-            <td><input type="number" class="inputNumber" formControlName="resultatExercice" step="0.01" /></td>
+            <td>{{ resEx | number: '1.2-2' }}</td>
         </tr>
         <tr>
             <td>Dotations aux amortissements</td>
@@ -31,7 +31,7 @@
         </tr>
         <tr class="row-capaAutof">
             <td>= Capacité d’autofinancement net</td>
-            <td><input type="number" class="inputNumber" formControlName="capaciteNet" step="0.01" /></td>
+            <td>{{ capaAutfinance | number: '1.2-2' }}</td>
         </tr>
         </tbody>
     </table>

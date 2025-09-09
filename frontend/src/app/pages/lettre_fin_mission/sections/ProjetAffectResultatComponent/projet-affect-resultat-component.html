@@ -10,7 +10,7 @@
         <tbody>
         <tr>
             <td>Résultat de l’exercice</td>
-            <td><input type="number" class="inputNumber" formControlName="resultatExercice" step="0.01" /></td>
+            <td>{{ resEx | number: '1.2-2' }}</td>
         </tr>
         <tr class="row-affectations">
             <td colspan="2">Affectations</td>
@@ -28,7 +28,7 @@
             <td><input type="number" class="inputNumber" formControlName="reportNouveau" step="0.01" /></td>
         </tr>
         <tr>
-            <td>Dividendes et/ou fonds associatifs</td>
+            <td>fonds associatifs</td>
             <td><input type="number" class="inputNumber" formControlName="dividendes" step="0.01" /></td>
         </tr>
         </tbody>

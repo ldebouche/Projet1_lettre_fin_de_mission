@@ -1,6 +1,8 @@
 import { Component , Input} from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+
+import { DbService } from '../../../../services/db-service';
 
 @Component({
   selector: 'section-projet-affect-resultat-component',
@@ -13,4 +15,5 @@ import { CommonModule } from '@angular/common';
 })
 export class ProjetAffectResultatComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() resEx = 0;
 }

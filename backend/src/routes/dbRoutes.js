@@ -1,8 +1,16 @@
 import express from 'express';
-import { VerifDossier } from '../controllers/dbController.js';
+import { login } from '../controllers/authController.js';
+import { GetCAData, GetDossierInfos, GetInfoFiscale } from '../controllers/dbController.js';
+import { authMiddleware } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-router.get('/verifDossier/:code_client/:dateFinEx', VerifDossier);
+router.post('/verifDossier', login);
+
+router.get('/caData', authMiddleware, GetCAData);
+
+router.get('/getDossierInfos', authMiddleware, GetDossierInfos);
+
+router.get('/getInfoFiscale', authMiddleware, GetInfoFiscale);
 
 export default router;

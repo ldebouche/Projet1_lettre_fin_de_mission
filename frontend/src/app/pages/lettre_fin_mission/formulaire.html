@@ -1,54 +1,57 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
+<div *ngIf="loading">
+  <p>Chargement en cours...</p>
+</div>
 
-  <!-- ===== CHIFFRES CLÉS ===== -->
-  <section-chiffres-cles [group]="f.chiffresCles"></section-chiffres-cles>
+<div *ngIf="!loading">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 
-  <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
-  <section-evolution-charges-component [group]="f.evolutionCharges"></section-evolution-charges-component>
+    <!-- ===== CHIFFRES CLÉS ===== -->
+    <section-chiffres-cles [group]="f.chiffresCles" *ngIf="anneeN1Existe"></section-chiffres-cles>
 
-  <!-- ===== CHARGES DE PERSONNEL ===== -->
-  <section-charges-personnel-component [group]="f.chargesPersonnel"></section-charges-personnel-component>
-  
-  <!-- ===== INVESTISSEMENTS ===== -->
-  <section-investissement-component [group]="f.investissement"></section-investissement-component>
+    <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
+    <section-evolution-charges-component [group]="f.evolutionCharges"></section-evolution-charges-component>
 
-  <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
-  <section-impot-societes-tab-component [group]="f.impotSocietesTab"></section-impot-societes-tab-component>
+    <!-- ===== CHARGES DE PERSONNEL ===== -->
+    <section-charges-personnel-component [group]="f.chargesPersonnel"></section-charges-personnel-component>
+    
+    <!-- ===== INVESTISSEMENTS ===== -->
+    <section-investissement-component [group]="f.investissement"></section-investissement-component>
 
-  <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
-  <section-acompte-impot-component [group]="f.acomptesImpotSocietesN1Tab"></section-acompte-impot-component>
+    <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
+    <section-impot-societes-tab-component [group]="f.impotSocietesTab"></section-impot-societes-tab-component>
 
-  <!-- ===== IMPÔT SUR LES SOCIÉTÉS (COMMENTAIRE) ===== -->
-  <section-impot-societe-comm-component [group]="f.impotSocietesCom"></section-impot-societe-comm-component>
+    <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
+    <section-acompte-impot-component [group]="f.acomptesImpotSocietesN1Tab"></section-acompte-impot-component>
 
-  <!-- ===== INFORMATION FISCALE ===== -->
-  <section-info-fiscale-component [formArray]="infoFiscale" [items]=informations_fiscales ></section-info-fiscale-component>
+    <!-- ===== IMPÔT SUR LES SOCIÉTÉS (COMMENTAIRE) ===== -->
+    <section-impot-societe-comm-component [group]="f.impotSocietesCom"></section-impot-societe-comm-component>
 
-  <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-  <section-projet-affect-resultat-component [group]="f.projetResultat"></section-projet-affect-resultat-component>
+    <!-- ===== INFORMATION FISCALE ===== -->
+    <section-info-fiscale-component [formArray]="infoFiscale" [items]=informations_fiscales ></section-info-fiscale-component>
 
-  <!-- ===== TABLEAU D’AUTOFINANCEMENT ===== -->
-  <section-tab-autofinancement-component [group]="f.tableauAutofinancement"></section-tab-autofinancement-component>
+    <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
+    <section-projet-affect-resultat-component [group]="f.projetResultat" [resEx]="resEx" *ngIf="!ei"></section-projet-affect-resultat-component>
 
-  <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
-  <section-estim-autofinancement-component [group]="f.estimationAutof"></section-estim-autofinancement-component>
+    <!-- ===== TABLEAU D’AUTOFINANCEMENT ===== -->
+    <section-tab-autofinancement-component [group]="f.tableauAutofinancement"></section-tab-autofinancement-component>
 
-  <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
-  <section-majdoc-unique-eval-component [group]="f.majDocEval"></section-majdoc-unique-eval-component>
+    <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
+    <section-estim-autofinancement-component [group]="f.estimationAutof" [resEx]="resEx"></section-estim-autofinancement-component>
 
-  <!-- ===== PROTECTION SOCIALE ===== -->
-  <section-protec-sociale-component [group]="f.protecSociale"></section-protec-sociale-component>
+    <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
+    <section-majdoc-unique-eval-component [group]="f.majDocEval"></section-majdoc-unique-eval-component>
 
-  <!-- ===== FAITS MARQUANTS ===== -->
-  <section-faits-marquants-component [group]="f.faitsMarquants"></section-faits-marquants-component>
+    <!-- ===== FAITS MARQUANTS ===== -->
+    <section-faits-marquants-component [group]="f.faitsMarquants"></section-faits-marquants-component>
 
-  <!-- ===== LES PERSPECTIVES ===== -->
-  <section-perspectives-component [group]="f.perspectives"></section-perspectives-component>
+    <!-- ===== LES PERSPECTIVES ===== -->
+    <section-perspectives-component [group]="f.perspectives"></section-perspectives-component>
 
-  <!-- ===== SIGNATAIRE ===== -->
-  <section-signataire-component [group]="f.signataire"></section-signataire-component>
+    <!-- ===== SIGNATAIRE ===== -->
+    <section-signataire-component [group]="f.signataire"></section-signataire-component>
 
-  <div class="actions">
-    <button class="btn" type="submit">Enregistrer</button>
-  </div>
-</form>
+    <div class="actions">
+      <button class="btn" type="submit">Enregistrer</button>
+    </div>
+  </form>
+</div>

@@ -7,17 +7,27 @@ import { map } from 'rxjs';
 })
 export class DbService {
   private http = inject(HttpClient);
-  baseUrl = 'http://localhost:4000';
-
-  testDb(nom: any) {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/api/testDb`, { contexte: { nom } }).pipe(map(r => r.text));
-  }
-
-  getClientNom(code_client: any) {
-    return this.http.get<string>(`${this.baseUrl}/api/testDb/${code_client}`);
-  }
-
+  baseUrl = 'http://localhost:4000/api/db';
+  
   VerifDossier(code_client: any, dateFinEx: Date) {
-    return this.http.get<{ code_client: any, dateFinEx: Date }>(`${this.baseUrl}/api/db/verifDossier/${code_client}/${dateFinEx}`);
+    return this.http.post<{ token: string }>(`${this.baseUrl}/verifDossier`, { code_client, dateFinEx })
+  };
+
+  getCAData() {
+    const token = localStorage.getItem('token');
+
+    return this.http.get(`${this.baseUrl}/caData`, { headers: { Authorization: `Bearer ${token}` } });
   }
+
+  GetDossierInfos() {
+    const token = localStorage.getItem('token');
+
+    return this.http.get(`${this.baseUrl}/getDossierInfos`, { headers: { Authorization: `Bearer ${token}` } })
+  };
+
+  GetInfoFiscale() {
+    const token = localStorage.getItem('token');
+
+    return this.http.get(`${this.baseUrl}/getInfoFiscale`, { headers: { Authorization: `Bearer ${token}` } })
+  };
 }

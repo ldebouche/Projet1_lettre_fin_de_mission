@@ -69,20 +69,31 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   onGenerateComment() {
     this.loading = true;
 
-    this.ai.generateComment(
-      { 
-        anneeN: 2024, 
-        anneeN1: 2023, 
-        caN: 500000, 
-        caN1: 499000
-      }
-    ).subscribe({
-      next: (text) => {
-        this.value = text && text.trim() ? text : this.defaultText;
-        this.onChange(this.value);
-        this.markTouched();
-        this.loading = false;   
-      }
+    switch (this.categorie) {
+      case 'progressionChiffre':
+        this.db.getCAData().subscribe({
+          next: (data: any) => {
+            this.callAI({
+              anneeN: data.anneeN,
+              anneeN1: data.anneeN1,
+              caN: data.caN,
+              caN1: data.caN1
+            });
+          },
+          error: () => this.setError()
+        });
+        break;
+
+      default:
+        this.loading = false;
+        this.errorMessage = 'Catégorie non reconnue';
+    }
+  }
+
+  private callAI(payload: any) {
+    this.ai.generateComment(payload).subscribe({
+      next: (text) => this.setResult(text),
+      error: () => this.setError()
     });
   }
 
@@ -111,35 +122,6 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     });
   }
 
-  onTestDb() {
-    this.loading = true;
-
-    this.db.getClientNom("AC0001").subscribe({
-      next: (data) => {
-        this.code_client = data;
-        this.db.testDb(this.code_client).subscribe({
-          next: (text) => {
-            this.value = text && text.trim() ? text : this.defaultText;
-            this.onChange(this.value);
-            this.markTouched();
-            this.loading = false;   
-          },
-          error: (err) => {
-            console.error(err);
-            this.errorMessage = 'Erreur lors de la génération du texte';
-            this.loading = false;
-          }
-        }); 
-      },
-      error: (err) => {
-        console.error(err);
-        this.errorMessage = 'Impossible de charger le client';
-      }
-    });
-
-    
-  }
-
   handleInput(val: string) {
     this.value = val;
     this.onChange(this.value);
@@ -154,5 +136,17 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
       this.onTouched();
       this.touched = true;
     }
+  }
+
+  private setResult(text: string) {
+    this.value = text && text.trim() ? text : this.defaultText;
+    this.onChange(this.value);
+    this.markTouched();
+    this.loading = false;
+  }
+
+  private setError() {
+    this.errorMessage = 'Erreur lors de la génération du texte';
+    this.loading = false;
   }
 }
