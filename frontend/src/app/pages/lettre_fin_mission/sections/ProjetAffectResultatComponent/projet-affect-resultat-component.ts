@@ -16,4 +16,5 @@ import { DbService } from '../../../../services/db-service';
 export class ProjetAffectResultatComponent {
   @Input({ required: true }) group!: FormGroup;
   @Input() resEx = 0;
+  @Input() affectation = '';
 }

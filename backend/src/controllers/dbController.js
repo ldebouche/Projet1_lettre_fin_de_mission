@@ -20,16 +20,21 @@ export const GetDossierInfos = async (req, res) => {
   try {
     const { code_client, dateFinEx } = req.user;
 
-    const anneeN1 = await dbService.VerifAnneeN1Existe(code_client, dateFinEx);
-    const resEx = await dbService.GetResEx(code_client, dateFinEx);
-    const getFormeSociete = await dbService.GetFormeSociete(code_client);
+    const infoClients = await dbService.GetInfoClients(code_client, dateFinEx);
+    const infoFec = await dbService.GetInfoFEC(code_client, dateFinEx);
     const signataire= await dbService.GetSignataire(code_client);
     
     res.json({
-      anneeN1Existe: !!anneeN1?.anneeN1,
-      resEx: resEx ? resEx.totalProduit - resEx.totalCharges : null,
-      ei: getFormeSociete.ei,
-      signataire
+      anneeN1Existe: !!infoFec?.anneeN1,
+      resEx: infoFec ? infoFec.totalProduit - infoFec.totalCharges : null,
+      forme_societe: infoClients.forme_societe,
+      categorie_revenu: infoClients.categorie_revenu,
+      signataire,
+      capitalSocial: infoFec.capitalSocial,
+      montantReserveLegale: infoFec.montantReserveLegale,
+      montantReserveOrdinaire: infoFec.montantReserveOrdinaire,
+      montantReportNouveau: infoFec.montantReportNouveau,
+      montantDividendesN1: infoFec.montantDividendesN1
     });
   } catch (err) {
     console.error(err);

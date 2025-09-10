@@ -13,4 +13,5 @@ import { CommonModule } from '@angular/common';
 })
 export class ChargesPersonnelComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() anneeN1Existe: boolean = false;
 }

@@ -31,18 +31,7 @@ class dbService {
     );
   }
 
-  async VerifAnneeN1Existe(code_client, dateFinEx) {
-    return this.executeQuery(
-      `SELECT 
-        MAX(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) - 1 
-                  THEN YEAR(datefinex) END) AS anneeN1
-      FROM FEC
-      WHERE code_client = @code_client`,
-      { code_client, dateFinEx }
-    );
-  }
-
-  async GetResEx(code_client, dateFinEx) {
+  async GetInfoFEC(code_client, dateFinEx) {
     return this.executeQuery(
       `SELECT
         SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) 
@@ -50,18 +39,30 @@ class dbService {
                   THEN Debit - Credit ELSE 0 END) AS totalCharges,
         SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) 
                   AND CompteNum LIKE '7%' 
-                  THEN Credit - Debit ELSE 0 END) AS totalProduit
+                  THEN Credit - Debit ELSE 0 END) AS totalProduit,
+        MAX(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) - 1 
+                  THEN YEAR(datefinex) END) AS anneeN1,
+        SUM(CASE WHEN CompteNum LIKE '101300'
+                  THEN Credit - Debit ELSE 0 END) AS capitalSocial,
+        SUM(CASE WHEN CompteNum LIKE '106100'
+                  THEN Credit - Debit ELSE 0 END) AS montantReserveLegale,
+        SUM(CASE WHEN CompteNum LIKE '106800'
+                  THEN Credit - Debit ELSE 0 END) AS montantReserveOrdinaire,
+        SUM(CASE WHEN CompteNum LIKE '110000' AND CompteNum LIKE '119000'
+                  THEN Credit - Debit ELSE 0 END) AS montantReportNouveau,
+        SUM(CASE WHEN CompteNum LIKE '457000'
+                  THEN Credit - Debit ELSE 0 END) AS montantDividendesN1
       FROM FEC
-      WHERE code_client = @code_client
-        AND YEAR(datefinex) = YEAR(@dateFinEx)`,
+      WHERE code_client = @code_client`,
       { code_client, dateFinEx }
     );
   }
 
-  async GetFormeSociete(code_client) {
+  async GetInfoClients(code_client) {
     return this.executeQuery(
       `SELECT
-        CASE WHEN clients.forme_societe = 'ei' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS ei
+        forme_societe,
+        categorie_revenu
       FROM clients
       WHERE clients.code_client = @code_client`,
       { code_client }

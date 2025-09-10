@@ -9,10 +9,10 @@
     <section-chiffres-cles [group]="f.chiffresCles" *ngIf="anneeN1Existe"></section-chiffres-cles>
 
     <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
-    <section-evolution-charges-component [group]="f.evolutionCharges"></section-evolution-charges-component>
+    <section-evolution-charges-component [group]="f.evolutionCharges" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
 
     <!-- ===== CHARGES DE PERSONNEL ===== -->
-    <section-charges-personnel-component [group]="f.chargesPersonnel"></section-charges-personnel-component>
+    <section-charges-personnel-component [group]="f.chargesPersonnel" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
     
     <!-- ===== INVESTISSEMENTS ===== -->
     <section-investissement-component [group]="f.investissement"></section-investissement-component>
@@ -30,7 +30,7 @@
     <section-info-fiscale-component [formArray]="infoFiscale" [items]=informations_fiscales ></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.projetResultat" [resEx]="resEx" *ngIf="!ei"></section-projet-affect-resultat-component>
+    <section-projet-affect-resultat-component [group]="f.projetResultat" [affectation]="affectation" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
 
     <!-- ===== TABLEAU D’AUTOFINANCEMENT ===== -->
     <section-tab-autofinancement-component [group]="f.tableauAutofinancement"></section-tab-autofinancement-component>

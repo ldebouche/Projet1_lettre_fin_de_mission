@@ -52,8 +52,9 @@ export class FormulaireComponent implements OnInit {
   loading = false;
 
   anneeN1Existe = true;
-  ei = false;
-
+  resEx = 0;
+  forme_societe = '';
+  categorie_revenu = '';
   signataire = {
     nomExpert: '',
     prenomExpert: '',
@@ -61,8 +62,23 @@ export class FormulaireComponent implements OnInit {
     prenomReviseur: ''
   };
 
-  resEx = 0;
-  
+  choixAffectation = [
+    "Fonds associatifs",
+    "Dividendes",
+    "Au prorata des comptes courants d’associés"
+  ];
+  affectation = this.choixAffectation[0];
+  valeurReserveLegale = 0;
+  valeurReserveOrdinaire = 0;
+  valeurReportNouveau = 0;
+  valeurAffectation = 0;
+
+  capitalSocial = 0;
+  montantReserveLegale = 0;
+  montantReserveOrdinaire = 0;
+  montantReportNouveau = 0;
+  montantDividendesN1 = 0;
+
   informations_fiscales = [
       'Rénovation et taux réduit de TVA',
       "Prestataire sous-traitant : l\'attestation de vigilence",
@@ -92,11 +108,50 @@ export class FormulaireComponent implements OnInit {
     this.db.GetDossierInfos().subscribe({
       next: (data: any) => {
         this.anneeN1Existe = data.anneeN1Existe;
-        this.ei = data.ei;
         this.resEx = data.resEx;
+        this.forme_societe = data.forme_societe;
+        this.categorie_revenu = data.categorie_revenu;
         this.signataire = data.signataire;
-        
+
+        if (this.forme_societe.startsWith("ASS")){
+          this.affectation = this.choixAffectation[0];
+          this.valeurAffectation = this.resEx;
+        } else if (this.forme_societe == "SCI" && this.categorie_revenu == "rfonc") {
+          this.affectation = this.choixAffectation[2];
+          if (this.resEx > 0) {
+            this.valeurAffectation = this.resEx;
+          } else {
+            this.valeurReportNouveau = this.resEx;
+          }
+        } else {
+          this.affectation = this.choixAffectation[1];
+          this.valeurAffectation = this.montantDividendesN1;
+          if (this.resEx > 0) {
+            if (this.montantReserveLegale == this.capitalSocial * 0.1) {
+              this.valeurReserveLegale = 0;
+              this.valeurReserveOrdinaire = this.resEx;
+            } else if (this.montantReserveLegale < this.capitalSocial * 0.1 && this.capitalSocial * 0.1 - this.montantReserveLegale - this.resEx <= 0) {
+              this.valeurReserveLegale = this.capitalSocial * 0.1 - this.montantReserveLegale;
+              this.valeurReserveOrdinaire = this.resEx - this.valeurReserveLegale;
+            } else if (this.montantReserveLegale < this.capitalSocial * 0.1 && this.capitalSocial * 0.1 - this.montantReserveLegale - this.resEx > 0) {
+              this.valeurReserveLegale = this.resEx;
+              this.valeurReserveOrdinaire = 0;
+            }
+          } else if (this.resEx < 0) {
+            if (this.resEx + this.montantReserveOrdinaire >= 0) {
+              this.valeurReserveOrdinaire -= this.resEx;
+            } else {
+              this.valeurReportNouveau = this.resEx + this.montantReserveOrdinaire;
+            }
+          }
+        };
         this.form.patchValue({
+          projetResultat: {
+            reserveLegale: Number(this.valeurReserveLegale.toFixed(2)),
+            reserveOrdinaire: Number(this.valeurReserveOrdinaire.toFixed(2)),
+            reportNouveau: Number(this.valeurReportNouveau.toFixed(2)),
+            affectation: Number(this.valeurAffectation.toFixed(2))
+          },
           signataire: {
             nomExpert: this.signataire.nomExpert + " " + this.signataire.prenomExpert,
             qualiteExpert: 'Expert-Comptable',
@@ -104,7 +159,6 @@ export class FormulaireComponent implements OnInit {
             qualiteReviseur: 'Chef de groupe'
           }
         });
-        
         this.loading = false;
       },
       error: (err) => {
@@ -179,7 +233,7 @@ export class FormulaireComponent implements OnInit {
         reserveLegale: [0.00],
         reserveOrdinaire: [0.00],
         reportNouveau: [0.00],
-        dividendes: [0.00]
+        affectation: [0.00]
       }),
 
       // ===== TABLEAU D’AUTOFINANCEMENT =====

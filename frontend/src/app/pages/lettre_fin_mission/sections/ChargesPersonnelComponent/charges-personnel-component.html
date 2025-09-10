@@ -7,14 +7,14 @@
         <tr>
           <th></th>
           <th class="col-n">N</th>
-          <th class="col-n1">N-1</th>
+          <th class="col-n1" *ngIf="anneeN1Existe">N-1</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>Nombre d'heures rémunérées</td>
           <td><input type="number" step="0.01" class="inputNumber" formControlName="heuresRemunN"></td>
-          <td><input type="number" step="0.01" class="inputNumber" formControlName="heuresRemunN1"></td>
+          <td *ngIf="anneeN1Existe"><input type="number" step="0.01" class="inputNumber" formControlName="heuresRemunN1"></td>
         </tr>
       </tbody>
     </table>
