@@ -80,6 +80,8 @@ typings/
 Thumbs.db
 
 # ------------------------------
-# .txt
+# Fichiers perso
 # ------------------------------
 *.txt
+*.pdf
+*.docx
