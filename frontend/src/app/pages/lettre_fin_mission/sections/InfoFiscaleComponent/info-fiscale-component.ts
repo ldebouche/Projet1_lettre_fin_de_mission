@@ -54,10 +54,10 @@ export class InfoFiscaleComponent implements OnInit {
     if (item === 'Prestataire sous-traitant : l\'attestation de vigilence' && !this.info2) return false;
     if (item === 'Utilisation de une ou plusieurs caisses enregistreuses ou d\'un système informatique de caisse' && !this.info3) return false;
     if (item === 'Créances irrécouvrables' && !this.info4) return false;
-    if (item === 'Rupture dans une séquence de numérotation de facturation' && !this.info5) return false;
-    if (item === 'Obligation FEC (pour les comptabilités externes)' && !this.info6) return false;
-    if (item === 'Obligation des entreprises individuelles' && !this.info7) return false;
-    if (item === 'Déclaration de revenus : obligation du gérant de transmettre les documents aux associés' && !this.info8) return false;
+    if (item === 'Comptes courants débiteurs' && !this.info5) return false;
+    if (item === 'Obligation des entreprises individuelles' && !this.info6) return false;
+    if (item === 'Déclaration de revenus : obligation du gérant de transmettre les documents aux associés' && !this.info7) return false;
+    if (item === 'Non affiliation à la médecine du travail' && !this.info8) return false;
     return true;
   }
 }

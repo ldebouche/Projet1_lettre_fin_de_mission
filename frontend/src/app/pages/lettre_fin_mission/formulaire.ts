@@ -19,6 +19,7 @@ import { PerspectivesComponent } from './sections/PerspectivesComponent/perspect
 import { SignataireComponent } from './sections/SignataireComponent/signataire-component';
 
 import { DbService } from '../../services/db-service';
+import { WordService } from '../../services/word-service';
 
 @Component({
   selector: 'app-formulaire',
@@ -93,13 +94,13 @@ export class FormulaireComponent implements OnInit {
       'Non affiliation à la médecine du travail',
       'Retard dépot déclaration fiscale : retard dépot documents',
       'Retard dépot déclaration fiscale : retard règlement honoraires',
-      'Réduction d\'impôt frais de comptabilité',
       'Protection sociale'
     ];
 
   constructor(
     private fb: FormBuilder,
-    private db: DbService
+    private db: DbService,
+    private wordService: WordService
   ) {
     this.form = this.buildForm();
   }
@@ -170,10 +171,21 @@ export class FormulaireComponent implements OnInit {
 
   private buildForm(): FormGroup {
     return this.fb.group({
+      // ===== DONNEES HORS FORMULAIRE =====
+      nomEntreprise: ['aaa'],
+      adresseEntreprise: [''],
+      codePostalClient: [''],
+      villeClient: [''],
+      lieuCreation: [''],
+      dateCreation: [''],
+      initialesChefGroupe: [''],
+      codeClient: [''],
+      dateFinEx: [''],
+
       // ===== CHIFFRES CLÉS =====
       chiffresCles: this.fb.group({
         progressionChiffre: this.fb.group({
-          commentaire: ['']
+          commentaire: ['test commentaire']
         }),
         tauxMarge: this.fb.group({
           commentaire: ['']
@@ -283,6 +295,33 @@ export class FormulaireComponent implements OnInit {
   get infoFiscale(): FormArray { return this.form.get('informationFiscale') as FormArray; }
 
   onSubmit() {
-    console.log('Formulaire envoyé :', this.form.value);
+    const formData = this.form.value;
+
+    const infoArray: boolean[] = formData.informationFiscale;
+
+    const hasAny = infoArray.some(v => v === true);
+
+    const infoFlags = this.informations_fiscales.reduce((acc, label, idx) => {
+      const key = label.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+      acc[key] = infoArray[idx];
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    const payload = {
+      ...formData,
+      informationFiscaleArray: infoArray,
+      informationFiscale: infoFlags,
+      informationFiscale_hasAny: hasAny,
+      anneeN1Existe: this.anneeN1Existe
+    };
+
+    this.wordService.generateWord(payload).subscribe((blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'LFM_test.docx'; 
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
   }
 }

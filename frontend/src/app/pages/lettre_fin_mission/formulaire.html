@@ -27,7 +27,7 @@
     <section-impot-societe-comm-component [group]="f.impotSocietesCom"></section-impot-societe-comm-component>
 
     <!-- ===== INFORMATION FISCALE ===== -->
-    <section-info-fiscale-component [formArray]="infoFiscale" [items]=informations_fiscales ></section-info-fiscale-component>
+    <section-info-fiscale-component [formArray]="infoFiscale" [items]="informations_fiscales" ></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
     <section-projet-affect-resultat-component [group]="f.projetResultat" [affectation]="affectation" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
