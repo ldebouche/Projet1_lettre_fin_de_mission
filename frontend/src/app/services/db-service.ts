@@ -30,5 +30,4 @@ export class DbService {
 
     return this.http.get(`${this.baseUrl}/getInfoFiscale`, { headers: { Authorization: `Bearer ${token}` } })
   };
-
 }

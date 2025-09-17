@@ -13,4 +13,5 @@ import { CommonModule } from '@angular/common';
 })
 export class AcompteImpotComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() moisCloture: Array<string> = [];
 }

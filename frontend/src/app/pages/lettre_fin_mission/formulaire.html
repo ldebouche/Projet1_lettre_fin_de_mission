@@ -6,49 +6,46 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 
     <!-- ===== CHIFFRES CLÉS ===== -->
-    <section-chiffres-cles [group]="f.chiffresCles" *ngIf="anneeN1Existe"></section-chiffres-cles>
+    <section-chiffres-cles [group]="f.CC"></section-chiffres-cles>
 
     <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
-    <section-evolution-charges-component [group]="f.evolutionCharges" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
+    <section-evolution-charges-component [group]="f.EC" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
 
     <!-- ===== CHARGES DE PERSONNEL ===== -->
-    <section-charges-personnel-component [group]="f.chargesPersonnel" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
+    <section-charges-personnel-component [group]="f.CP" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
     
     <!-- ===== INVESTISSEMENTS ===== -->
-    <section-investissement-component [group]="f.investissement"></section-investissement-component>
+    <section-investissement-component [group]="f.I"></section-investissement-component>
 
     <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
-    <section-impot-societes-tab-component [group]="f.impotSocietesTab"></section-impot-societes-tab-component>
+    <section-impot-societes-tab-component [group]="f.IS"></section-impot-societes-tab-component>
 
     <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
-    <section-acompte-impot-component [group]="f.acomptesImpotSocietesN1Tab"></section-acompte-impot-component>
-
-    <!-- ===== IMPÔT SUR LES SOCIÉTÉS (COMMENTAIRE) ===== -->
-    <section-impot-societe-comm-component [group]="f.impotSocietesCom"></section-impot-societe-comm-component>
+    <section-acompte-impot-component [group]="f.AI"  [moisCloture]="moisClotureArray"></section-acompte-impot-component>
 
     <!-- ===== INFORMATION FISCALE ===== -->
-    <section-info-fiscale-component [formArray]="infoFiscale" [items]="informations_fiscales" ></section-info-fiscale-component>
+    <section-info-fiscale-component [formArray]="IF" [items]="informations_fiscales" ></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.projetResultat" [affectation]="affectation" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
+    <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" ></section-projet-affect-resultat-component>
 
     <!-- ===== TABLEAU D’AUTOFINANCEMENT ===== -->
-    <section-tab-autofinancement-component [group]="f.tableauAutofinancement"></section-tab-autofinancement-component>
+    <section-tab-autofinancement-component [group]="f.AF"></section-tab-autofinancement-component>
 
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
-    <section-estim-autofinancement-component [group]="f.estimationAutof" [resEx]="resEx"></section-estim-autofinancement-component>
+    <section-estim-autofinancement-component [group]="f.EA" [resEx]="resEx"></section-estim-autofinancement-component>
 
     <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
-    <section-majdoc-unique-eval-component [group]="f.majDocEval"></section-majdoc-unique-eval-component>
+    <section-majdoc-unique-eval-component [group]="f.MD"></section-majdoc-unique-eval-component>
 
     <!-- ===== FAITS MARQUANTS ===== -->
-    <section-faits-marquants-component [group]="f.faitsMarquants"></section-faits-marquants-component>
+    <section-faits-marquants-component [group]="f.FM"></section-faits-marquants-component>
 
     <!-- ===== LES PERSPECTIVES ===== -->
-    <section-perspectives-component [group]="f.perspectives"></section-perspectives-component>
+    <section-perspectives-component [group]="f.P"></section-perspectives-component>
 
     <!-- ===== SIGNATAIRE ===== -->
-    <section-signataire-component [group]="f.signataire"></section-signataire-component>
+    <section-signataire-component [group]="f.S"></section-signataire-component>
 
     <div class="actions">
       <button class="btn" type="submit">Enregistrer</button>

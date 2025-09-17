@@ -15,23 +15,23 @@
         <tbody>
         <tr>
             <td>Résultat de l’exercice</td>
-            <td>{{ resEx | number: '1.2-2' }}</td>
+            <td>{{ resEx | number:'1.0-0':'fr-FR' }}</td>
         </tr>
         <tr>
             <td>Dotations aux amortissements</td>
-            <td><input type="number" class="inputNumber" formControlName="dotations" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="dot" step="1" /></td>
         </tr>
         <tr>
             <td>Remboursements emprunts</td>
-            <td><input type="number" class="inputNumber" formControlName="remboursements" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="rembours" step="1" /></td>
         </tr>
         <tr>
             <td>Dividendes</td>
-            <td><input type="number" class="inputNumber" formControlName="dividendes" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="divi" step="1" /></td>
         </tr>
         <tr class="row-capaAutof">
             <td>= Capacité d’autofinancement net</td>
-            <td>{{ capaAutfinance | number: '1.2-2' }}</td>
+            <td>{{ capaAutfinance | number:'1.0-0':'fr-FR' }}</td>
         </tr>
         </tbody>
     </table>

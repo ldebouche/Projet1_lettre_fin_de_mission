@@ -10,26 +10,26 @@
         <tbody>
         <tr>
             <td>Résultat de l’exercice</td>
-            <td>{{ resEx | number: '1.2-2' }}</td>
+            <td>{{ resEx | number:'1.0-0':'fr-FR' }}</td>
         </tr>
         <tr class="row-affectations">
             <td colspan="2">Affectations</td>
         </tr>
         <tr>
             <td>Réserve légale</td>
-            <td><input type="number" class="inputNumber" formControlName="reserveLegale" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="resLeg" step="1" /></td>
         </tr>
         <tr>
             <td>Réserve ordinaire</td>
-            <td><input type="number" class="inputNumber" formControlName="reserveOrdinaire" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="resOrd" step="1" /></td>
         </tr>
         <tr>
             <td>Report à nouveau</td>
-            <td><input type="number" class="inputNumber" formControlName="reportNouveau" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="report" step="1" /></td>
         </tr>
         <tr>
             <td>{{ affectation }}</td>
-            <td><input type="number" class="inputNumber" formControlName="affectation" step="0.01" /></td>
+            <td><input type="number" class="inputNumber" formControlName="affect" step="1" /></td>
         </tr>
         </tbody>
     </table>

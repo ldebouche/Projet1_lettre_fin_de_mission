@@ -8,7 +8,6 @@ import { ChargesPersonnelComponent } from './sections/ChargesPersonnelComponent/
 import { InvestissementComponent } from './sections/InvestissementComponent/investissement-component';
 import { ImpotSocietesTabComponent } from './sections/ImpotSocietesTabComponent/impot-societes-tab-component';
 import { AcompteImpotComponent } from './sections/AcompteImpotComponent/acompte-impot-component';
-import { ImpotSocieteCommComponent } from './sections/ImpotSocieteCommComponent/impot-societe-comm-component';
 import { InfoFiscaleComponent } from './sections/InfoFiscaleComponent/info-fiscale-component';
 import { ProjetAffectResultatComponent } from './sections/ProjetAffectResultatComponent/projet-affect-resultat-component';
 import { TabAutofinancementComponent } from './sections/TabAutofinancementComponent/tab-autofinancement-component';
@@ -33,7 +32,6 @@ import { WordService } from '../../services/word-service';
     InvestissementComponent,
     ImpotSocietesTabComponent,
     AcompteImpotComponent,
-    ImpotSocieteCommComponent,
     InfoFiscaleComponent,
     ProjetAffectResultatComponent,
     TabAutofinancementComponent,
@@ -53,9 +51,15 @@ export class FormulaireComponent implements OnInit {
   loading = false;
 
   anneeN1Existe = true;
+  imposable = true;
+  moisClotureArray = [''];
   resEx = 0;
   forme_societe = '';
   categorie_revenu = '';
+
+  acompte_total = 0;
+  phraseAcomptes = '';
+
   signataire = {
     nomExpert: '',
     prenomExpert: '',
@@ -68,7 +72,7 @@ export class FormulaireComponent implements OnInit {
     "Dividendes",
     "Au prorata des comptes courants d’associés"
   ];
-  affectation = this.choixAffectation[0];
+  PA_affectation = this.choixAffectation[0];
   valeurReserveLegale = 0;
   valeurReserveOrdinaire = 0;
   valeurReportNouveau = 0;
@@ -97,6 +101,13 @@ export class FormulaireComponent implements OnInit {
       'Protection sociale'
     ];
 
+  infoChargesPersonnel: any;
+  infoImpotSociete: any;
+  infoClient: any;
+  infoChiffresCles: any;
+  infoAutofinancement: any;
+  infoEvolutionCharges: any;
+  
   constructor(
     private fb: FormBuilder,
     private db: DbService,
@@ -107,25 +118,45 @@ export class FormulaireComponent implements OnInit {
 
   ngOnInit(): void {
     this.db.GetDossierInfos().subscribe({
+
       next: (data: any) => {
+        this.infoChargesPersonnel = data.chargesPersonnel;
+        this.infoImpotSociete = data.impotSociete;
+        this.infoClient = data.client;
+        this.infoChiffresCles = data.chiffreCles;
+        this.infoAutofinancement = data.autofinancement;
+        this.infoEvolutionCharges = data.evolutionCharges;
+
         this.anneeN1Existe = data.anneeN1Existe;
+        this.imposable = data.imposable;
         this.resEx = data.resEx;
         this.forme_societe = data.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
+        this.acompte_total = data.acompte_total;
         this.signataire = data.signataire;
 
+        if (data.mois_cloture == 12 || data.mois_cloture == 1 || data.mois_cloture == 2) {
+          this.moisClotureArray = ['03', '06', '09', '12'];
+        } else if (data.mois_cloture == 3 || data.mois_cloture == 4 || data.mois_cloture == 5) {
+          this.moisClotureArray = ['06', '09', '12', '03'];
+        } else if (data.mois_cloture == 6 || data.mois_cloture == 7 || data.mois_cloture == 8) {
+          this.moisClotureArray = ['09', '12', '03', '06'];
+        } else if (data.mois_cloture == 9 || data.mois_cloture == 10 || data.mois_cloture == 11) {
+          this.moisClotureArray = ['12', '03', '06', '09'];
+        }
+
         if (this.forme_societe.startsWith("ASS")){
-          this.affectation = this.choixAffectation[0];
+          this.PA_affectation = this.choixAffectation[0];
           this.valeurAffectation = this.resEx;
         } else if (this.forme_societe == "SCI" && this.categorie_revenu == "rfonc") {
-          this.affectation = this.choixAffectation[2];
+          this.PA_affectation = this.choixAffectation[2];
           if (this.resEx > 0) {
             this.valeurAffectation = this.resEx;
           } else {
             this.valeurReportNouveau = this.resEx;
           }
         } else {
-          this.affectation = this.choixAffectation[1];
+          this.PA_affectation = this.choixAffectation[1];
           this.valeurAffectation = this.montantDividendesN1;
           if (this.resEx > 0) {
             if (this.montantReserveLegale == this.capitalSocial * 0.1) {
@@ -146,20 +177,45 @@ export class FormulaireComponent implements OnInit {
             }
           }
         };
+
+        if (this.resEx < 0) {
+          this.phraseAcomptes = 'Compte tenu du déficit constaté, aucun acompte d\'impôt sur les sociétés n\'est exigible au titre de l\'exercice à venir.'
+        } else if (this.resEx >= 0 && this.infoImpotSociete.IS_tot <= 3000) {
+          this.phraseAcomptes = 'Le montant total de l\'impot sur les sociétés dû au titre de cet exercice étant inférieur à 3000 €, aucun acompte n\'est exigible pour l\'exercice suivant.'
+        }
+
         this.form.patchValue({
-          projetResultat: {
-            reserveLegale: Number(this.valeurReserveLegale.toFixed(2)),
-            reserveOrdinaire: Number(this.valeurReserveOrdinaire.toFixed(2)),
-            reportNouveau: Number(this.valeurReportNouveau.toFixed(2)),
-            affectation: Number(this.valeurAffectation.toFixed(2))
+          IS: {
+            phraseAcomptes: this.phraseAcomptes
           },
-          signataire: {
-            nomExpert: this.signataire.nomExpert + " " + this.signataire.prenomExpert,
+          AI: {
+            acompte1: Math.round(this.acompte_total/4),
+            acompte2: Math.round(this.acompte_total/4),
+            acompte3: Math.round(this.acompte_total/4),
+            acompte4: Math.round(this.acompte_total/4)            
+          },
+          PA: {
+            resEx: Math.round(this.resEx),
+            resLeg: Math.round(this.valeurReserveLegale),
+            resOrd: Math.round(this.valeurReserveOrdinaire),
+            report: Math.round(this.valeurReportNouveau),
+            affectation: this.PA_affectation,
+            affect: Math.round(this.valeurAffectation)
+          },
+          EA: {
+            resEx: Math.round(this.resEx)
+          },
+          S: {
+            nomExpert: `${this.signataire.nomExpert} ${this.signataire.prenomExpert}`,
             qualiteExpert: 'Expert-Comptable',
-            nomReviseur: this.signataire.nomReviseur + " " + this.signataire.prenomReviseur,
+            nomReviseur: `${this.signataire.nomReviseur} ${this.signataire.prenomReviseur}`,
             qualiteReviseur: 'Chef de groupe'
           }
         });
+        console.log(this.infoEvolutionCharges);
+
+        
+        
         this.loading = false;
       },
       error: (err) => {
@@ -171,19 +227,8 @@ export class FormulaireComponent implements OnInit {
 
   private buildForm(): FormGroup {
     return this.fb.group({
-      // ===== DONNEES HORS FORMULAIRE =====
-      nomEntreprise: ['aaa'],
-      adresseEntreprise: [''],
-      codePostalClient: [''],
-      villeClient: [''],
-      lieuCreation: [''],
-      dateCreation: [''],
-      initialesChefGroupe: [''],
-      codeClient: [''],
-      dateFinEx: [''],
-
       // ===== CHIFFRES CLÉS =====
-      chiffresCles: this.fb.group({
+      CC: this.fb.group({
         progressionChiffre: this.fb.group({
           commentaire: ['test commentaire']
         }),
@@ -193,7 +238,7 @@ export class FormulaireComponent implements OnInit {
       }),
 
       // ===== ÉVOLUTION CHARGES EXTERNES & AUTRES ACHATS =====
-      evolutionCharges: this.fb.group({
+      EC: this.fb.group({
         masquerSection: [false],
         montantVariationMin: [0.00],
         montantVariationMinPourcentage: [0.00],
@@ -202,74 +247,77 @@ export class FormulaireComponent implements OnInit {
       }),
 
       // ===== CHARGES DE PERSONNEL =====
-      chargesPersonnel: this.fb.group({
+      CP: this.fb.group({
         heuresRemunN: [0.00],
         heuresRemunN1: [0.00],
         annexeCotisationsEnabled: [false]
       }),
 
       // ===== INVESTISSEMENTS =====
-      investissement: this.fb.group({
+      I: this.fb.group({
         masquerSection: [false],
         commentaire: [''],
-        dotAmortissN: [0.00],
-        dotAmortissN1: [0.00],
-        dotAmortissN2: [0.00],
+        prevAmoN: [0.00],
+        prevAmoN1: [0.00],
+        prevAmoN2: [0.00],
         immobilisationEnabled: [false]
       }),
 
-      // ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) =====
-      impotSocietesTab: this.fb.group({
+      // ===== IMPÔT SUR LES SOCIÉTÉS =====
+      IS: this.fb.group({
         masquerSection: [false],
+        acomptes: [0.00],
+        montant: [0.00],
+        choixMontant: [''],
+        phraseAcomptes: ['']
       }),
 
-      // ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 (TABLEAU) =====
-      acomptesImpotSocietesN1Tab: this.fb.group({
+      // ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 =====
+      AI: this.fb.group({
         masquerSection: [false],
-      }),
-
-      // ===== IMPÔT SUR LES SOCIÉTÉS (COMMENTAIRE) =====
-      impotSocietesCom: this.fb.group({
-        masquerSection: [false],
-        commentaire: ['']
+        acompte1: [0.00],
+        acompte2: [0.00],
+        acompte3: [0.00],
+        acompte4: [0.00]
       }),
 
       // ===== INFORMATION FISCALE =====
-      informationFiscale: this.fb.array(
+      IF: this.fb.array(
         this.informations_fiscales.map(() => this.fb.control(false))
       ),
 
       // ===== PROJET D’AFFECTATION DU RÉSULTAT =====
-      projetResultat: this.fb.group({
-        resultatExercice: [0.00],
-        reserveLegale: [0.00],
-        reserveOrdinaire: [0.00],
-        reportNouveau: [0.00],
-        affectation: [0.00]
+      PA: this.fb.group({
+        resEx: [0.00],
+        resLeg: [0.00],
+        resOrd: [0.00],
+        report: [0.00],
+        affectation: [''],
+        affect: [0.00]
       }),
 
       // ===== TABLEAU D’AUTOFINANCEMENT =====
-      tableauAutofinancement: this.fb.group({
+      AF: this.fb.group({
         enabled: [false]
       }),
 
       // ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL =====
-      estimationAutof: this.fb.group({
+      EA: this.fb.group({
         enabled: [false],
-        resultatExercice: [0.00],
-        dotations: [0.00],
-        remboursements: [0.00],
-        dividendes: [0.00],
-        capaciteNet: [0.00]
+        resEx: [0.00],
+        dot: [0.00],
+        rembours: [0.00],
+        divi: [0.00],
+        capa: [0.00]
       }),
 
       // ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE =====
-      majDocEval: this.fb.group({
+      MD: this.fb.group({
         enabled: [false]
       }),
 
       // ===== FAITS MARQUANTS DE L'EXERCICE =====
-      faitsMarquants: this.fb.group({
+      FM: this.fb.group({
         enabled: [false],
         commentaire: [''],
         commentairesRevision: [false],
@@ -277,12 +325,12 @@ export class FormulaireComponent implements OnInit {
       }),
 
       // ===== LES PERSPECTIVES =====
-      perspectives: this.fb.group({
+      P: this.fb.group({
         commentaire: ['']
       }),
 
       // ===== SIGNATAIRE =====
-      signataire: this.fb.group({
+      S: this.fb.group({
         nomExpert: [this.signataire?.nomExpert],
         qualiteExpert: ['Expert-Comptable'],
         nomReviseur: [this.signataire?.nomReviseur],
@@ -292,12 +340,49 @@ export class FormulaireComponent implements OnInit {
   }
 
   get f() { return this.form.controls as any; }
-  get infoFiscale(): FormArray { return this.form.get('informationFiscale') as FormArray; }
+  get IF(): FormArray { return this.form.get('IF') as FormArray; }
+
+  private formatPayload(obj: any): any {
+    const formatNumber = (val: any, key?: string) => {
+      if (typeof val !== 'number' || isNaN(val)) return val;
+
+      if (key && key.includes('%')) {
+        return Number(val.toFixed(2)).toLocaleString('fr-FR');
+      }
+
+      return Math.round(val).toLocaleString('fr-FR');
+    };
+
+    if (Array.isArray(obj)) {
+      return obj.map((item, idx) => this.formatPayload(item));
+    } else if (typeof obj === 'object' && obj !== null) {
+      return Object.keys(obj).reduce((acc, key) => {
+        acc[key] = this.formatPayload(obj[key]);
+        return acc;
+      }, {} as any);
+    } else {
+      return formatNumber(obj);
+    }
+  }
 
   onSubmit() {
     const formData = this.form.value;
 
-    const infoArray: boolean[] = formData.informationFiscale;
+    this.infoChargesPersonnel.CP_heureVar = formData.CP.heuresRemunN - formData.CP.heuresRemunN1;
+    this.infoChargesPersonnel["CP_%heureVar"] = this.infoChargesPersonnel.CP_heuresRemunN - this.infoChargesPersonnel.CP_heuresRemunN1 < 0 ? (-1 + (this.infoChargesPersonnel.CP_heuresRemunN / this.infoChargesPersonnel.CP_heuresRemunN1)) * 100 : (1 - this.infoChargesPersonnel.CP_heuresRemunNN / this.infoChargesPersonnel.CP_heuresRemunN1) * 100;
+    this.infoChargesPersonnel.CP_coutHorN = this.infoChargesPersonnel.CP_N / formData.CP.heuresRemunN;
+    this.infoChargesPersonnel.CP_coutHorN1 = this.infoChargesPersonnel.CP_N1 / formData.CP.heuresRemunN1;
+    this.infoChargesPersonnel.CP_N = this.infoChargesPersonnel.CP_N;
+    this.infoChargesPersonnel.CP_N1 = this.infoChargesPersonnel.CP_N1;
+
+    this.infoImpotSociete.IS_montant = this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - formData.IS.acomptes; 
+    if (this.infoImpotSociete.IS_montant > 0) {
+      formData.IS.choixMontant = "payer";
+    } else if (this.infoImpotSociete.IS_montant < 0) {
+      formData.IS.choixMontant = "rembourser";
+    }
+
+    const infoArray: boolean[] = formData.IF;
 
     const hasAny = infoArray.some(v => v === true);
 
@@ -312,10 +397,19 @@ export class FormulaireComponent implements OnInit {
       informationFiscaleArray: infoArray,
       informationFiscale: infoFlags,
       informationFiscale_hasAny: hasAny,
-      anneeN1Existe: this.anneeN1Existe
+      anneeN1Existe: this.anneeN1Existe,
+      ...this.infoClient,
+      ...this.infoChiffresCles,
+      ...this.infoChargesPersonnel,
+      ...this.infoImpotSociete,
+      ...this.infoAutofinancement,
+      EC_tab: this.infoEvolutionCharges
     };
 
-    this.wordService.generateWord(payload).subscribe((blob) => {
+    const formattedPayload = this.formatPayload(payload);
+    console.log(formattedPayload);
+
+    this.wordService.generateWord(formattedPayload).subscribe((blob) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

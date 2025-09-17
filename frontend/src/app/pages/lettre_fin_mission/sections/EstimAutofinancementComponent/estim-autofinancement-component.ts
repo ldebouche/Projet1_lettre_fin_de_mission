@@ -18,9 +18,9 @@ export class EstimAutofinancementComponent {
   get capaAutfinance(): number {
     return (
       this.resEx +
-      (this.group.get('dotations')?.value || 0) -
-      (this.group.get('remboursements')?.value || 0) -
-      (this.group.get('dividendes')?.value || 0)
+      (this.group.get('dot')?.value || 0) -
+      (this.group.get('rembours')?.value || 0) -
+      (this.group.get('divi')?.value || 0)
     );
   }
 }

@@ -1,4 +1,4 @@
-<fieldset class="block block-empty" [formGroup]="group">
+<fieldset class="block" [formGroup]="group">
   <legend>
     <label class="clickable">
       <input type="checkbox" formControlName="masquerSection" />
@@ -6,4 +6,12 @@
       <small class="note">(Cocher la case pour présenter cette partie dans la lettre de fin de mission)</small>
     </label>
   </legend>
+  <table class="table" >
+    <tbody>
+      <tr>
+        <td>Acomptes versés</td>
+        <td><input type="number" step="0.01" class="inputNumber" formControlName="acomptes"></td>
+      </tr>
+    </tbody>
+  </table>
 </fieldset>
