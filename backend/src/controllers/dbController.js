@@ -89,7 +89,6 @@ export const GetDossierInfos = async (req, res) => {
         "CC_%resNetVar": infoChiffresCles.resNetN - infoChiffresCles.resNetN1 < 0 ? (-1 + (infoChiffresCles.resNetN / infoChiffresCles.resNetN1)) * 100 : (1 - infoChiffresCles.resNetN / infoChiffresCles.resNetN1) * 100
       },
       evolutionCharges: infoEvoCharges.map(item => ({
-        "EC_compte": item.EC_compte,
         "EC_lib": item.EC_lib,
         "EC_valN": item.EC_valN,
         "EC_valN1": item.EC_valN1,

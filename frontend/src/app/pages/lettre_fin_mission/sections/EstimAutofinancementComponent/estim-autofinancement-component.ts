@@ -14,11 +14,12 @@ import { CommonModule } from '@angular/common';
 export class EstimAutofinancementComponent {
   @Input({ required: true }) group!: FormGroup;
   @Input() resEx = 0;
+  @Input() dotation = 0;
 
   get capaAutfinance(): number {
     return (
       this.resEx +
-      (this.group.get('dot')?.value || 0) -
+      (this.dotation || 0) -
       (this.group.get('rembours')?.value || 0) -
       (this.group.get('divi')?.value || 0)
     );

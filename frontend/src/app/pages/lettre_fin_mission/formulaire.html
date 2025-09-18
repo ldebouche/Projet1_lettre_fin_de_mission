@@ -9,10 +9,10 @@
     <section-chiffres-cles [group]="f.CC"></section-chiffres-cles>
 
     <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
-    <section-evolution-charges-component [group]="f.EC" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
+    <section-evolution-charges-component [group]="f.EC"></section-evolution-charges-component>
 
     <!-- ===== CHARGES DE PERSONNEL ===== -->
-    <section-charges-personnel-component [group]="f.CP" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
+    <section-charges-personnel-component [group]="f.CP"></section-charges-personnel-component>
     
     <!-- ===== INVESTISSEMENTS ===== -->
     <section-investissement-component [group]="f.I" [dotations]="dotations"></section-investissement-component>
@@ -30,7 +30,7 @@
     <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" ></section-projet-affect-resultat-component>
 
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
-    <section-estim-autofinancement-component [group]="f.EA" [resEx]="resEx"></section-estim-autofinancement-component>
+    <section-estim-autofinancement-component [group]="f.EA" [resEx]="resEx" [dotation]="dotations[0]"></section-estim-autofinancement-component>
 
     <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
     <section-majdoc-unique-eval-component [group]="f.MD"></section-majdoc-unique-eval-component>

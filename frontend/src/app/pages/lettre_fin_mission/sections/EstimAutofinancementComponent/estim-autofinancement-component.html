@@ -19,7 +19,7 @@
         </tr>
         <tr>
             <td>Dotations aux amortissements</td>
-            <td><input type="number" class="inputNumber" formControlName="dot" step="1" /></td>
+            <td>{{ dotation | number:'1.0-0':'fr-FR' }}</td>
         </tr>
         <tr>
             <td>Remboursements emprunts</td>

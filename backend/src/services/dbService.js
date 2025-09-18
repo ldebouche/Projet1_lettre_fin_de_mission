@@ -234,22 +234,98 @@ class dbService {
   async GetInfoEvoCharges(code_client, dateFinEx) {
     return this.executeQuery(
       `SELECT 
-          f.CompteNum AS EC_compte,
-          f.CompteLib AS EC_lib,
-          SUM(CASE 
-                WHEN YEAR(f.datefinex) = YEAR(@dateFinEx) 
-                AND (f.CompteNum LIKE '606%' OR f.CompteNum LIKE '61%' OR f.CompteNum LIKE '62%') 
-                THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN,
-          SUM(CASE 
-                WHEN YEAR(f.datefinex) = YEAR(@dateFinEx) - 1
-                AND (f.CompteNum LIKE '606%' OR f.CompteNum LIKE '61%' OR f.CompteNum LIKE '62%') 
-                THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN1
+          CASE
+              WHEN f.CompteNum LIKE '606%' THEN 'Fournitures consommables'
+              WHEN f.CompteNum LIKE '611%' THEN 'Sous-traitance'
+              WHEN f.CompteNum LIKE '612%' THEN 'Loyers de crédits-bails'
+              WHEN f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' THEN 'Locations, Charges locatives'
+              WHEN f.CompteNum LIKE '615%' THEN 'Entretiens, Réparations'
+              WHEN f.CompteNum LIKE '616%' THEN 'Primes d''assurance'
+              WHEN f.CompteNum LIKE '617%' THEN 'Etudes, recherches'
+              WHEN f.CompteNum LIKE '621%' THEN 'Personnel extérieur'
+              WHEN f.CompteNum LIKE '622%' THEN 'Intermédiaires et honoraires'
+              WHEN f.CompteNum LIKE '623%' THEN 'Publicité'
+              WHEN f.CompteNum LIKE '624%' THEN 'Transports'
+              WHEN f.CompteNum LIKE '625%' THEN 'Déplacements, Réception'
+              WHEN f.CompteNum LIKE '626%' THEN 'Frais postaux, Télécom.'
+              WHEN f.CompteNum LIKE '627%' THEN 'Frais bancaires'
+              WHEN f.CompteNum LIKE '618%' OR f.CompteNum LIKE '619%' 
+                OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 'Autres services extérieurs'
+          END AS EC_lib,
+
+          SUM(CASE WHEN YEAR(f.datefinex) = YEAR(@dateFinEx) 
+                  THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN,
+
+          SUM(CASE WHEN YEAR(f.datefinex) = YEAR(@dateFinEx) - 1
+                  THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN1
+
       FROM FEC f
       WHERE f.code_client = @code_client
         AND YEAR(f.datefinex) IN (YEAR(@dateFinEx), YEAR(@dateFinEx) - 1)
-        AND (f.CompteNum LIKE '606%' OR f.CompteNum LIKE '61%' OR f.CompteNum LIKE '62%')
-      GROUP BY f.CompteNum, f.CompteLib
-      ORDER BY f.CompteNum;`,
+        AND (
+            f.CompteNum LIKE '606%' OR f.CompteNum LIKE '611%' OR f.CompteNum LIKE '612%'
+            OR f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' OR f.CompteNum LIKE '615%'
+            OR f.CompteNum LIKE '616%' OR f.CompteNum LIKE '617%' OR f.CompteNum LIKE '621%'
+            OR f.CompteNum LIKE '622%' OR f.CompteNum LIKE '623%' OR f.CompteNum LIKE '624%'
+            OR f.CompteNum LIKE '625%' OR f.CompteNum LIKE '626%' OR f.CompteNum LIKE '627%'
+            OR f.CompteNum LIKE '618%' OR f.CompteNum LIKE '619%' OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%'
+        )
+      GROUP BY 
+          CASE
+              WHEN f.CompteNum LIKE '606%' THEN 'Fournitures consommables'
+              WHEN f.CompteNum LIKE '611%' THEN 'Sous-traitance'
+              WHEN f.CompteNum LIKE '612%' THEN 'Loyers de crédits-bails'
+              WHEN f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' THEN 'Locations, Charges locatives'
+              WHEN f.CompteNum LIKE '615%' THEN 'Entretiens, Réparations'
+              WHEN f.CompteNum LIKE '616%' THEN 'Primes d''assurance'
+              WHEN f.CompteNum LIKE '617%' THEN 'Etudes, recherches'
+              WHEN f.CompteNum LIKE '621%' THEN 'Personnel extérieur'
+              WHEN f.CompteNum LIKE '622%' THEN 'Intermédiaires et honoraires'
+              WHEN f.CompteNum LIKE '623%' THEN 'Publicité'
+              WHEN f.CompteNum LIKE '624%' THEN 'Transports'
+              WHEN f.CompteNum LIKE '625%' THEN 'Déplacements, Réception'
+              WHEN f.CompteNum LIKE '626%' THEN 'Frais postaux, Télécom.'
+              WHEN f.CompteNum LIKE '627%' THEN 'Frais bancaires'
+              WHEN f.CompteNum LIKE '618%' OR f.CompteNum LIKE '619%' 
+                OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 'Autres services extérieurs'
+          END,
+          CASE
+              WHEN f.CompteNum LIKE '606%' THEN 1
+              WHEN f.CompteNum LIKE '611%' THEN 2
+              WHEN f.CompteNum LIKE '612%' THEN 3
+              WHEN f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' THEN 4
+              WHEN f.CompteNum LIKE '615%' THEN 5
+              WHEN f.CompteNum LIKE '616%' THEN 6
+              WHEN f.CompteNum LIKE '617%' THEN 7
+              WHEN f.CompteNum LIKE '621%' THEN 8
+              WHEN f.CompteNum LIKE '622%' THEN 9
+              WHEN f.CompteNum LIKE '623%' THEN 10
+              WHEN f.CompteNum LIKE '624%' THEN 11
+              WHEN f.CompteNum LIKE '625%' THEN 12
+              WHEN f.CompteNum LIKE '626%' THEN 13
+              WHEN f.CompteNum LIKE '627%' THEN 14
+              WHEN f.CompteNum LIKE '618%' OR f.CompteNum LIKE '619%' 
+                OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 15
+          END
+      ORDER BY 
+          CASE
+              WHEN f.CompteNum LIKE '606%' THEN 1
+              WHEN f.CompteNum LIKE '611%' THEN 2
+              WHEN f.CompteNum LIKE '612%' THEN 3
+              WHEN f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' THEN 4
+              WHEN f.CompteNum LIKE '615%' THEN 5
+              WHEN f.CompteNum LIKE '616%' THEN 6
+              WHEN f.CompteNum LIKE '617%' THEN 7
+              WHEN f.CompteNum LIKE '621%' THEN 8
+              WHEN f.CompteNum LIKE '622%' THEN 9
+              WHEN f.CompteNum LIKE '623%' THEN 10
+              WHEN f.CompteNum LIKE '624%' THEN 11
+              WHEN f.CompteNum LIKE '625%' THEN 12
+              WHEN f.CompteNum LIKE '626%' THEN 13
+              WHEN f.CompteNum LIKE '627%' THEN 14
+              WHEN f.CompteNum LIKE '618%' OR f.CompteNum LIKE '619%' 
+                OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 15
+          END;`,
       { code_client, dateFinEx },
       false
     );

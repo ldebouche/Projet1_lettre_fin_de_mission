@@ -15,7 +15,7 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
 })
 export class EvolutionChargesComponent {
   @Input({ required: true }) group!: FormGroup;
-  @Input() anneeN1Existe: boolean = false;
+  @Input() anneeN1Existe: boolean = true;
 
   get variation(): FormGroup {
     return this.group.get('variation') as FormGroup;
