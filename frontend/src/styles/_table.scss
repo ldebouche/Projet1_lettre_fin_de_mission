@@ -6,10 +6,11 @@
   font-size: 14px;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: right;
 
-
-  th, td {
+  th,
+  td {
     padding: 12px 14px;
     border: 1px solid var(--color-light);
   }
@@ -31,6 +32,10 @@
     border: 1px solid var(--color-sand);
     border-radius: var(--radius-sm);
     padding: 6px 8px;
+  }
+
+  .first-row {
+    text-align: left;
   }
 
   .row-affectations td {

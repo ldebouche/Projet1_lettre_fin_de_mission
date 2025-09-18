@@ -16,6 +16,25 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
 })
 export class ChiffresClesComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() infoChiffresCles: any;
+
+  indicateurs = [
+    { label: "CA produit HT", keys: { n: "CC_caN", n1: "CC_caN1", var: "CC_caVar", pctVar: "CC_%caVar" }, force100: true },
+    { label: "Marge brute", keys: { n: "CC_margeN", n1: "CC_margeN1", var: "CC_margeVar", pctN: "CC_%margeN", pctN1: "CC_%margeN1", pctVar: "CC_%margeVar" } },
+    { label: "Excédent brut d'exploitation", keys: { n: "CC_excedN", n1: "CC_excedN1", var: "CC_excedVar", pctN: "CC_%excedN", pctN1: "CC_%excedN1", pctVar: "CC_%excVar" } },
+    { label: "Résultat courant", keys: { n: "CC_resCourantN", n1: "CC_resCourantN1", var: "CC_resCourantVar", pctN: "CC_%resCourantN", pctN1: "CC_%resCourantN1", pctVar: "CC_%resCourantVar" } },
+    { label: "Résultat net", keys: { n: "CC_resNetN", n1: "CC_resNetN1", var: "CC_resNetVar", pctN: "CC_%resNetN", pctN1: "CC_%resNetN1", pctVar: "CC_%resNetVar" } },
+  ];
+
+  getValue(key?: string, isPercent: boolean = false): string {
+  if (!key) return '';
+  const val = this.infoChiffresCles[key];
+  if (val == null || val === '') return '';
+
+  return isPercent 
+    ? Number(val).toFixed(2)
+    : Math.round(Number(val)).toLocaleString('fr-FR'); 
+}
 
   get progressionChiffre(): FormGroup {
     return this.group.get('progressionChiffre') as FormGroup;

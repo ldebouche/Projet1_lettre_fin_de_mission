@@ -1,5 +1,40 @@
 <fieldset class="block" [formGroup]="group">
   <legend><span class="titre">CHIFFRES CLES</span></legend>
+  <table class="table">
+    <thead>
+      <tr>
+        <th rowspan="2"></th>
+        <th colspan="2">N</th>
+        <th colspan="2">N-1</th>
+        <th colspan="2">Variation</th>
+      </tr>
+      <tr>
+        <th>Valeur</th>
+        <th>%</th>
+        <th>Valeur</th>
+        <th>%</th>
+        <th>Valeur</th>
+        <th>%</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ind of indicateurs">
+        <td class="first-row">{{ ind.label }}</td>
+        
+        <!-- N -->
+        <td>{{ getValue(ind.keys.n) }}</td>
+        <td>{{ ind.force100 ? '100.00' : getValue(ind.keys.pctN, true) }}</td>
+        
+        <!-- N-1 -->
+        <td>{{ getValue(ind.keys.n1) }}</td>
+        <td>{{ ind.force100 ? '100.00' : getValue(ind.keys.pctN1, true) }}</td>
+        
+        <!-- Variation -->
+        <td>{{ getValue(ind.keys.var) }}</td>
+        <td>{{ getValue(ind.keys.pctVar, true) }}</td>
+      </tr>
+    </tbody>
+  </table>
 
   <div [formGroup]="progressionChiffre">
     <label class="checkline"><span>• Progression du chiffre</span></label>
