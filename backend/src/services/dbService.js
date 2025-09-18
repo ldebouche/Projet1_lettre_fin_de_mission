@@ -59,7 +59,9 @@ class dbService {
         SUM(CASE WHEN CompteNum LIKE '457000'
                   THEN Credit - Debit ELSE 0 END) AS montantDividendesN1,
         SUM(CASE WHEN CompteNum LIKE '695%' 
-                  THEN Debit - Credit ELSE 0 END) AS acompte_total
+                  THEN Debit - Credit ELSE 0 END) AS acompte_total,
+        CAST(SUM(CASE WHEN CompteNum LIKE '2%' THEN 1 ELSE 0 END) AS bit) AS I_classe2,
+        CAST(SUM(CASE WHEN CompteNum LIKE '641%' THEN 1 ELSE 0 END) AS bit) AS MD_salaries
       FROM FEC
       WHERE code_client = @code_client AND YEAR(datefinex) = YEAR(@dateFinEx);`,
       { code_client, dateFinEx }
@@ -83,7 +85,8 @@ class dbService {
         TRIM(c.cpos_corresp) AS codePostalClient,
         TRIM(c.ville_siege) AS villeClient,
         TRIM(c.site) AS lieuCreation,
-        CONCAT(LEFT(collab.nom, 1), LEFT(collab.prenom, 1), ' ', TRIM(c.code_client)) AS initialesChefGroupe
+        CONCAT(LEFT(collab.nom, 1), LEFT(collab.prenom, 1), ' ', TRIM(c.code_client)) AS initialesChefGroupe,
+        CASE WHEN c.forme_societe LIKE 'ass%' AND regime_fiscal = 'a' THEN CAST(0 AS bit) ELSE CAST(1 AS bit) END AS tabAutofinancement
       FROM clients AS c
       INNER JOIN collaborateurs AS collab ON c.chef_de_mission = collab.id_sellsy
       WHERE c.code_client = @code_client;`,

@@ -15,7 +15,7 @@
     <section-charges-personnel-component [group]="f.CP" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
     
     <!-- ===== INVESTISSEMENTS ===== -->
-    <section-investissement-component [group]="f.I"></section-investissement-component>
+    <section-investissement-component [group]="f.I" [dotations]="dotations"></section-investissement-component>
 
     <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
     <section-impot-societes-tab-component [group]="f.IS"></section-impot-societes-tab-component>
@@ -28,9 +28,6 @@
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
     <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" ></section-projet-affect-resultat-component>
-
-    <!-- ===== TABLEAU D’AUTOFINANCEMENT ===== -->
-    <section-tab-autofinancement-component [group]="f.AF"></section-tab-autofinancement-component>
 
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
     <section-estim-autofinancement-component [group]="f.EA" [resEx]="resEx"></section-estim-autofinancement-component>

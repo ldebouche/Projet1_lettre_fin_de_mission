@@ -30,13 +30,15 @@ export const GetDossierInfos = async (req, res) => {
     const infoAutofinancement = await dbService.GetInfoAutofinancement(code_client, dateFinEx);
     const infoEvoCharges = await dbService.GetInfoEvoCharges(code_client, dateFinEx);
 
-    console.log(infoEvoCharges);
     res.json({
       anneeN1Existe: !!infoFec?.anneeN1,
+      I_classe2: infoFec.I_classe2,
+      MD_salaries: infoFec.MD_salaries,
       imposable: infoClients.imposable,
       mois_cloture: infoClients.mois_cloture,
       resEx: infoFec.totalProduit - infoFec.totalCharges,
       forme_societe: infoClients.forme_societe,
+      tabAutofinancement: infoClients.tabAutofinancement,
       categorie_revenu: infoClients.categorie_revenu,
       acompte_total: infoFec.acompte_total,
       signataire,

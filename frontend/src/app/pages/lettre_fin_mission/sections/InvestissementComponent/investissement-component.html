@@ -18,14 +18,10 @@
       <tbody>
         <tr>
           <td>Dotations aux amortisssements</td>
-          <td><input type="number" step="0.01" class="inputNumber" formControlName="prevAmoN"></td>
-          <td><input type="number" step="0.01" class="inputNumber" formControlName="prevAmoN1"></td>
-          <td><input type="number" step="0.01" class="inputNumber" formControlName="prevAmoN2"></td>
+          <td>{{ dotations[0] | number:'1.0-0':'fr-FR' }}</td>
+          <td>{{ dotations[1] | number:'1.0-0':'fr-FR' }}</td>
+          <td>{{ dotations[2] | number:'1.0-0':'fr-FR' }}</td>
         </tr>
       </tbody>
     </table>
-    <label class="checkline inline">
-      <input type="checkbox" formControlName="immobilisationEnabled" />
-      <span>Cocher la case + F5, si sur l'exercice N+1, une immobilisation a été acquise sur l'exercice pour corriger les valeurs de N+1 et N+2</span>
-    </label>
   </fieldset>
