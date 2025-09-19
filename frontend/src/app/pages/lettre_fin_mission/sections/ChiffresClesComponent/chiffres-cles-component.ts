@@ -17,6 +17,7 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
 export class ChiffresClesComponent {
   @Input({ required: true }) group!: FormGroup;
   @Input() infoChiffresCles: any;
+  @Input() anneeN1Existe: boolean = true;
 
   indicateurs = [
     { label: "CA produit HT", keys: { n: "CC_caN", n1: "CC_caN1", var: "CC_caVar", pctVar: "CC_%caVar" }, force100: true },

@@ -5,16 +5,16 @@
       <tr>
         <th rowspan="2"></th>
         <th colspan="2">N</th>
-        <th colspan="2">N-1</th>
-        <th colspan="2">Variation</th>
+        <th colspan="2" *ngIf="anneeN1Existe">N-1</th>
+        <th colspan="2" *ngIf="anneeN1Existe">Variation</th>
       </tr>
       <tr>
         <th>Valeur</th>
         <th>%</th>
-        <th>Valeur</th>
-        <th>%</th>
-        <th>Valeur</th>
-        <th>%</th>
+        <th *ngIf="anneeN1Existe">Valeur</th>
+        <th *ngIf="anneeN1Existe">%</th>
+        <th *ngIf="anneeN1Existe">Valeur</th>
+        <th *ngIf="anneeN1Existe">%</th>
       </tr>
     </thead>
     <tbody>
@@ -26,12 +26,12 @@
         <td>{{ ind.force100 ? '100.00' : getValue(ind.keys.pctN, true) }}</td>
         
         <!-- N-1 -->
-        <td>{{ getValue(ind.keys.n1) }}</td>
-        <td>{{ ind.force100 ? '100.00' : getValue(ind.keys.pctN1, true) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ind.keys.n1) }}</td>
+        <td *ngIf="anneeN1Existe">{{ ind.force100 ? '100.00' : getValue(ind.keys.pctN1, true) }}</td>
         
         <!-- Variation -->
-        <td>{{ getValue(ind.keys.var) }}</td>
-        <td>{{ getValue(ind.keys.pctVar, true) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ind.keys.var) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ind.keys.pctVar, true) }}</td>
       </tr>
     </tbody>
   </table>
