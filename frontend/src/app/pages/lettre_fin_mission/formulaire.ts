@@ -47,7 +47,7 @@ import { forkJoin } from 'rxjs';
 export class FormulaireComponent implements OnInit {
   commentaire = '';
   form!: FormGroup;
-  loading = false;
+  loading = true;
 
   anneeN1Existe = true;
   I_classe2 = true;

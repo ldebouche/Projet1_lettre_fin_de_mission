@@ -3,11 +3,23 @@ import { poolPromise, sql } from '../config/db.js';
 class dbService {
   async executeQuery(query, params, single = true) {
     const pool = await poolPromise;
-    const result = await pool.request()
+    const result = await pool
+      .request()
       .input('code_client', sql.NVarChar, params.code_client)
       .input('dateFinEx', sql.Date, params.dateFinEx)
       .query(query);
-    return single ? (result.recordset[0] || null) : result.recordset;
+    return single ? result.recordset[0] || null : result.recordset;
+  }
+
+  async GetAggregats(code_client, dateFinEx) {
+    return this.executeQuery(
+      `SELECT *
+      FROM Aggregats_FEC
+      WHERE code_client = @code_client
+        AND annee IN (YEAR(@dateFinEx), YEAR(@dateFinEx)-1);`,
+      { code_client, dateFinEx },
+      false,
+    );
   }
 
   async GetDossier(code_client, dateFinEx) {
@@ -16,55 +28,7 @@ class dbService {
       FROM FEC 
       WHERE code_client = @code_client 
         AND YEAR(datefinex) = YEAR(@dateFinEx);`,
-      { code_client, dateFinEx }
-    );
-  }
-
-  async GetCA(code_client, dateFinEx) {
-    return this.executeQuery(
-      `SELECT 
-        SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) 
-                  THEN Credit - Debit ELSE 0 END) AS caN,
-        SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) - 1 
-                  THEN Credit - Debit ELSE 0 END) AS caN1,
-        YEAR(@dateFinEx) AS anneeN,
-        YEAR(@dateFinEx) - 1 AS anneeN1
-      FROM FEC
-      WHERE CompteNum LIKE '70%'
-        AND code_client = @code_client
-        AND (YEAR(datefinex) = YEAR(@dateFinEx) OR YEAR(datefinex) = YEAR(@dateFinEx) - 1)`,
-      { code_client, dateFinEx }
-    );
-  }
-
-  async GetInfoFECForm(code_client, dateFinEx) {
-    return this.executeQuery(
-      `SELECT
-        SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) 
-                  AND CompteNum LIKE '6%' 
-                  THEN Debit - Credit ELSE 0 END) AS totalCharges,
-        SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) 
-                  AND CompteNum LIKE '7%' 
-                  THEN Credit - Debit ELSE 0 END) AS totalProduit,
-        MAX(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) - 1 
-                  THEN YEAR(datefinex) END) AS anneeN1,
-        SUM(CASE WHEN CompteNum LIKE '101300'
-                  THEN Credit - Debit ELSE 0 END) AS capitalSocial,
-        SUM(CASE WHEN CompteNum LIKE '106100'
-                  THEN Credit - Debit ELSE 0 END) AS montantReserveLegale,
-        SUM(CASE WHEN CompteNum LIKE '106800'
-                  THEN Credit - Debit ELSE 0 END) AS montantReserveOrdinaire,
-        SUM(CASE WHEN CompteNum LIKE '110000' OR CompteNum LIKE '119000'
-                  THEN Credit - Debit ELSE 0 END) AS montantReportNouveau,
-        SUM(CASE WHEN CompteNum LIKE '457000'
-                  THEN Credit - Debit ELSE 0 END) AS montantDividendesN1,
-        SUM(CASE WHEN CompteNum LIKE '695%' 
-                  THEN Debit - Credit ELSE 0 END) AS acompte_total,
-        CAST(SUM(CASE WHEN CompteNum LIKE '2%' THEN 1 ELSE 0 END) AS bit) AS I_classe2,
-        CAST(SUM(CASE WHEN CompteNum LIKE '641%' THEN 1 ELSE 0 END) AS bit) AS MD_salaries
-      FROM FEC
-      WHERE code_client = @code_client AND YEAR(datefinex) = YEAR(@dateFinEx);`,
-      { code_client, dateFinEx }
+      { code_client, dateFinEx },
     );
   }
 
@@ -75,9 +39,9 @@ class dbService {
         c.mois_cloture AS mois_cloture,
         CASE WHEN c.raison_sociale = ''
                 THEN CONCAT(TRIM(c.civilite), ' ', TRIM(c.nom), ' ', TRIM(c.prenom)) 
-             WHEN LEFT(c.raison_sociale, LEN(c.forme_societe)) = c.forme_societe
+            WHEN LEFT(c.raison_sociale, LEN(c.forme_societe)) = c.forme_societe
                 THEN LTRIM(RTRIM(c.raison_sociale))
-             ELSE CONCAT(TRIM(c.forme_societe), ' ', TRIM(c.raison_sociale)) END AS nomEntreprise,
+                ELSE CONCAT(TRIM(c.forme_societe), ' ', TRIM(c.raison_sociale)) END AS nomEntreprise,
         TRIM(c.forme_societe) AS forme_societe,
         TRIM(c.categorie_revenu) AS categorie_revenu,
         TRIM(c.adr1_corresp) AS adresseEntreprise1,
@@ -90,10 +54,10 @@ class dbService {
       FROM clients AS c
       INNER JOIN collaborateurs AS collab ON c.chef_de_mission = collab.id_sellsy
       WHERE c.code_client = @code_client;`,
-      { code_client }
-    )
+      { code_client },
+    );
   }
-  
+
   async GetSignataire(code_client) {
     return this.executeQuery(
       `SELECT
@@ -105,7 +69,7 @@ class dbService {
       INNER JOIN collaborateurs AS collabExp ON clients.expert_comptable = collabExp.id_sellsy
       INNER JOIN collaborateurs AS collabRev ON clients.chef_de_mission = collabRev.id_sellsy
       WHERE clients.code_client = @code_client;`,
-      { code_client }
+      { code_client },
     );
   }
 
@@ -139,97 +103,9 @@ class dbService {
       INNER JOIN FEC f ON c.code_client = f.code_client
       WHERE c.code_client = @code_client AND YEAR(f.datefinex) = YEAR(@dateFinEx)
       GROUP BY c.ape, c.forme_societe, c.categorie_revenu;`,
-      { code_client, dateFinEx }
+      { code_client, dateFinEx },
     );
   }
-
-  async GetInfoChiffresCles(code_client, dateFinEx) {
-    return this.executeQuery(
-      `WITH sig AS (
-        SELECT 
-            YEAR(datefinex) AS annee,
-
-            MAX(datefinex) AS dateFinEx,
-
-            SUM(CASE WHEN CompteNum LIKE '70%' THEN Credit - Debit ELSE 0 END) AS ca,
-
-            SUM(CASE WHEN CompteNum LIKE '707%' THEN Credit - Debit ELSE 0 END) 
-            - SUM(CASE WHEN CompteNum LIKE '607%' THEN Debit - Credit ELSE 0 END) AS marge,
-
-            (SUM(CASE WHEN CompteNum LIKE '70%' THEN Credit - Debit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '60%' THEN Debit - Credit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '61%' THEN Debit - Credit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '62%' THEN Debit - Credit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '63%' THEN Debit - Credit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '64%' THEN Debit - Credit ELSE 0 END)
-            + SUM(CASE WHEN CompteNum LIKE '74%' THEN Credit - Debit ELSE 0 END)) AS ebe,
-
-            (SUM(CASE WHEN CompteNum LIKE '70%' THEN Credit - Debit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '60%' THEN Debit - Credit ELSE 0 END)
-            + SUM(CASE WHEN CompteNum LIKE '76%' THEN Credit - Debit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '66%' THEN Debit - Credit ELSE 0 END)) AS resCourant,
-
-            (SUM(CASE WHEN CompteNum LIKE '70%' THEN Credit - Debit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '60%' THEN Debit - Credit ELSE 0 END)
-            + SUM(CASE WHEN CompteNum LIKE '76%' THEN Credit - Debit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '66%' THEN Debit - Credit ELSE 0 END)
-            + SUM(CASE WHEN CompteNum LIKE '77%' THEN Credit - Debit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '67%' THEN Debit - Credit ELSE 0 END)
-            - SUM(CASE WHEN CompteNum LIKE '69%' THEN Debit - Credit ELSE 0 END)) AS resNet
-
-        FROM FEC
-        WHERE code_client = @code_client
-          AND YEAR(datefinex) IN (YEAR(@dateFinEx), YEAR(@dateFinEx) - 1)
-        GROUP BY YEAR(datefinex)
-    )
-
-    SELECT 
-        n.dateFinEx AS dateFinEx,
-        n.ca AS caN,
-        n1.ca AS caN1,
-
-        n.marge AS margeN,
-        n1.marge AS margeN1,
-
-        n.ebe AS excedN,
-        n1.ebe AS excedN1,
-
-        n.resCourant AS resCourantN,
-        n1.resCourant AS resCourantN1,
-
-        n.resNet AS resNetN,
-        n1.resNet AS resNetN1
-
-    FROM sig n
-    LEFT JOIN sig n1 ON n1.annee = n.annee - 1
-    WHERE n.annee = YEAR(@dateFinEx);
-    `,
-      { code_client, dateFinEx }
-    );
-  }
-
-  async GetInfoChargesPersonnel(code_client, dateFinEx) {
-    return this.executeQuery(
-      `SELECT 
-        SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) AND CompteNum LIKE '64%' THEN Debit - Credit ELSE 0 END) AS CP_N,
-        SUM(CASE WHEN YEAR(datefinex) = YEAR(@dateFinEx) - 1 AND CompteNum LIKE '64%' THEN Debit - Credit ELSE 0 END) AS CP_N1
-      FROM FEC
-      WHERE code_client = @code_client
-        AND YEAR(datefinex) IN (YEAR(@dateFinEx), YEAR(@dateFinEx) - 1);`,
-      { code_client, dateFinEx }
-    );
-  };
-
-  async GetInfoImpotSociete(code_client, dateFinEx) {
-    return this.executeQuery(
-      `SELECT 
-        SUM(CASE WHEN CompteNum LIKE '695000' OR CompteNum LIKE '695100' OR CompteNum LIKE '698100' THEN Debit - Credit ELSE 0 END) AS IS_tot,
-        SUM(CASE WHEN CompteNum LIKE '699%' THEN Debit - Credit ELSE 0 END) AS IS_credit
-      FROM FEC
-      WHERE code_client = @code_client AND YEAR(datefinex) = YEAR(@dateFinEx);`,
-      { code_client, dateFinEx }
-    );
-  };
 
   async GetInfoEvoCharges(code_client, dateFinEx) {
     return this.executeQuery(
@@ -327,37 +203,9 @@ class dbService {
                 OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 15
           END;`,
       { code_client, dateFinEx },
-      false
+      false,
     );
-  };
-
-  async GetInfoAutofinancement(code_client, dateFinEx) {
-    return this.executeQuery(
-      `SELECT 
-        SUM(CASE WHEN CompteNum LIKE '681%' OR CompteNum LIKE '686%' 
-                THEN Debit - Credit ELSE 0 END) AS AF_dota,
-
-        SUM(CASE WHEN CompteNum LIKE '781%' OR CompteNum LIKE '786%' 
-                THEN Credit - Debit ELSE 0 END) AS AF_reprises,
-
-        (SUM(CASE WHEN CompteNum LIKE '675%' 
-                  THEN Debit - Credit ELSE 0 END)
-        - SUM(CASE WHEN CompteNum LIKE '775%' 
-                  THEN Credit - Debit ELSE 0 END)) AS AF_cession,
-
-        SUM(CASE WHEN CompteNum LIKE '777%' 
-                THEN Credit - Debit ELSE 0 END) AS AF_subv,
-
-        SUM(CASE WHEN CompteNum LIKE '16%' 
-                THEN Debit - Credit ELSE 0 END) AS AF_rembours,
-
-        SUM(CASE WHEN CompteNum LIKE '457%' 
-                THEN Credit - Debit ELSE 0 END) AS AF_divi
-      FROM FEC
-      WHERE code_client = @code_client AND YEAR(datefinex) = YEAR(@dateFinEx);`,
-      { code_client, dateFinEx }
-    );
-  };
+  }
 }
 
 export default new dbService();

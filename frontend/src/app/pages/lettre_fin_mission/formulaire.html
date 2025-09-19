@@ -1,7 +1,3 @@
-<div *ngIf="loading">
-  <p>Chargement en cours...</p>
-</div>
-
 <div *ngIf="!loading">
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 
