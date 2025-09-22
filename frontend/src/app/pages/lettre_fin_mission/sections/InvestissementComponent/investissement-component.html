@@ -5,7 +5,6 @@
         <span class="titre">INVESTISSEMENTS</span>
       </label>
     </legend>
-    <bouton-textarea formControlName="commentaire"></bouton-textarea>
     <table class="table">
       <thead>
         <tr>
@@ -17,11 +16,12 @@
       </thead>
       <tbody>
         <tr>
-          <td>Dotations aux amortisssements</td>
+          <td class="first-row">Dotations aux amortisssements</td>
           <td>{{ dotations[0] | number:'1.0-0':'fr-FR' }}</td>
           <td>{{ dotations[1] | number:'1.0-0':'fr-FR' }}</td>
           <td>{{ dotations[2] | number:'1.0-0':'fr-FR' }}</td>
         </tr>
       </tbody>
     </table>
+    <bouton-textarea formControlName="commentaire"></bouton-textarea>
   </fieldset>

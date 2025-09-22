@@ -9,15 +9,15 @@
   <table class="table" >
     <tbody>
       <tr *ngIf="anneeN1Existe">
-        <td>Montant de variation minimum</td>
+        <td class="first-row">Montant de variation minimum (valeur)</td>
         <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMin"></td>
       </tr>
       <tr *ngIf="anneeN1Existe">
-        <td>Montant de variation minimum en pourcentage</td>
+        <td class="first-row">Montant de variation minimum (pourcentage)</td>
         <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMinPourcentage"></td>
       </tr>
       <tr>
-        <td>Montant minimum à afficher</td>
+        <td class="first-row">Montant minimum à afficher (N)</td>
         <td><input type="number" step="0.01" class="inputNumber" formControlName="montantMinAffiché"></td>
       </tr>
     </tbody>
