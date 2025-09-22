@@ -1,31 +1,56 @@
 <fieldset class="block" [formGroup]="group">
-    <legend>
-      <label class="clickable">
-        <input type="checkbox" formControlName="masquerSection" />
-        <span class="titre">EVOLUTION DES CHARGES EXTERNES ET AUTRES ACHATS</span>
-        <small class="note">(Cocher la case pour ne pas présenter cette partie dans la lettre de fin de mission)</small>
-      </label>
-    </legend>
-      <table class="table" >
-        <tbody>
-          <tr *ngIf="anneeN1Existe">
-            <td>Montant de variation minimum</td>
-            <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMin"></td>
-          </tr>
-          <tr *ngIf="anneeN1Existe">
-            <td>Montant de variation minimum en pourcentage</td>
-            <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMinPourcentage"></td>
-          </tr>
-          <tr>
-            <td>Montant minimum à afficher</td>
-            <td><input type="number" step="0.01" class="inputNumber" formControlName="montantMinAffiché"></td>
-          </tr>
-        </tbody>
-      </table>
-      <div *ngIf="anneeN1Existe">
-        <label class="checkline">
-          <span>• Variation</span>
-        </label>
-        <bouton-textarea formControlName="commentaire"></bouton-textarea>
-      </div>
-  </fieldset>
+  <legend>
+    <label class="clickable">
+      <input type="checkbox" formControlName="masquerSection" />
+      <span class="titre">EVOLUTION DES CHARGES EXTERNES ET AUTRES ACHATS</span>
+      <small class="note">(Cocher la case pour ne pas présenter cette partie dans la lettre de fin de mission)</small>
+    </label>
+  </legend>
+  <table class="table" >
+    <tbody>
+      <tr *ngIf="anneeN1Existe">
+        <td>Montant de variation minimum</td>
+        <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMin"></td>
+      </tr>
+      <tr *ngIf="anneeN1Existe">
+        <td>Montant de variation minimum en pourcentage</td>
+        <td><input type="number" step="0.01" class="inputNumber" formControlName="montantVariationMinPourcentage"></td>
+      </tr>
+      <tr>
+        <td>Montant minimum à afficher</td>
+        <td><input type="number" step="0.01" class="inputNumber" formControlName="montantMinAffiché"></td>
+      </tr>
+    </tbody>
+  </table>
+  <table class="table">
+    <thead>
+      <tr>
+        <th rowspan="2">Libellé</th>
+        <th>N</th>
+        <th *ngIf="anneeN1Existe">N-1</th>
+        <th colspan="2" *ngIf="anneeN1Existe">Variation</th>
+      </tr>
+      <tr>
+        <th>Valeur</th>
+        <th *ngIf="anneeN1Existe">Valeur</th>
+        <th *ngIf="anneeN1Existe">Valeur</th>
+        <th *ngIf="anneeN1Existe">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ec of infoEvolutionCharges">
+        <td class="first-row">{{ ec.EC_lib }}</td>
+        <td>{{ getValue(ec.EC_valN) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valN1) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valVar) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_%Var'], true) }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div *ngIf="anneeN1Existe">
+    <label class="checkline">
+      <span>• Variation</span>
+    </label>
+    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+  </div>
+</fieldset>

@@ -131,7 +131,6 @@ export class FormulaireComponent implements OnInit {
         this.infoImpotSociete = data.impotSociete;
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
-        console.log(this.infoChiffresCles);
         this.infoAutofinancement = data.autofinancement;
         this.infoEvolutionCharges = data.evolutionCharges;
 
@@ -233,9 +232,6 @@ export class FormulaireComponent implements OnInit {
             qualiteReviseur: 'Chef de groupe'
           }
         });
-        console.log(this.infoEvolutionCharges);
-
-        
         
         this.loading = false;
       },
