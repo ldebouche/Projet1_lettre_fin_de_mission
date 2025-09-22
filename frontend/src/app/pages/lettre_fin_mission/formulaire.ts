@@ -381,6 +381,22 @@ export class FormulaireComponent implements OnInit {
     }
   }
 
+  private formatEvoCharges(obj: any[], form: any) {
+    return obj.filter(ligne => {
+      const displayPrcVar =
+        form['EC']['montantVariationMinPourcentage'] === 0 ||
+        (ligne['EC_%Var'] &&
+          Math.abs(ligne['EC_%Var']) >= form['EC']['montantVariationMinPourcentage']);
+
+      return (
+        ligne['EC_valN'] >= form['EC']['montantMinAffiché'] &&
+        Math.abs(ligne['EC_valVar']) >= form['EC']['montantVariationMin'] &&
+        displayPrcVar
+      );
+    });
+  }
+
+
   onSubmit() {
     const formData = this.form.value;
 
@@ -408,6 +424,8 @@ export class FormulaireComponent implements OnInit {
       return acc;
     }, {} as Record<string, boolean>);
 
+    const evoChargesApresAffichage = this.formatEvoCharges(this.infoEvolutionCharges, formData);
+
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
@@ -419,7 +437,7 @@ export class FormulaireComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
-      EC_tab: this.infoEvolutionCharges
+      EC_tab: evoChargesApresAffichage
     };
 
     const formattedPayload = this.formatPayload(payload);
