@@ -7,8 +7,8 @@ export class AiService {
   private http = inject(HttpClient);
   baseUrl = 'http://localhost:4000';
 
-  generateComment(contexte: any) {
-    return this.http.post<{ text: string }>(`${this.baseUrl}/api/ai/generate-comment`, { contexte }).pipe(map(r => r.text));
+  generateComment(type: string, contexte: any) {
+    return this.http.post<{ text: string }>(`${this.baseUrl}/api/ai/generate-comment`, { type, contexte }).pipe(map(r => r.text));
   }
 
   pipelineAnalyse(contexte: any) {

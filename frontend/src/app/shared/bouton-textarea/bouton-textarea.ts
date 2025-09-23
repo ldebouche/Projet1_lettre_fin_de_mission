@@ -4,6 +4,7 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 
 import { AiService } from '../../services/ai-service';
 import { DbService } from '../../services/db-service';
+import { PdfService } from '../../services/pdf-service';
 
 @Component({
   selector: 'bouton-textarea',
@@ -35,7 +36,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
 
   constructor(
     private ai: AiService, 
-    private db: DbService
+    private db: DbService,
+    private pdf: PdfService
   ) {}
 
   get showTextarea() { return (this.value ?? '').trim().length > 0; }
@@ -73,25 +75,44 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
       case 'progressionChiffre':
         this.db.getCAData().subscribe({
           next: (data: any) => {
-            this.callAI({
-              anneeN: data.anneeN,
-              anneeN1: data.anneeN1,
-              caN: data.caN,
-              caN1: data.caN1
-            });
+            this.callAI(
+              'CA',
+              {
+                anneeN: data.anneeN,
+                anneeN1: data.anneeN1,
+                caN: data.caN,
+                caN1: data.caN1
+              }
+            );
           },
           error: () => this.setError()
         });
         break;
 
+        case 'investissement':
+        this.pdf.getImmob().subscribe({
+          next: (data: any) => {
+            this.callAI(
+              'investissement',
+              {
+                total_entrees: data.immobEntree.totalGeneral,
+                entrees: data.immobEntree.comptes,
+                total_sorties: data.immobSortie.totalGeneral,
+                sorties: data.immobSortie.comptes,
+              }
+            );
+          },
+          error: () => this.setError()
+        });
+        break;
       default:
         this.loading = false;
         this.errorMessage = 'Catégorie non reconnue';
     }
   }
 
-  private callAI(payload: any) {
-    this.ai.generateComment(payload).subscribe({
+  private callAI(type: string, contexte: any) {
+    this.ai.generateComment(type, contexte).subscribe({
       next: (text) => this.setResult(text),
       error: () => this.setError()
     });

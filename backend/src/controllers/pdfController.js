@@ -1,4 +1,5 @@
-import { extractCumuls, extractComments } from "../services/pdfService.js";
+import { get } from "http";
+import { extractCumuls, extractComments, extractImmobEntree, extractImmobSortie } from "../services/pdfService.js";
 
 export async function getCumuls(req, res) {
   try {
@@ -22,5 +23,22 @@ export async function getComments(req, res) {
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les commentaires" });
+  }
+}
+
+
+export async function getImmob(req, res) {
+  try {
+    const filePathEntree = "./Immobs Entrées de l'exercice.pdf";
+    const filePathSortie = "./Immobs Sorties de l'exercice.pdf";
+    const immobEntree = await extractImmobEntree(filePathEntree);
+    const immobSortie = await extractImmobSortie(filePathSortie);
+
+    const immob = { immobEntree, immobSortie };
+
+    res.json(immob);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire les immobilisations" });
   }
 }

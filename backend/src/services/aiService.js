@@ -32,10 +32,20 @@ export async function callOllama(message) {
         { role: 'user', content: message }
       ],
       stream: false,
-      options: { temperature: 0.3 }
+      options: { temperature: 0.3, num_predict: 200 }
     }
   );
-  return resp.data?.message?.content ?? '';
+
+  console.log("OLLAMA RAW ===>", JSON.stringify(resp.data, null, 2));
+
+  if (resp.data?.message?.content) return resp.data.message.content;
+  if (Array.isArray(resp.data?.messages)) {
+    return resp.data.messages.map(m => m.content).join("\n");
+  }
+  if (resp.data?.error) {
+    return `Erreur Ollama: ${resp.data.error}`;
+  }
+  return JSON.stringify(resp.data);
 }
 
 export async function callMistral(message) {

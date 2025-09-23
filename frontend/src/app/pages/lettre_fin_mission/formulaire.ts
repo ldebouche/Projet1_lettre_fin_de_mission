@@ -369,7 +369,6 @@ export class FormulaireComponent implements OnInit {
     );
     
     forkJoin(requests).subscribe(result => {
-      console.log(evoCharges, result);
       this.infoEvolutionCharges = result;
     });
   }

@@ -20,4 +20,8 @@ export class PdfService {
       params: { compte }
     });
   }
+
+  getImmob() {
+    return this.http.get(`${this.baseUrl}/immob`);
+  }
 }
