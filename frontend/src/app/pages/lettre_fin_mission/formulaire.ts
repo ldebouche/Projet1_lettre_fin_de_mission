@@ -19,7 +19,8 @@ import { SignataireComponent } from './sections/SignataireComponent/signataire-c
 import { DbService } from '../../services/db-service';
 import { WordService } from '../../services/word-service';
 import { PdfService } from '../../services/pdf-service';
-import { forkJoin } from 'rxjs';
+import { of, forkJoin } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-formulaire',
@@ -132,7 +133,8 @@ export class FormulaireComponent implements OnInit {
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
-        this.infoEvolutionCharges = data.evolutionCharges;
+        this.loadEvoChargesWithComments(data.evolutionCharges);
+        
 
         this.anneeN1Existe = data.anneeN1Existe;
         this.resEx = data.resEx;
@@ -357,6 +359,20 @@ export class FormulaireComponent implements OnInit {
 
   get f() { return this.form.controls as any; }
   get IF(): FormArray { return this.form.get('IF') as FormArray; }
+
+  private loadEvoChargesWithComments(evoCharges: any[]) {
+    const requests = evoCharges.map(ligne =>
+      this.pdfService.getComments(ligne.EC_numCompte).pipe(
+        map(comment => ({ ...ligne, EC_comment: comment })),
+        catchError(() => of({ ...ligne, EC_comment: null }))
+      )
+    );
+    
+    forkJoin(requests).subscribe(result => {
+      console.log(evoCharges, result);
+      this.infoEvolutionCharges = result;
+    });
+  }
 
   private formatPayload(obj: any): any {
     const formatNumber = (val: any, key?: string) => {

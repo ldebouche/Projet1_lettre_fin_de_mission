@@ -1,4 +1,5 @@
 import dbService from '../services/dbService.js';
+import { comptesMapping } from '../utils/comptesMapping.js';
 
 export const GetCAData = async (req, res) => {
   try {
@@ -110,15 +111,32 @@ export const GetDossierInfos = async (req, res) => {
       },
 
       // === Evolution charges ===
-      evolutionCharges: infoEvoCharges.map(item => ({
-        EC_lib: item.EC_lib,
-        EC_valN: item.EC_valN,
-        EC_valN1: item.EC_valN1,
-        EC_valVar: item.EC_valN - item.EC_valN1,
-        "EC_%Var": item.EC_valN1
-          ? ((item.EC_valN - item.EC_valN1) / item.EC_valN1) * 100
-          : null
-      })),
+      evolutionCharges: infoEvoCharges.map(item => {
+        const valN = item.EC_valN || 0;
+        const valN1 = item.EC_valN1 || 0;
+        const valVar = valN - valN1;
+        const pctVar = valN1 ? (valVar / valN1) * 100 : null;
+
+        const totValN = infoEvoCharges.reduce((sum, it) => sum + (it.EC_valN || 0), 0);
+        const poids = totValN ? (valN / totValN) * 100 : 0;
+
+        let comment = false;
+        if (poids > 30 || (pctVar !== null && Math.abs(pctVar) > 10 && Math.abs(valVar) / totValN * 100 > 6)) {
+          comment = true;
+        }
+
+        const comptes = comptesMapping[item.EC_lib] || [];
+        
+        return {
+          EC_lib: item.EC_lib,
+          EC_valN: valN,
+          EC_valN1: valN1,
+          EC_valVar: valVar,
+          "EC_%Var": pctVar,
+          EC_comment: comment,
+          EC_numCompte: comptes
+        };
+      }),
 
       // === Charges de personnel ===
       chargesPersonnel: {

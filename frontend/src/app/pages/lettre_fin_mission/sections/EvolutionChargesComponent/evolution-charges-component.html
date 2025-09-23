@@ -38,19 +38,20 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let ec of infoEvolutionCharges">
-        <td class="first-row">{{ ec.EC_lib }}</td>
-        <td>{{ getValue(ec.EC_valN) }}</td>
-        <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valN1) }}</td>
-        <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valVar) }}</td>
-        <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_%Var'], true) }}</td>
-      </tr>
+      <ng-container *ngFor="let ec of infoEvolutionCharges">
+        <tr>
+          <td class="first-row">{{ ec.EC_lib }}</td>
+          <td>{{ getValue(ec.EC_valN) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valN1) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valVar) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_%Var'], true) }}</td>
+        </tr>
+        <ng-container *ngIf="ec.EC_comment.comments.length">
+          <tr *ngFor="let comment of ec.EC_comment.comments">
+            <td class="first-row" colspan="5"><small><i>{{ comment.compte }} - {{ comment.libelle }} - {{ comment.commentaire }}</i></small></td>
+          </tr>
+        </ng-container>
+      </ng-container>
     </tbody>
   </table>
-  <div *ngIf="anneeN1Existe">
-    <label class="checkline">
-      <span>• Variation</span>
-    </label>
-    <bouton-textarea formControlName="commentaire"></bouton-textarea>
-  </div>
 </fieldset>

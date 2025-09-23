@@ -22,3 +22,38 @@ export async function extractCumuls(filePath) {
 
   return { cumul2025, cumul2026, cumul2027 };
 }
+
+export async function extractComments(filePath, numComptes) {
+  const buffer = fs.readFileSync(filePath);
+  const data = await pdf(buffer);
+  const text = data.text;
+
+  const sectionD = text.match(/Cycle D[\s\S]*?(?=Cycle E|$)/);
+
+  const regex = /(\d{6,8})\s*-\s*(.+?)\n([\s\S]*?)(?=\n\d{6,8}\s*-|\nChapitre|\nEdition|\Z)/g;
+  const matches = [...sectionD[0].matchAll(regex)];
+
+  const comptes = matches.map(m => ({
+    compte: m[1],
+    libelle: m[2],
+    commentaire: m[3].trim()
+  }));
+
+  const result = [];
+
+  const matchesPrefix = (compte, prefixes) =>
+    prefixes.some(pref => compte.startsWith(pref));
+
+  for (let i = 0; i < comptes.length; i++) {
+    if (Array.isArray(numComptes)) {
+      if (matchesPrefix(comptes[i].compte, numComptes)) {
+        result.push(comptes[i]);
+      }
+    } else {
+      if (comptes[i].compte.startsWith(numComptes)) {
+          result.push(comptes[i]);
+        }
+    }
+  }
+  return result;
+}

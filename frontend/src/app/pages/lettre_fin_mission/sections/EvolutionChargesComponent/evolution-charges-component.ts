@@ -1,14 +1,12 @@
 import { Component , Input} from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
 
 @Component({
   selector: 'section-evolution-charges-component',
   imports: [
     CommonModule, 
-    ReactiveFormsModule, 
-    BtnToTextareaComponent
+    ReactiveFormsModule
   ],
   templateUrl: './evolution-charges-component.html',
   styleUrl: './evolution-charges-component.scss'

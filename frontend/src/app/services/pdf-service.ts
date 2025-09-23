@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 
 @Injectable({
@@ -12,5 +13,11 @@ export class PdfService {
 
   getDotations() {
     return this.http.get(`${this.baseUrl}/cumuls`);
+  }
+
+  getComments(compte: string): Observable<string> {
+    return this.http.get<string>(`${this.baseUrl}/comments`, {
+      params: { compte }
+    });
   }
 }
