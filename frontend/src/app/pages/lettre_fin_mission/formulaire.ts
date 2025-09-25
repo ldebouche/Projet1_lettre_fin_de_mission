@@ -122,6 +122,7 @@ export class FormulaireComponent implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
+      result: this.pdfService.getAnaSectorielle(),
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations()
     }).subscribe({

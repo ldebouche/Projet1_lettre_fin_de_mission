@@ -1,12 +1,13 @@
 import fs from "fs";
 import pdf from "pdf-parse-fork";
+import path from "path";
+import { exec } from "child_process";
 
 export async function extractCumuls(filePath) {
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
   const text = data.text;
 
-  // regex qui cible les 3 colonnes "calculé"
   const regex =
     /Cumul tous comptes[\s\S]*?(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)\s+(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)\s+(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)/;
 
@@ -125,4 +126,42 @@ export async function extractImmobSortie(filePath) {
 
   totalGeneral = totalGeneral.toLocaleString('fr-FR');
   return { comptes, totalGeneral };
+}
+
+export function extractAnaSectorielle(pdfPath) {
+  return new Promise((resolve, reject) => {
+    const cmd = `python ./utils/extract_table.py "${pdfPath}"`;
+
+    exec(cmd, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
+      if (error) return reject("Python error: " + stderr);
+
+      try {
+        const parsed = JSON.parse(stdout);
+
+        if (!parsed) {
+          return reject("Tableau 'Répartition selon le chiffre' non trouvé");
+        }
+
+        parsed.rows = mergeBrokenLabels(parsed.rows);
+        resolve(parsed);
+      } catch (e) {
+        reject("Parsing error: " + e.message + "\n" + stdout);
+      }
+    });
+  });
+}
+
+function mergeBrokenLabels(rows) {
+  const fixed = [];
+  
+  for (const row of rows) {
+    if (row.length > 1) {
+      fixed.push(row);
+    } 
+    else if (row.length === 1 && fixed.length > 0) {
+      fixed[fixed.length - 1][0] += " " + row[0];
+    }
+  }
+
+  return fixed;
 }
