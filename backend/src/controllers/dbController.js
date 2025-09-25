@@ -68,42 +68,42 @@ export const GetDossierInfos = async (req, res) => {
       // === Chiffres clés ===
       chiffreCles: {
         dateFinEx: new Date(dateFinEx).toLocaleDateString('fr-FR'),
-        CC_caN: aggN.totalProduits || 0,
+        CC_caN: aggN.ca || 0,
         "CC_%caN": 100,
-        CC_caN1: aggN1.totalProduits || 0,
+        CC_caN1: aggN1.ca || 0,
         "CC_%caN1": 100,
-        CC_caVar: (aggN.totalProduits || 0) - (aggN1.totalProduits || 0),
-        "CC_%caVar": (aggN1.totalProduits
-          ? ((aggN.totalProduits - aggN1.totalProduits) / aggN1.totalProduits) * 100
+        CC_caVar: (aggN.ca || 0) - (aggN1.ca || 0),
+        "CC_%caVar": (aggN1.ca
+          ? ((aggN.ca - aggN1.ca) / aggN1.ca) * 100
           : null),
         CC_margeN: aggN.marge || 0,
-        "CC_%margeN": aggN.totalProduits ? (aggN.marge / aggN.totalProduits) * 100 : null,
+        "CC_%margeN": aggN.ca ? (aggN.marge / aggN.ca) * 100 : null,
         CC_margeN1: aggN1.marge || 0,
-        "CC_%margeN1": aggN1.totalProduits ? (aggN1.marge / aggN1.totalProduits) * 100 : null,
+        "CC_%margeN1": aggN1.ca ? (aggN1.marge / aggN1.ca) * 100 : null,
         CC_margeVar: (aggN.marge || 0) - (aggN1.marge || 0),
         "CC_%margeVar": (aggN1.marge
           ? ((aggN.marge - aggN1.marge) / aggN1.marge) * 100
           : null),
         CC_excedN: aggN.ebe || 0,
-        "CC_%excedN": aggN.totalProduits ? (aggN.ebe / aggN.totalProduits) * 100 : null,
+        "CC_%excedN": aggN.ca ? (aggN.ebe / aggN.ca) * 100 : null,
         CC_excedN1: aggN1.ebe || 0,
-        "CC_%excedN1": aggN1.totalProduits ? (aggN1.ebe / aggN1.totalProduits) * 100 : null,
+        "CC_%excedN1": aggN1.ca ? (aggN1.ebe / aggN1.ca) * 100 : null,
         CC_excedVar: (aggN.ebe || 0) - (aggN1.ebe || 0),
         "CC_%excedVar": (aggN1.ebe
           ? ((aggN.ebe - aggN1.ebe) / aggN1.ebe) * 100
           : null),
         CC_resCourantN: aggN.resCourant || 0,
-        "CC_%resCourantN": aggN.totalProduits ? (aggN.resCourant / aggN.totalProduits) * 100 : null,
+        "CC_%resCourantN": aggN.ca ? (aggN.resCourant / aggN.ca) * 100 : null,
         CC_resCourantN1: aggN1.resCourant || 0,
-        "CC_%resCourantN1": aggN1.totalProduits ? (aggN1.resCourant / aggN1.totalProduits) * 100 : null,
+        "CC_%resCourantN1": aggN1.ca ? (aggN1.resCourant / aggN1.ca) * 100 : null,
         CC_resCourantVar: (aggN.resCourant || 0) - (aggN1.resCourant || 0),
         "CC_%resCourantVar": (aggN1.resCourant
           ? ((aggN.resCourant - aggN1.resCourant) / aggN1.resCourant) * 100
           : null),
         CC_resNetN: aggN.resNet || 0,
-        "CC_%resNetN": aggN.totalProduits ? (aggN.resNet / aggN.totalProduits) * 100 : null,
+        "CC_%resNetN": aggN.ca ? (aggN.resNet / aggN.ca) * 100 : null,
         CC_resNetN1: aggN1.resNet || 0,
-        "CC_%resNetN1": aggN1.totalProduits ? (aggN1.resNet / aggN1.totalProduits) * 100 : null,
+        "CC_%resNetN1": aggN1.ca ? (aggN1.resNet / aggN1.ca) * 100 : null,
         CC_resNetVar: (aggN.resNet || 0) - (aggN1.resNet || 0),
         "CC_%resNetVar": (aggN1.resNet
           ? ((aggN.resNet - aggN1.resNet) / aggN1.resNet) * 100
@@ -146,11 +146,11 @@ export const GetDossierInfos = async (req, res) => {
         "CP_%": aggN1.CP_N
           ? ((aggN.CP_N - aggN1.CP_N) / aggN1.CP_N) * 100
           : null,
-        "CP_%caN": aggN.totalProduits
-          ? (aggN.CP_N / aggN.totalProduits) * 100
+        "CP_%caN": aggN.ca
+          ? (aggN.CP_N / aggN.ca) * 100
           : null,
-        "CP_%caN1": aggN1.totalProduits
-          ? (aggN1.CP_N / aggN1.totalProduits) * 100
+        "CP_%caN1": aggN1.ca
+          ? (aggN1.CP_N / aggN1.ca) * 100
           : null,
         "CP_%margeN": aggN.marge
           ? (aggN.CP_N / aggN.marge) * 100
@@ -181,7 +181,7 @@ export const GetDossierInfos = async (req, res) => {
         AF_capa:
           ((aggN.totalProduits || 0) - (aggN.totalCharges || 0))
           + (aggN.AF_dota || 0)
-          + (aggN.AF_reprises || 0)
+          - (aggN.AF_reprises || 0)
           + (aggN.AF_cession || 0)
           - (aggN.AF_subv || 0),
         AF_rembours: aggN.AF_rembours || 0,
@@ -189,7 +189,7 @@ export const GetDossierInfos = async (req, res) => {
         AF_capaNet:
           ((aggN.totalProduits || 0) - (aggN.totalCharges || 0))
           + (aggN.AF_dota || 0)
-          + (aggN.AF_reprises || 0)
+          - (aggN.AF_reprises || 0)
           + (aggN.AF_cession || 0)
           - (aggN.AF_subv || 0)
           - (aggN.AF_rembours || 0)

@@ -122,7 +122,6 @@ export class FormulaireComponent implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
-      result: this.pdfService.getAnaSectorielle(),
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations()
     }).subscribe({
@@ -223,7 +222,8 @@ export class FormulaireComponent implements OnInit {
             enabled: data.tabAutofinancement
           },
           EA: {
-            resEx: Math.round(data.resEx)
+            resEx: Math.round(data.resEx),
+            dot: Math.round(this.dotations[1])
           },
           MD: {
             enabled: data.MD_salaries
@@ -414,6 +414,12 @@ export class FormulaireComponent implements OnInit {
 
 
   onSubmit() {
+    this.form.patchValue({
+      EA: {
+        capa: this.form.value.EA.resEx + this.form.value.EA.dot - this.form.value.EA.rembours - this.form.value.EA.divi
+      }
+    });
+
     const formData = this.form.value;
 
     this.infoChargesPersonnel.CP_heureVar = formData.CP.heuresRemunN - formData.CP.heuresRemunN1;
@@ -441,6 +447,7 @@ export class FormulaireComponent implements OnInit {
     }, {} as Record<string, boolean>);
 
     const evoChargesApresAffichage = this.formatEvoCharges(this.infoEvolutionCharges, formData);
+
 
     const payload = {
       ...formData,

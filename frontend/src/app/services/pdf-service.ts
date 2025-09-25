@@ -24,8 +24,4 @@ export class PdfService {
   getImmob() {
     return this.http.get(`${this.baseUrl}/immob`);
   }
-
-  getAnaSectorielle() {
-    return this.http.get(`${this.baseUrl}/analyse-sectorielle`);
-  }
 }
