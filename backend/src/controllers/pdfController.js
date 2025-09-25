@@ -55,6 +55,7 @@ export async function getAnaSectorielle(req, res) {
     const pool = await poolPromise;
 
     for (const row of analyse.rows) {
+      console.log(row);
       await pool.request()
         .input("code_ape", sql.NVarChar, analyse.code_ape)
         .input("millesime", sql.Int, analyse.millesime)
@@ -65,10 +66,11 @@ export async function getAnaSectorielle(req, res) {
         .input("tranche_3", sql.NVarChar, row[4] ?? null)
         .input("tranche_4", sql.NVarChar, row[5] ?? null)
         .input("tranche_5", sql.NVarChar, row[6] ?? null)
+        .input("perspectives", sql.NVarChar, row[7] ?? null)
         .query(`
           INSERT INTO analyse_sectorielle 
-          (code_ape, millesime, libelle, tranche_globale, tranche_1, tranche_2, tranche_3, tranche_4, tranche_5)
-          VALUES (@code_ape, @millesime, @libelle, @tranche_globale, @tranche_1, @tranche_2, @tranche_3, @tranche_4, @tranche_5)
+          (code_ape, millesime, libelle, tranche_globale, tranche_1, tranche_2, tranche_3, tranche_4, tranche_5, perspectives)
+          VALUES (@code_ape, @millesime, @libelle, @tranche_globale, @tranche_1, @tranche_2, @tranche_3, @tranche_4, @tranche_5, @perspectives);
         `);
     }
 

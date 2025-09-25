@@ -22,10 +22,12 @@ def clean_table(table):
 result = None
 code_ape = None
 millesime = None
+perspectives = []
 
 with pdfplumber.open(pdf_path) as pdf:
     for page in pdf.pages:
         text = page.extract_text() or ""
+        lines = text.split("\n")
 
         match_year = re.search(r"Données\s+(\d{4})", text)
         if match_year:
@@ -34,6 +36,16 @@ with pdfplumber.open(pdf_path) as pdf:
         match_ape = re.search(r"code\s+([0-9]{2}\.[0-9]{2}[A-Z]?)", text)
         if match_ape:
             code_ape = match_ape.group(1).replace(".", "")
+
+        capture = False
+        for line in lines:
+            if line.strip().startswith("3.1."):
+                capture = True
+            if capture:
+                if re.match(r"^\d+\.\d+", line.strip()) and not line.strip().startswith("3.1."):
+                    capture = False
+                    break
+                perspectives.append(line)
 
         tables = page.extract_tables()
         for table in tables:
@@ -44,6 +56,8 @@ with pdfplumber.open(pdf_path) as pdf:
                 break
         if result:
             break
+
+perspectives_text = " ".join(perspectives).strip()
 
 output = {
     "code_ape": code_ape,
@@ -57,6 +71,20 @@ if result:
         if r[0].startswith("Répartition") or r[0].startswith("Données") or r[0].startswith("d’affaires en %") or r[0].startswith("Source"):
             continue
         r[0] = re.sub(r"(\D)\d+$", r"\1", r[0]).strip()
-        output["rows"].append(r)
+
+        cleaned = [r[0]]
+        if len(r) > 7:
+            while len(cleaned) < 7:
+                prev = None
+                for v in r[1:]:
+                    if v != prev: 
+                        cleaned.append(v)
+                    prev = v
+        else :
+            cleaned.extend(r[1:])
+
+        output["rows"].append(cleaned)
+
+output["rows"].append(['Commentaire', None, None, None, None, None, None, perspectives_text])
 
 print(json.dumps(output, ensure_ascii=False))
