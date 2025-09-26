@@ -24,16 +24,18 @@ export const GetDossierInfos = async (req, res) => {
     const anneeN1 = anneeN - 1;
 
     // Récupération des infos
-    const [infoClients, signataire, aggregats, infoEvoCharges] = await Promise.all([
+    const [infoClients, signataire, aggregats, infoEvoCharges, anaSectorielle] = await Promise.all([
       dbService.GetInfoClients(code_client, dateFinEx),
       dbService.GetSignataire(code_client, dateFinEx),
       dbService.GetAggregats(code_client, dateFinEx),
-      dbService.GetInfoEvoCharges(code_client, dateFinEx)
+      dbService.GetInfoEvoCharges(code_client, dateFinEx),
+      dbService.GetAnaSectorielle((await dbService.GetInfoClients(code_client))?.code_ape)
     ]);
 
     const aggN = aggregats.find(a => a.annee === anneeN) || {};
     const aggN1 = aggregats.find(a => a.annee === anneeN1) || {};
 
+    console.log(anaSectorielle);
     res.json({
       // === Infos générales ===
       anneeN1Existe: !!aggN1.annee,
@@ -194,6 +196,22 @@ export const GetDossierInfos = async (req, res) => {
           - (aggN.AF_subv || 0)
           - (aggN.AF_rembours || 0)
           - (aggN.AF_divi || 0)
+      },
+
+      anaSectorielle: {
+        valeurs: anaSectorielle.filter(r => r.type_donnee === 'valeur').map(r => ({
+          libelle: r.libelle,
+          millesime: r.millesime,
+          tranches: {
+            tranche_1: r.tranche_1,
+            tranche_2: r.tranche_2,
+            tranche_3: r.tranche_3,
+            tranche_4: r.tranche_4,
+            tranche_5: r.tranche_5,
+            globale: r.tranche_globale
+          }
+        })),
+        commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives)
       }
     });
   } catch (err) {

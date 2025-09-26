@@ -41,11 +41,13 @@ with pdfplumber.open(pdf_path) as pdf:
         for line in lines:
             if line.strip().startswith("3.1."):
                 capture = True
+                continue
             if capture:
-                if re.match(r"^\d+\.\d+", line.strip()) and not line.strip().startswith("3.1."):
+                if re.match(r"^\d+\.\d+", line.strip()):
                     capture = False
                     break
-                perspectives.append(line)
+                cleaned_line = line.replace("➜", "-").replace("", "-").strip()
+                perspectives.append(cleaned_line)
 
         tables = page.extract_tables()
         for table in tables:

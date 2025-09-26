@@ -126,6 +126,7 @@ export class FormulaireComponent implements OnInit {
       dotations: this.pdfService.getDotations()
     }).subscribe({
       next: ({ data, dotations }: any) => {
+        console.log(data);
         this.dotations = Object.values(dotations);
 
         this.infoChargesPersonnel = data.chargesPersonnel;
@@ -195,6 +196,9 @@ export class FormulaireComponent implements OnInit {
         }
 
         this.form.patchValue({
+          CC: {
+            comPerspective: data.anaSectorielle.commentaire
+          },
           I: {
             masquerSection: data.I_classe2,
             prevAmoN: Math.round(this.dotations[0]),
@@ -249,6 +253,7 @@ export class FormulaireComponent implements OnInit {
     return this.fb.group({
       // ===== CHIFFRES CLÉS =====
       CC: this.fb.group({
+        comPerspective: [''],
         progressionChiffre: this.fb.group({
           commentaire: ['test commentaire']
         }),

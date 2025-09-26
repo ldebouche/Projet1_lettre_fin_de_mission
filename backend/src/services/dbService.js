@@ -1,13 +1,19 @@
 import { poolPromise, sql } from '../config/db.js';
 
 class dbService {
-  async executeQuery(query, params, single = true) {
+  async executeQuery(query, params = {}, single = true) {
     const pool = await poolPromise;
-    const result = await pool
-      .request()
-      .input('code_client', sql.NVarChar, params.code_client)
-      .input('dateFinEx', sql.Date, params.dateFinEx)
-      .query(query);
+    const request = pool.request();
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value instanceof Date) {
+        request.input(key, sql.Date, value);
+      } else {
+        request.input(key, sql.NVarChar, value);
+      }
+    }
+
+    const result = await request.query(query);
     return single ? result.recordset[0] || null : result.recordset;
   }
 
@@ -35,6 +41,7 @@ class dbService {
   async GetInfoClients(code_client) {
     return this.executeQuery(
       `SELECT
+        c.ape AS code_ape,
         c.soumis_is AS imposable,
         c.mois_cloture AS mois_cloture,
         CASE WHEN c.raison_sociale = ''
@@ -203,6 +210,26 @@ class dbService {
                 OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 15
           END;`,
       { code_client, dateFinEx },
+      false,
+    );
+  }
+
+  async GetAnaSectorielle(code_ape) {
+    return this.executeQuery(
+      `SELECT 
+          *,
+          CASE 
+              WHEN libelle = 'Commentaire' THEN 'commentaire'
+              ELSE 'valeur'
+          END AS type_donnee
+      FROM analyse_sectorielle
+      WHERE code_ape = @code_ape
+        AND millesime = (
+          SELECT MAX(millesime)
+          FROM analyse_sectorielle
+          WHERE code_ape = @code_ape
+        );`,
+      { code_ape },
       false,
     );
   }
