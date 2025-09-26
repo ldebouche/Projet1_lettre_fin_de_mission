@@ -5,7 +5,11 @@
         <span class="titre">FAITS MARQUANTS DE L’EXERCICE</span>
         </label>
     </legend>
-    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+    <textarea 
+        rows="4" 
+        class="area"
+        formControlName="commentaire">
+    </textarea>
     <label class="checkline">
         <input type="checkbox" formControlName="commentairesRevision"/>
         <span>Afficher les commentaires du dossier de révision qui ont un indicateur "points importants"</span>

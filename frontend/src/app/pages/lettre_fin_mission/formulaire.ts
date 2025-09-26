@@ -374,26 +374,31 @@ export class FormulaireComponent implements OnInit {
     });
   }
 
-  private formatPayload(obj: any): any {
+  private formatPayload(obj: any, parentKey?: string): any {
     const formatNumber = (val: any, key?: string) => {
       if (typeof val !== 'number' || isNaN(val)) return val;
 
+      // Si c’est un pourcentage
       if (key && key.includes('%')) {
+        if (val < -100 || val > 100) {
+          return 'NS';
+        }
         return Number(val.toFixed(2)).toLocaleString('fr-FR');
       }
 
+      // Sinon, arrondi normal
       return Math.round(val).toLocaleString('fr-FR');
     };
 
     if (Array.isArray(obj)) {
-      return obj.map((item, idx) => this.formatPayload(item));
+      return obj.map((item) => this.formatPayload(item, parentKey));
     } else if (typeof obj === 'object' && obj !== null) {
       return Object.keys(obj).reduce((acc, key) => {
-        acc[key] = this.formatPayload(obj[key]);
+        acc[key] = this.formatPayload(obj[key], key);
         return acc;
       }, {} as any);
     } else {
-      return formatNumber(obj);
+      return formatNumber(obj, parentKey);
     }
   }
 

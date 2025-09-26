@@ -18,6 +18,9 @@ export class EvolutionChargesComponent {
 
   getValue(val: any, isPercent: boolean = false): string {
     if (val == null || val === '') return '';
+
+    if (isPercent && (val < -100 || val > 100)) return 'NS'; 
+
     return isPercent 
       ? Number(val).toFixed(2)
       : Math.round(Number(val)).toLocaleString('fr-FR'); 

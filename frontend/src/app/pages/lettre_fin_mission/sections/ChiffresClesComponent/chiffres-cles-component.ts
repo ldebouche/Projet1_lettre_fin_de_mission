@@ -28,14 +28,16 @@ export class ChiffresClesComponent {
   ];
 
   getValue(key?: string, isPercent: boolean = false): string {
-  if (!key) return '';
-  const val = this.infoChiffresCles[key];
-  if (val == null || val === '') return '';
+    if (!key) return '';
+    const val = this.infoChiffresCles[key];
+    if (val == null || val === '') return '';
 
-  return isPercent 
-    ? Number(val).toFixed(2)
-    : Math.round(Number(val)).toLocaleString('fr-FR'); 
-}
+    if (isPercent && (val < -100 || val > 100)) return 'NS'; 
+
+    return isPercent 
+      ? Number(val).toFixed(2)
+      : Math.round(Number(val)).toLocaleString('fr-FR'); 
+  }
 
   get progressionChiffre(): FormGroup {
     return this.group.get('progressionChiffre') as FormGroup;
