@@ -24,7 +24,6 @@ export function fillTemplate(template, variables) {
 
 
 export function pickPrompt(variation, type) {
-  console.log(variation);
   const seuil = 50;
   if (variation >= 0) {
     return variation < seuil
@@ -32,8 +31,8 @@ export function pickPrompt(variation, type) {
       : prompts.generateComment[type].grosse_variation_positive;
   } else {
     return Math.abs(variation) < seuil
-      ? prompts.generateComment.type.petite_variation_negative
-      : prompts.generateComment.type.grosse_variation_negative;
+      ? prompts.generateComment[type].petite_variation_negative
+      : prompts.generateComment[type].grosse_variation_negative;
   }
 }
 
@@ -58,11 +57,11 @@ export async function callOllama(message) {
     {
       model: process.env.OLLAMA_MODEL,
       messages: [
-        { role: 'system', content: 'Tu es expert comptable et tu fais des commentaires pour un client professionnel. Tu ne calcules rien, tu utilises uniquement les données que je te fournis. Distingue clairement la variation (en EUR et en %) et son intensité (faible, modérée ou forte) de la comparaison sectorielle. Ne mélange jamais intensité de la variation et niveau sectoriel. Tu fais un commentaire de 5-6 phrases. Réponds uniquement en JSON valide (sans sauts de ligne dans les chaînes). Toutes les chaînes doivent être échappées.' },
+        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Mentionne toutes les données transmises (montants, pourcentages, moyenne sectorielle, tranches, intensité, explications éventuelles). Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour. Format attendu : { \"resume\": \"string\" }' },
         { role: 'user', content: JSON.stringify(message) }
       ],
       stream: false,
-      options: { temperature: 0.3, num_predict: 500 }
+      options: { temperature: 0.5, num_predict: 500 }
     }
   );
 

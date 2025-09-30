@@ -7,13 +7,13 @@ export const generateComment = async (req, res) => {
     let template, prompt;
 
     if (type === 'CA') {
-      const { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, compte207_credit, compte207_debit, millesimeSecteur, caSecteur, maTranche } = contexte;
+      const { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, FDC, millesimeSecteur, caSecteur, maTranche } = contexte;
 
       template = pickPrompt(variationPrcCA, 'CA');
 
       const caSecteurStr = formatTranches(caSecteur);
-      console.log(caSecteurStr);
-      prompt = fillTemplate(template, { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, compte207_credit, compte207_debit, millesimeSecteur, caSecteurGlobale: caSecteurStr.globale, caSecteurDetails: caSecteurStr.details, maTranche });
+
+      prompt = fillTemplate(template, { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, FDC, millesimeSecteur, caSecteurGlobale: caSecteurStr.globale, caSecteurDetails: caSecteurStr.details, maTranche });
       console.log(prompt);
     }
 

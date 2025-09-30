@@ -86,6 +86,16 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     return " supérieure à la tranche 5";
   }
 
+  checkFDC(variation: number): string {
+    if (variation > 0) {
+      return "acquisition de fond de commerce";
+    } else if (variation < 0) {
+      return "cession de fond de commerce ou de branche d'activité";
+    } else {
+      return "";
+    }
+  }
+
   onGenerateComment() {
     this.loading = true;
     switch (this.categorie) {
@@ -106,9 +116,10 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
             maTranche: this.getTrancheCA(this.data.caN, caSecteur),
 
             //grosse_variation
+            FDC: this.checkFDC(this.data.compte207Var),
+
+            //absence
             produitsFinanciers: this.data.produitsFinanciers,
-            compte207_credit: this.data.compte207_credit,
-            compte207_debit: this.data.compte207_debit,
           }
         );
         break;

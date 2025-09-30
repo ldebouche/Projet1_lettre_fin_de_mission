@@ -157,8 +157,7 @@ export class FormulaireComponent implements OnInit {
           "%caVar": data.chiffreCles["CC_%caVar"],
           anneeN: data.anneeN,
           anneeN1: data.anneeN1,
-          compte207_credit: data.compte207_credit,
-          compte207_debit: data.compte207_debit,
+          compte207Var: data.compte207Var,
           produitsFinanciers: data.produitsFinanciers
         };
 

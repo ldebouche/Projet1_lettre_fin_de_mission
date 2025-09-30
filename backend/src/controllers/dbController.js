@@ -202,8 +202,7 @@ export const GetDossierInfos = async (req, res) => {
       anneeN: aggN.annee,
       anneeN1: aggN1.annee?? null,
       produitsFinanciers: !!aggN.produitsFinanciers,
-      compte207_credit: aggN.compte207_credit || 0,
-      compte207_debit: aggN.compte207_debit || 0
+      compte207Var: aggN.compte207 - aggN1.compte207 ?? null,
     });
   } catch (err) {
     console.error(err);
