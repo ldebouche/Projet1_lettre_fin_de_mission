@@ -1,22 +1,6 @@
 import dbService from '../services/dbService.js';
 import { comptesMapping } from '../utils/comptesMapping.js';
 
-export const GetCAData = async (req, res) => {
-  try {
-    const { code_client, dateFinEx } = req.user;
-    const caData = await dbService.GetCA(code_client, dateFinEx);
-
-    if (!caData) {
-      return res.status(404).json({ error: 'Pas de données trouvées' });
-    }
-
-    res.json(caData);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur SQL' });
-  }
-};
-
 export const GetDossierInfos = async (req, res) => {
   try {
     const { code_client, dateFinEx } = req.user;
@@ -35,7 +19,6 @@ export const GetDossierInfos = async (req, res) => {
     const aggN = aggregats.find(a => a.annee === anneeN) || {};
     const aggN1 = aggregats.find(a => a.annee === anneeN1) || {};
 
-    console.log(anaSectorielle);
     res.json({
       // === Infos générales ===
       anneeN1Existe: !!aggN1.annee,
@@ -47,7 +30,7 @@ export const GetDossierInfos = async (req, res) => {
       forme_societe: infoClients.forme_societe,
       tabAutofinancement: infoClients.tabAutofinancement,
       categorie_revenu: infoClients.categorie_revenu,
-      acompte_total: aggN.acompte_total || 0, // ajoute ce champ dans Aggregats_FEC si besoin
+      acompte_total: aggN.acompte_total || 0,
       signataire,
       capitalSocial: aggN.capitalSocial || 0,
       montantReserveLegale: aggN.montantReserveLegale || 0,
@@ -198,6 +181,7 @@ export const GetDossierInfos = async (req, res) => {
           - (aggN.AF_divi || 0)
       },
 
+      // === Analyse sectorielle ===
       anaSectorielle: {
         valeurs: anaSectorielle.filter(r => r.type_donnee === 'valeur').map(r => ({
           libelle: r.libelle,
@@ -212,7 +196,14 @@ export const GetDossierInfos = async (req, res) => {
           }
         })),
         commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives)
-      }
+      },
+
+      // === Commentaires ===
+      anneeN: aggN.annee,
+      anneeN1: aggN1.annee?? null,
+      produitsFinanciers: !!aggN.produitsFinanciers,
+      compte207_credit: aggN.compte207_credit || 0,
+      compte207_debit: aggN.compte207_debit || 0
     });
   } catch (err) {
     console.error(err);

@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 
 import { AiService } from '../../services/ai-service';
-import { DbService } from '../../services/db-service';
 import { PdfService } from '../../services/pdf-service';
 
 @Component({
@@ -24,6 +23,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   @Input() defaultText = 'Texte par défaut (modifiable)…';
   @Input() selector = true; // true: commentaire, false: analyse
   @Input() categorie ='';
+  @Input() data: any;
+  @Input() anaSectorielle: any;
 
   value = '';
   disabled = false;
@@ -36,7 +37,6 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
 
   constructor(
     private ai: AiService, 
-    private db: DbService,
     private pdf: PdfService
   ) {}
 
@@ -68,28 +68,65 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     }
   }
 
+  getTrancheCA(caN: number, caSecteur: any): string {
+    const parseNum = (val: string): number =>
+      parseFloat(val.replace(/\s/g, "").replace(",", "."));
+  
+    const t1 = parseNum(caSecteur.tranche_1);
+    const t2 = parseNum(caSecteur.tranche_2);
+    const t3 = parseNum(caSecteur.tranche_3);
+    const t4 = parseNum(caSecteur.tranche_4);
+    const t5 = parseNum(caSecteur.tranche_5);
+
+    if (caN < t1) return "tranche 1";
+    if (caN < t2) return "tranche 2";
+    if (caN < t3) return "tranche 3";
+    if (caN < t4) return "tranche 4";
+    if (caN < t5) return "tranche 5";
+    return " supérieure à la tranche 5";
+  }
+
   onGenerateComment() {
     this.loading = true;
-
     switch (this.categorie) {
-      case 'progressionChiffre':
-        this.db.getCAData().subscribe({
-          next: (data: any) => {
-            this.callAI(
-              'CA',
-              {
-                anneeN: data.anneeN,
-                anneeN1: data.anneeN1,
-                caN: data.caN,
-                caN1: data.caN1
-              }
-            );
-          },
-          error: () => this.setError()
-        });
+      case 'CA':
+        let caSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €').tranches;
+
+        this.callAI(
+          'CA',
+          {
+            anneeN: this.data.anneeN,
+            anneeN1: this.data.anneeN1,
+            caN: this.data.caN.toLocaleString('fr-FR'),
+            caN1: this.data.caN1.toLocaleString('fr-FR'),
+            variationCA: this.data.caVar.toLocaleString('fr-FR'),
+            variationPrcCA: this.data["%caVar"].toFixed(2),
+            millesimeSecteur: this.anaSectorielle[0]?.millesime ?? null,
+            caSecteur: caSecteur,
+            maTranche: this.getTrancheCA(this.data.caN, caSecteur),
+
+            //grosse_variation
+            produitsFinanciers: this.data.produitsFinanciers,
+            compte207_credit: this.data.compte207_credit,
+            compte207_debit: this.data.compte207_debit,
+          }
+        );
         break;
 
-        case 'investissement':
+      case 'marge':
+        this.callAI(
+          'marge',
+          {
+            anneeN: this.data.anneeN,
+            anneeN1: this.data.anneeN1,
+            margeN: this.data.margeN,
+            margeN1: this.data.margeN1,
+            anaFinanciere: this.anaSectorielle
+          }
+        );
+        break;
+
+      case 'investissement':
         this.pdf.getImmob().subscribe({
           next: (data: any) => {
             this.callAI(

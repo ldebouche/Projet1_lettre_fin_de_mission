@@ -43,11 +43,11 @@
 
   <div [formGroup]="progressionChiffre">
     <label class="checkline"><span>• Progression du chiffre</span></label>
-    <bouton-textarea formControlName="commentaire" [selector]="true" categorie="progressionChiffre"></bouton-textarea>
+    <bouton-textarea formControlName="commentaire" [selector]="true" categorie="CA" [data]="dataCA" [anaSectorielle]="anaSectorielle"></bouton-textarea>
   </div>
 
   <div [formGroup]="tauxMarge">
     <label class="checkline"><span>• Taux de marge</span></label>
-    <bouton-textarea formControlName="commentaire" [selector]="true" categorie="tauxMarge"></bouton-textarea>
+    <bouton-textarea formControlName="commentaire" [selector]="true" categorie="marge" [data]="dataMarge" [anaSectorielle]="anaSectorielle"></bouton-textarea>
   </div>
 </fieldset>

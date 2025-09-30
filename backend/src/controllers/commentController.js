@@ -1,4 +1,4 @@
-import { callOllama, fillTemplate, pickCAPrompt, prompts } from '../services/aiService.js';
+import { callOllama, fillTemplate, pickPrompt, prompts, formatTranches } from '../services/aiService.js';
 
 export const generateComment = async (req, res) => {
   try {
@@ -7,11 +7,22 @@ export const generateComment = async (req, res) => {
     let template, prompt;
 
     if (type === 'CA') {
-      const { anneeN, anneeN1, caN, caN1 } = contexte;
+      const { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, compte207_credit, compte207_debit, millesimeSecteur, caSecteur, maTranche } = contexte;
+
+      template = pickPrompt(variationPrcCA, 'CA');
+
+      const caSecteurStr = formatTranches(caSecteur);
+      console.log(caSecteurStr);
+      prompt = fillTemplate(template, { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, compte207_credit, compte207_debit, millesimeSecteur, caSecteurGlobale: caSecteurStr.globale, caSecteurDetails: caSecteurStr.details, maTranche });
+      console.log(prompt);
+    }
+
+    if (type === 'margeBrute') {
+      const { anneeN, anneeN1, margeN, margeN1, variationMarge, millesimeSecteur, margeSecteur } = contexte;
       const variation = (caN - caN1) / caN1;
 
-      template = pickCAPrompt(variation);
-      prompt = fillTemplate(template, { anneeN, anneeN1, caN, caN1, variationCA: variation });
+      template = pickPrompt(variation, 'margeBrute');
+      prompt = fillTemplate(template, { anneeN, anneeN1, margeN, margeN1, variationMarge, millesimeSecteur, margeSecteur });
     }
 
     if (type === 'investissement') {
@@ -42,8 +53,6 @@ export const generateComment = async (req, res) => {
     }
     
     const raw = await callOllama(prompt);
-    console.log("==== Réponse brute de Qwen ====");
-    console.log(raw);
 
     if (!raw || typeof raw !== "string") {
       return res.json({ text: "Réponse vide ou invalide d’Ollama" });

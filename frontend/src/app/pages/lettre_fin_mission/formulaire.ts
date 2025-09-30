@@ -110,6 +110,10 @@ export class FormulaireComponent implements OnInit {
   infoChiffresCles: any;
   infoAutofinancement: any;
   infoEvolutionCharges: any;
+
+  dataCA = {};
+  dataMarge = {};
+  anaSectorielle: any;
   
   constructor(
     private fb: FormBuilder,
@@ -145,6 +149,31 @@ export class FormulaireComponent implements OnInit {
         this.forme_societe = data.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
         this.signataire = data.signataire;
+
+        this.dataCA = {
+          caN: data.chiffreCles.CC_caN,
+          caN1: data.chiffreCles.CC_caN1,
+          caVar: data.chiffreCles.CC_caVar,
+          "%caVar": data.chiffreCles["CC_%caVar"],
+          anneeN: data.anneeN,
+          anneeN1: data.anneeN1,
+          compte207_credit: data.compte207_credit,
+          compte207_debit: data.compte207_debit,
+          produitsFinanciers: data.produitsFinanciers
+        };
+
+        this.dataMarge = {
+          CC_margeN: data.chiffreCles.CC_margeN,
+          "CC_%margeN": data.chiffreCles["CC_%margeN"],
+          CC_margeN1: data.chiffreCles.CC_margeN1,
+          "CC_%margeN1": data.chiffreCles["CC_%margeN1"],
+          CC_margeVar: data.chiffreCles.CC_margeVar,
+          "CC_%margeVar": data.chiffreCles["CC_%margeVar"],
+          anneeN: data.chiffreCles.dateFinEx.split('/')[2],
+          anneeN1: Number(data.chiffreCles.dateFinEx.split('/')[2]) - 1
+        };
+
+        this.anaSectorielle = data.anaSectorielle.valeurs;
 
         if (data.mois_cloture == 12 || data.mois_cloture == 1 || data.mois_cloture == 2) {
           this.moisClotureArray = ['03', '06', '09', '12'];

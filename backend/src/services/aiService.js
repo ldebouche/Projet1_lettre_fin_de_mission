@@ -4,22 +4,52 @@ import fs from 'fs';
 const prompts = JSON.parse(fs.readFileSync('./config/prompts.json', 'utf-8'));
 
 export function fillTemplate(template, variables) {
-  return template.replace(/{{(.*?)}}/g, (_, key) => {
-    return variables[key.trim()] ?? `{{${key}}}`;
-  });
+  if (typeof template === "string") {
+    return template.replace(/{{(.*?)}}/g, (_, key) => {
+      return variables[key.trim()] ?? `{{${key}}}`;
+    });
+  } else if (Array.isArray(template)) {
+    return template.map(item => fillTemplate(item, variables));
+  } else if (template && typeof template === "object") {
+    const result = {};
+    for (const key in template) {
+      if (Object.prototype.hasOwnProperty.call(template, key)) {
+        result[key] = fillTemplate(template[key], variables);
+      }
+    }
+    return result;
+  }
+  return template;
 }
 
-export function pickCAPrompt(variation) {
-  const seuil = 0.1;
+
+export function pickPrompt(variation, type) {
+  console.log(variation);
+  const seuil = 50;
   if (variation >= 0) {
     return variation < seuil
-      ? prompts.generateComment.CA.petite_variation_positive
-      : prompts.generateComment.CA.grosse_variation_positive;
+      ? prompts.generateComment[type].petite_variation_positive
+      : prompts.generateComment[type].grosse_variation_positive;
   } else {
     return Math.abs(variation) < seuil
-      ? prompts.generateComment.CA.petite_variation_negative
-      : prompts.generateComment.CA.grosse_variation_negative;
+      ? prompts.generateComment.type.petite_variation_negative
+      : prompts.generateComment.type.grosse_variation_negative;
   }
+}
+
+
+export function formatTranches(obj) {
+  if (!obj) return { globale: "", details: "" };
+
+  return {
+    globale: `${obj.globale} EUR`,
+    details: `
+      - Tranche 1 : ${obj.tranche_1} EUR
+      - Tranche 2 : ${obj.tranche_2} EUR
+      - Tranche 3 : ${obj.tranche_3} EUR
+      - Tranche 4 : ${obj.tranche_4} EUR
+      - Tranche 5 : ${obj.tranche_5} EUR`
+  };
 }
 
 export async function callOllama(message) {
@@ -28,11 +58,11 @@ export async function callOllama(message) {
     {
       model: process.env.OLLAMA_MODEL,
       messages: [
-        { role: 'system', content: 'Tu es concis et professionnel.' },
-        { role: 'user', content: message }
+        { role: 'system', content: 'Tu es expert comptable et tu fais des commentaires pour un client professionnel. Tu ne calcules rien, tu utilises uniquement les données que je te fournis. Distingue clairement la variation (en EUR et en %) et son intensité (faible, modérée ou forte) de la comparaison sectorielle. Ne mélange jamais intensité de la variation et niveau sectoriel. Tu fais un commentaire de 5-6 phrases. Réponds uniquement en JSON valide (sans sauts de ligne dans les chaînes). Toutes les chaînes doivent être échappées.' },
+        { role: 'user', content: JSON.stringify(message) }
       ],
       stream: false,
-      options: { temperature: 0.3, num_predict: 200 }
+      options: { temperature: 0.3, num_predict: 500 }
     }
   );
 
