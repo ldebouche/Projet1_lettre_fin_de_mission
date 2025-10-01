@@ -114,6 +114,7 @@ export class FormulaireComponent implements OnInit {
   dataCA = {};
   dataMarge = {};
   anaSectorielle: any;
+  CC_textePerspective = '';
   
   constructor(
     private fb: FormBuilder,
@@ -122,6 +123,10 @@ export class FormulaireComponent implements OnInit {
     private pdfService: PdfService
   ) {
     this.form = this.buildForm();
+  }
+
+  private texteRefactor(texte: string): string {
+    return texte[0].replace(/ - /g, '\n - ').trim();
   }
 
   ngOnInit(): void {
@@ -168,6 +173,7 @@ export class FormulaireComponent implements OnInit {
         };
 
         this.anaSectorielle = data.anaSectorielle.valeurs;
+        this.CC_textePerspective = this.texteRefactor(data.anaSectorielle.commentaire);
 
         if (data.mois_cloture == 12 || data.mois_cloture == 1 || data.mois_cloture == 2) {
           this.moisClotureArray = ['03', '06', '09', '12'];
@@ -220,7 +226,7 @@ export class FormulaireComponent implements OnInit {
 
         this.form.patchValue({
           CC: {
-            comPerspective: data.anaSectorielle.commentaire
+            comPerspective: this.CC_textePerspective
           },
           I: {
             masquerSection: data.I_classe2,

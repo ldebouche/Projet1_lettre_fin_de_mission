@@ -41,13 +41,7 @@
     </tbody>
   </table>
 
-  <div [formGroup]="progressionChiffre">
-    <label class="checkline"><span>• Progression du chiffre</span></label>
-    <bouton-textarea formControlName="commentaire" [selector]="true" categorie="CA" [data]="dataCA" [anaSectorielle]="anaSectorielle"></bouton-textarea>
-  </div>
-
   <div [formGroup]="tauxMarge">
-    <label class="checkline"><span>• Taux de marge</span></label>
     <bouton-textarea formControlName="commentaire" [selector]="true" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle"></bouton-textarea>
   </div>
 </fieldset>

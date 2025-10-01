@@ -1,4 +1,4 @@
-import { callOllama, fillTemplate, pickPrompt, prompts, formatTranches, checkIntensiteVariation } from '../services/aiService.js';
+import { fillTemplate, prompts, formatTranches, checkIntensiteVariation, callMistral } from '../services/aiService.js';
 
 export const generateComment = async (req, res) => {
   try {
@@ -6,21 +6,10 @@ export const generateComment = async (req, res) => {
 
     let template, prompt;
 
-    if (type === 'CA') {
-      const { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, FDC, millesimeSecteur, caSecteur, maTranche } = contexte;
-
-      template = pickPrompt(variationPrcCA, 'CA');
-
-      const caSecteurStr = formatTranches(caSecteur);
-
-      prompt = fillTemplate(template, { anneeN, anneeN1, caN, caN1, variationCA, variationPrcCA, produitsFinanciers, FDC, millesimeSecteur, caSecteurGlobale: caSecteurStr.globale, caSecteurDetails: caSecteurStr.details, maTranche });
-      console.log(prompt);
-    }
-
     if (type === 'CA_marge') {
-      const { anneeN, anneeN1, millesimeSecteur, CA, MARGE } = contexte;
+      const { anneeN, anneeN1, millesimeSecteur, maTranche, CA, MARGE } = contexte;
 
-      template = pickPrompt(CA.variationPrcCA, 'CA_marge');
+      template = prompts.generateComment.CA_marge;
 
       const { intensite: intensiteVariationCA, sens: sensVariationCA } = checkIntensiteVariation(CA.variationPrcCA);
       const { intensite: intensiteVariationMarge, sens: sensVariationMarge } = checkIntensiteVariation(MARGE.variationPrcMarge);
@@ -33,6 +22,7 @@ export const generateComment = async (req, res) => {
         anneeN,
         anneeN1,
         millesimeSecteur,
+        maTranche,
 
         caN: CA.caN,
         caN1: CA.caN1,
@@ -42,7 +32,6 @@ export const generateComment = async (req, res) => {
         sensVariationCA: sensVariationCA,
         caSecteurGlobale: caSecteurStr.globale,
         caSecteurDetails: caSecteurStr.details,
-        maTrancheCA: CA.maTrancheCA,
         FDC: "",
 
         margeN: MARGE.margeN,
@@ -55,7 +44,6 @@ export const generateComment = async (req, res) => {
         sensVariationMarge: sensVariationMarge,
         margeSecteurGlobale: margeSecteurStr.globale,
         margeSecteurDetails: margeSecteurStr.details,
-        maTrancheMarge: MARGE.maTrancheMarge
       }
 
       if (intensiteVariationCA === 'fort') {
@@ -91,31 +79,9 @@ export const generateComment = async (req, res) => {
       });
     }
     
-    const raw = await callOllama(prompt);
+    const raw = await callMistral(prompt);
+    return res.json({ text: raw });
 
-    if (!raw || typeof raw !== "string") {
-      return res.json({ text: "Réponse vide ou invalide d’Ollama" });
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-      return res.json({ text: parsed.resume ?? raw });
-    } catch (e) {
-      console.warn("Réponse IA invalide, fallback brut ===>", raw);
-
-      // Essayer d'extraire un JSON partiel
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          parsed = JSON.parse(jsonMatch[0]);
-          return res.json({ text: parsed.resume ?? raw });
-        } catch {}
-      }
-
-      // Fallback texte brut
-      return res.json({ text: raw });
-    }
   } catch (e) {
     console.error("ERREUR GENERATE COMMENT ===>");
     console.error("Message :", e.message);

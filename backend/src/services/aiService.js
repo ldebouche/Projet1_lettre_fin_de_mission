@@ -22,20 +22,6 @@ export function fillTemplate(template, variables) {
   return template;
 }
 
-
-export function pickPrompt(variation, type) {
-  const seuil = 50;
-  if (variation >= 0) {
-    return variation < seuil
-      ? prompts.generateComment[type].petite_variation_positive
-      : prompts.generateComment[type].grosse_variation_positive;
-  } else {
-    return Math.abs(variation) < seuil
-      ? prompts.generateComment[type].petite_variation_negative
-      : prompts.generateComment[type].grosse_variation_negative;
-  }
-}
-
 export function checkIntensiteVariation(variationPrc) {
   const seuil = 50;
 
@@ -66,11 +52,11 @@ export async function callOllama(message) {
     {
       model: process.env.OLLAMA_MODEL,
       messages: [
-        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Tu dois produire exactement 2 parties dans un seul commentaire : une partie sur le chiffre d’affaires, une partie sur la marge brute. Chaque partie doit faire 5 ou 6 phrases complètes. Mentionne toutes les données transmises (montants, pourcentages, moyenne sectorielle, tranches, intensité, explications éventuelles). Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour. Format attendu : { \"resume\": \"string\" }' },
+        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour.' },
         { role: 'user', content: JSON.stringify(message) }
       ],
       stream: false,
-      options: { temperature: 0.5, num_predict: 800 }
+      options: { temperature: 0.2 }
     }
   );
 
@@ -92,16 +78,28 @@ export async function callMistral(message) {
     {
       model: process.env.MISTRAL_MODEL,
       messages: [
-        { role: 'system', content: 'Tu es concis et professionnel.' },
-        { role: 'user', content: message }
+        {
+          role: 'system',
+          content: `
+Tu es un expert-comptable qui rédige des commentaires cohérents et professionnels pour un client professionnel. 
+
+Contraintes strictes :
+- Chaque paragraphe doit contenir 3 ou 4 phrases.
+- Fais des commentaires sur les données fournies.
+- Tu n’ajoutes AUCUNE donnée ni calcul supplémentaire.
+- Tu n’utilises AUCUNE mise en forme (pas de Markdown, pas de gras, pas de listes).
+`       },
+        { role: 'user', content: JSON.stringify(message) }
       ],
-      temperature: 0.7
+      temperature: 0.5
     },
-    {
-      headers: { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` }
-    }
+    { headers: { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` } }
   );
-  return resp.data?.choices?.[0]?.message?.content ?? '';
+
+  let raw = resp.data?.choices?.[0]?.message?.content ?? '';
+  return raw;
 }
+
+
 
 export { prompts };
