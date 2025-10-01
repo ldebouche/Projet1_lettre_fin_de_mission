@@ -100,7 +100,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     this.loading = true;
     switch (this.categorie) {
       case 'CA':
-        let caSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €').tranches;
+        //let caSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €').tranches;
+        //let margeSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Marge brute globale').tranches;
 
         this.callAI(
           'CA',
@@ -112,8 +113,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
             variationCA: this.data.caVar.toLocaleString('fr-FR'),
             variationPrcCA: this.data["%caVar"].toFixed(2),
             millesimeSecteur: this.anaSectorielle[0]?.millesime ?? null,
-            caSecteur: caSecteur,
-            maTranche: this.getTrancheCA(this.data.caN, caSecteur),
+            //caSecteur: caSecteur,
+            //maTranche: this.getTrancheCA(this.data.caN, caSecteur),
 
             //grosse_variation
             FDC: this.checkFDC(this.data.compte207Var),
@@ -128,11 +129,42 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
         this.callAI(
           'marge',
           {
+            
+          }
+        );
+        break;
+
+      case 'CA_marge':
+        let caSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €').tranches;
+        let margeSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Marge brute globale').tranches;
+        this.callAI(
+          'CA_marge',
+          {
             anneeN: this.data.anneeN,
             anneeN1: this.data.anneeN1,
-            margeN: this.data.margeN,
-            margeN1: this.data.margeN1,
-            anaFinanciere: this.anaSectorielle
+            millesimeSecteur: this.anaSectorielle[0]?.millesime ?? null,
+            'CA': {
+              caN: this.data.caN.toLocaleString('fr-FR'),
+              caN1: this.data.caN1.toLocaleString('fr-FR'),
+              variationCA: this.data.caVar.toLocaleString('fr-FR'),
+              variationPrcCA: this.data["%caVar"].toFixed(2),
+              caSecteur: caSecteur,
+              maTrancheCA: this.getTrancheCA(this.data.caN, caSecteur),
+              FDC: this.checkFDC(this.data.compte207Var),
+            },
+            'MARGE': {
+              margeN: this.data.margeN.toLocaleString('fr-FR'),
+              margeN1: this.data.margeN1.toLocaleString('fr-FR'),
+              margeNPrcCA: this.data["%margeN"].toFixed(2),
+              margeN1PrcCA: this.data["%margeN1"].toFixed(2),
+              variationMarge: this.data.margeVar.toLocaleString('fr-FR'),
+              variationPrcMarge: this.data["%margeVar"].toFixed(2),
+              margeSecteur: margeSecteur,
+              //à modifier
+              maTrancheMarge: this.getTrancheCA(this.data.caN, caSecteur)
+            },
+            //absence
+            produitsFinanciers: this.data.produitsFinanciers,
           }
         );
         break;

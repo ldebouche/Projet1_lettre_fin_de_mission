@@ -36,6 +36,15 @@ export function pickPrompt(variation, type) {
   }
 }
 
+export function checkIntensiteVariation(variationPrc) {
+  const seuil = 50;
+
+  return {
+    intensite: Math.abs(variationPrc) > seuil ? "forte" : "faible",
+    sens: variationPrc < 0 ? "negative" : "positive"
+  };
+}
+
 
 export function formatTranches(obj) {
   if (!obj) return { globale: "", details: "" };
@@ -57,11 +66,11 @@ export async function callOllama(message) {
     {
       model: process.env.OLLAMA_MODEL,
       messages: [
-        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Mentionne toutes les données transmises (montants, pourcentages, moyenne sectorielle, tranches, intensité, explications éventuelles). Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour. Format attendu : { \"resume\": \"string\" }' },
+        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Tu dois produire exactement 2 parties dans un seul commentaire : une partie sur le chiffre d’affaires, une partie sur la marge brute. Chaque partie doit faire 5 ou 6 phrases complètes. Mentionne toutes les données transmises (montants, pourcentages, moyenne sectorielle, tranches, intensité, explications éventuelles). Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour. Format attendu : { \"resume\": \"string\" }' },
         { role: 'user', content: JSON.stringify(message) }
       ],
       stream: false,
-      options: { temperature: 0.5, num_predict: 500 }
+      options: { temperature: 0.5, num_predict: 800 }
     }
   );
 

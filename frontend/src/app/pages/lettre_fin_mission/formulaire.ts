@@ -158,18 +158,13 @@ export class FormulaireComponent implements OnInit {
           anneeN: data.anneeN,
           anneeN1: data.anneeN1,
           compte207Var: data.compte207Var,
-          produitsFinanciers: data.produitsFinanciers
-        };
-
-        this.dataMarge = {
-          CC_margeN: data.chiffreCles.CC_margeN,
-          "CC_%margeN": data.chiffreCles["CC_%margeN"],
-          CC_margeN1: data.chiffreCles.CC_margeN1,
-          "CC_%margeN1": data.chiffreCles["CC_%margeN1"],
-          CC_margeVar: data.chiffreCles.CC_margeVar,
-          "CC_%margeVar": data.chiffreCles["CC_%margeVar"],
-          anneeN: data.chiffreCles.dateFinEx.split('/')[2],
-          anneeN1: Number(data.chiffreCles.dateFinEx.split('/')[2]) - 1
+          produitsFinanciers: data.produitsFinanciers,
+          margeN: data.chiffreCles.CC_margeN,
+          "%margeN": data.chiffreCles["CC_%margeN"],
+          margeN1: data.chiffreCles.CC_margeN1,
+          "%margeN1": data.chiffreCles["CC_%margeN1"],
+          margeVar: data.chiffreCles.CC_margeVar,
+          "%margeVar": data.chiffreCles["CC_%margeVar"],
         };
 
         this.anaSectorielle = data.anaSectorielle.valeurs;

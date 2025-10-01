@@ -1,4 +1,4 @@
-import { callOllama, fillTemplate, pickPrompt, prompts, formatTranches } from '../services/aiService.js';
+import { callOllama, fillTemplate, pickPrompt, prompts, formatTranches, checkIntensiteVariation } from '../services/aiService.js';
 
 export const generateComment = async (req, res) => {
   try {
@@ -17,14 +17,53 @@ export const generateComment = async (req, res) => {
       console.log(prompt);
     }
 
-    if (type === 'margeBrute') {
-      const { anneeN, anneeN1, margeN, margeN1, variationMarge, millesimeSecteur, margeSecteur } = contexte;
-      const variation = (caN - caN1) / caN1;
+    if (type === 'CA_marge') {
+      const { anneeN, anneeN1, millesimeSecteur, CA, MARGE } = contexte;
 
-      template = pickPrompt(variation, 'margeBrute');
-      prompt = fillTemplate(template, { anneeN, anneeN1, margeN, margeN1, variationMarge, millesimeSecteur, margeSecteur });
+      template = pickPrompt(CA.variationPrcCA, 'CA_marge');
+
+      const { intensite: intensiteVariationCA, sens: sensVariationCA } = checkIntensiteVariation(CA.variationPrcCA);
+      const { intensite: intensiteVariationMarge, sens: sensVariationMarge } = checkIntensiteVariation(MARGE.variationPrcMarge);
+
+      const caSecteurStr = formatTranches(CA.caSecteur);
+
+      const margeSecteurStr = formatTranches(MARGE.margeSecteur);
+      
+      const payload = {  
+        anneeN,
+        anneeN1,
+        millesimeSecteur,
+
+        caN: CA.caN,
+        caN1: CA.caN1,
+        variationCA: CA.variationCA,
+        variationPrcCA: CA.variationPrcCA,
+        intensiteVariationCA: intensiteVariationCA,
+        sensVariationCA: sensVariationCA,
+        caSecteurGlobale: caSecteurStr.globale,
+        caSecteurDetails: caSecteurStr.details,
+        maTrancheCA: CA.maTrancheCA,
+        FDC: "",
+
+        margeN: MARGE.margeN,
+        margeN1: MARGE.margeN1,
+        margeNPrcCA: MARGE.margeNPrcCA,
+        margeN1PrcCA: MARGE.margeN1PrcCA,
+        variationMarge: MARGE.variationMarge,
+        variationPrcMarge: MARGE.variationPrcMarge,
+        intensiteVariationMarge: intensiteVariationMarge,
+        sensVariationMarge: sensVariationMarge,
+        margeSecteurGlobale: margeSecteurStr.globale,
+        margeSecteurDetails: margeSecteurStr.details,
+        maTrancheMarge: MARGE.maTrancheMarge
+      }
+
+      if (intensiteVariationCA === 'fort') {
+        payload.FDC = CA.FDC;
+      }
+      prompt = fillTemplate(template, payload);
+      console.log(prompt);
     }
-
     if (type === 'investissement') {
       const { total_entrees, entrees, total_sorties, sorties } = contexte;
 

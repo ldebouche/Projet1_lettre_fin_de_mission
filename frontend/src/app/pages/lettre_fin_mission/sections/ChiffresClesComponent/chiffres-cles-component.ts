@@ -19,7 +19,6 @@ export class ChiffresClesComponent {
   @Input() infoChiffresCles: any;
   @Input() anneeN1Existe: boolean = true;
   @Input() dataCA: any;
-  @Input() dataMarge: any;
   @Input() anaSectorielle: any;
 
   indicateurs = [
