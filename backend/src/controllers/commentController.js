@@ -50,7 +50,6 @@ export const generateComment = async (req, res) => {
         payload.FDC = CA.FDC;
       }
       prompt = fillTemplate(template, payload);
-      console.log(prompt);
     }
     if (type === 'investissement') {
       const { total_entrees, entrees, total_sorties, sorties } = contexte;
@@ -79,6 +78,7 @@ export const generateComment = async (req, res) => {
       });
     }
     
+    console.log(prompt);
     const raw = await callMistral(prompt);
     return res.json({ text: raw });
 
