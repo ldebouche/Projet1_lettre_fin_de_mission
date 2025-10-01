@@ -124,7 +124,6 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
               variationPrcMarge: this.data["%margeVar"].toFixed(2),
               margeSecteur: margeSecteur,
             },
-            //absence
             produitsFinanciers: this.data.produitsFinanciers,
           }
         );
