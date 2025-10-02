@@ -3,5 +3,10 @@
     <label class="checkline">
         <span>• Mesures à prendre et plan d’action à mettre en œuvre</span>
     </label>
-    <bouton-textarea formControlName="commentaire"></bouton-textarea>
+    <textarea 
+        rows="4" 
+        class="area"
+        formControlName="commentaire">
+    </textarea>
+    <bouton-textarea class="reformuler" formControlName="commentaire" buttonLabel="Reformuler" categorie="reformuler" [data]="data"></bouton-textarea>
 </fieldset>

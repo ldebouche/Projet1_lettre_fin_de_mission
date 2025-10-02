@@ -1,19 +1,40 @@
-<div *ngIf="!showTextarea">
+<div *ngIf="categorie === 'reformuler'">
   <button 
     type="button"
     class="btn"
     [disabled]="disabled || loading"
-    (click)="handleClick()">
-    {{ loading ? 'Génération en cours…' : buttonLabel }}
+    (click)="handleClick(categorie)">
+    {{ loading ? 'Reformulation en cours…' : buttonLabel }}
   </button>
 </div>
 
-<div *ngIf="showTextarea">
-  <textarea 
-    rows="4" 
-    class="area"
-    [value]="value"
-    (input)="handleInput(($any($event.target)).value)"
-    (blur)="handleBlur()">
-  </textarea>
+<div *ngIf="categorie !== 'reformuler'">
+  <div *ngIf="!showTextarea">
+    <button 
+      type="button"
+      class="btn"
+      [disabled]="disabled || loading"
+      (click)="handleClick(categorie)">
+      {{ loading ? 'Génération en cours…' : buttonLabel }}
+    </button>
+  </div>
+
+  <div *ngIf="showTextarea">
+    <textarea 
+      rows="4" 
+      class="area"
+      [value]="value"
+      (input)="handleInput(($any($event.target)).value)"
+      (blur)="handleBlur()">
+    </textarea>
+    <div class="reformuler">
+      <button
+        type="button"
+        class="btn"
+        [disabled]="disabled || loading"
+        (click)="handleClick('reformuler')">
+        {{ loading ? 'Reformulation en cours…' : 'Reformuler' }}
+      </button>
+    </div>
+  </div>
 </div>

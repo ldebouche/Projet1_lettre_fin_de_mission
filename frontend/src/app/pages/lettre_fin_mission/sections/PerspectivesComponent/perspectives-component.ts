@@ -1,5 +1,5 @@
 import { Component , Input} from '@angular/core';
-import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
 
@@ -15,4 +15,5 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
 })
 export class PerspectivesComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() data!: FormControl;
 }

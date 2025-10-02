@@ -18,6 +18,7 @@ export class ChiffresClesComponent {
   @Input({ required: true }) group!: FormGroup;
   @Input() infoChiffresCles: any;
   @Input() anneeN1Existe: boolean = true;
+  @Input() dataPerspective: any;
   @Input() dataCA: any;
   @Input() anaSectorielle: any;
 

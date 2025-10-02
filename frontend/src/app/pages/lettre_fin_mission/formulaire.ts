@@ -278,17 +278,13 @@ export class FormulaireComponent implements OnInit {
     })
   }
 
+
   private buildForm(): FormGroup {
     return this.fb.group({
       // ===== CHIFFRES CLÉS =====
       CC: this.fb.group({
         comPerspective: [''],
-        progressionChiffre: this.fb.group({
-          commentaire: ['test commentaire']
-        }),
-        tauxMarge: this.fb.group({
-          commentaire: ['']
-        })
+        commentaire: ['']
       }),
 
       // ===== ÉVOLUTION CHARGES EXTERNES & AUTRES ACHATS =====

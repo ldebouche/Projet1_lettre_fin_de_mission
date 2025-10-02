@@ -5,6 +5,7 @@
       class="area"
       formControlName="comPerspective">
   </textarea>
+  <bouton-textarea class="reformuler" formControlName="commentaire" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective"></bouton-textarea>
   <table class="table">
     <thead>
       <tr>
@@ -40,8 +41,5 @@
       </tr>
     </tbody>
   </table>
-
-  <div [formGroup]="tauxMarge">
-    <bouton-textarea formControlName="commentaire" [selector]="true" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle"></bouton-textarea>
-  </div>
+  <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle"></bouton-textarea>
 </fieldset>

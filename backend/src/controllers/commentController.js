@@ -12,7 +12,7 @@ export const generateComment = async (req, res) => {
       if (CA.caN === 0 && produitsFinanciers) {
         return res.json({ text: "L’absence de chiffre d’affaires et la présence exclusive de produits financiers indiquent que la société exerce une activité de type holding non animatrice. Elle ne réalise pas d’activité opérationnelle propre, mais tire ses revenus de placements financiers, de dividendes ou d’intérêts perçus sur ses participations. Ce modèle économique repose sur la gestion d’un portefeuille d’actifs, sans intervention directe dans la gestion des filiales."});
       }
-      
+
       template = prompts.generateComment.CA_marge;
 
       const { intensite: intensiteVariationCA, sens: sensVariationCA } = checkIntensiteVariation(CA.variationPrcCA);
@@ -81,9 +81,16 @@ export const generateComment = async (req, res) => {
         sorties: sortiesStr
       });
     }
+
+    if (type === 'reformuler') {
+      const { texte } = contexte;
+      template = prompts.generateComment.reformuler;
+      prompt = fillTemplate(template, { texte });
+    }
     
     console.log(prompt);
     const raw = await callMistral(prompt);
+    console.log("======> ", raw);
     return res.json({ text: raw });
 
   } catch (e) {

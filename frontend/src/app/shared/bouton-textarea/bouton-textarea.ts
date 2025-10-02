@@ -1,6 +1,6 @@
 import { Component, Input, forwardRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { NG_VALUE_ACCESSOR, ControlValueAccessor, FormControl } from '@angular/forms';
 
 import { AiService } from '../../services/ai-service';
 import { PdfService } from '../../services/pdf-service';
@@ -18,10 +18,8 @@ import { PdfService } from '../../services/pdf-service';
   }]
 })
 export class BtnToTextareaComponent implements ControlValueAccessor {
-  buttonLabel = 'Générer commentaire';
-  /** Valeur initiale injectée au moment du clic si vide */
+  @Input() buttonLabel = 'Générer commentaire';
   @Input() defaultText = 'Texte par défaut (modifiable)…';
-  @Input() selector = true; // true: commentaire, false: analyse
   @Input() categorie ='';
   @Input() data: any;
   @Input() anaSectorielle: any;
@@ -53,19 +51,11 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   registerOnTouched(fn: () => void): void { this.onTouched = fn; }
   setDisabledState(isDisabled: boolean): void { this.disabled = isDisabled; }
 
-  handleClick() {
+  handleClick(typeComment: string = '') {
     if (this.disabled) return;
-    if (!this.value) {
-      if (this.selector) {
-        this.onGenerateComment();
-      }
-      else {
-        this.onGenerateAnalyse();
-      }
-
-      this.onChange(this.value);
-      this.markTouched();
-    }
+    this.onGenerateComment(typeComment);
+    this.onChange(this.value);
+    this.markTouched();
   }
 
   getTrancheCA(caN: number, caSecteur: any): string {
@@ -94,9 +84,9 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     }
   }
 
-  onGenerateComment() {
+  onGenerateComment(typeComment: string) {
     this.loading = true;
-    switch (this.categorie) {
+    switch (typeComment) {
       case 'CA_marge':
         let caSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €').tranches;
         let margeSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Marge brute globale').tranches;
@@ -145,6 +135,14 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
           error: () => this.setError()
         });
         break;
+
+      case 'reformuler':
+        console.log(this.data);
+        if (this.data instanceof FormControl) {
+          this.value = this.data.value;
+        }
+        this.callAI('reformuler', { texte: this.value });
+        break;
       default:
         this.loading = false;
         this.errorMessage = 'Catégorie non reconnue';
@@ -152,34 +150,16 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   }
 
   private callAI(type: string, contexte: any) {
+    console.log("value before AI", this.value);
     this.ai.generateComment(type, contexte).subscribe({
-      next: (text) => this.setResult(text),
-      error: () => this.setError()
-    });
-  }
-
-  onGenerateAnalyse() {
-    this.loading = true;
-
-    this.ai.pipelineAnalyse(
-      {
-        secteur: "BTP",
-        periode: { from: "2023", to: "2024" },
-        donneesInternes: {
-          clientNom: "Entreprise ACME",
-          siren: "123456789",
-          ca: 420000,
-          marge: 0.18
-        },
-        redactCloud: true
-      }
-    ).subscribe({
       next: (text) => {
         this.value = text && text.trim() ? text : this.defaultText;
-        this.onChange(this.value);
+        this.data instanceof FormControl ? this.data.setValue(this.value) : this.onChange(this.value);
         this.markTouched();
-        this.loading = false;   
-      }
+        this.loading = false;
+        console.log("value after AI", this.value);
+      },
+      error: () => this.setError()
     });
   }
 
@@ -197,13 +177,6 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
       this.onTouched();
       this.touched = true;
     }
-  }
-
-  private setResult(text: string) {
-    this.value = text && text.trim() ? text : this.defaultText;
-    this.onChange(this.value);
-    this.markTouched();
-    this.loading = false;
   }
 
   private setError() {
