@@ -15,7 +15,7 @@ export class PdfService {
     return this.http.get(`${this.baseUrl}/cumuls`);
   }
 
-  getComments(compte: string): Observable<string> {
+  getComments(compte: string): Observable<any> {
     return this.http.get<string>(`${this.baseUrl}/comments`, {
       params: { compte }
     });

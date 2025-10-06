@@ -41,8 +41,8 @@ export const GetDossierInfos = async (req, res) => {
       // === Infos client ===
       client: {
         nomEntreprise: infoClients.nomEntreprise,
-        adresseEntreprise1: infoClients.adresseEntreprise1,
-        adresseEntreprise2: infoClients.adresseEntreprise2,
+        adrEntreprise1: infoClients.adresseEntreprise1,
+        adrEntreprise2: infoClients.adresseEntreprise2,
         codePostalClient: infoClients.codePostalClient,
         villeClient: infoClients.villeClient,
         lieuCreation: infoClients.lieuCreation,
@@ -215,6 +215,18 @@ export const GetInfoFiscale = async (req, res) => {
     const { code_client, dateFinEx } = req.user;
     const infoFiscale = await dbService.GetInfoFiscale(code_client, dateFinEx);
     res.json(infoFiscale);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur SQL' });
+  }
+};
+
+export const GetMontantCharges = async (req, res) => {
+  try {
+    const { code_client, dateFinEx } = req.user;
+    const comptes = req.query.comptes;
+    const montantCharges = await dbService.GetMontantCharges(code_client, dateFinEx, comptes);
+    res.json(montantCharges);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur SQL' });

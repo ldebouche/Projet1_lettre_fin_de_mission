@@ -20,7 +20,7 @@ import { DbService } from '../../services/db-service';
 import { WordService } from '../../services/word-service';
 import { PdfService } from '../../services/pdf-service';
 import { of, forkJoin } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-formulaire',
@@ -392,15 +392,90 @@ export class FormulaireComponent implements OnInit {
   get IF(): FormArray { return this.form.get('IF') as FormArray; }
 
   private loadEvoChargesWithComments(evoCharges: any[]) {
-    const requests = evoCharges.map(ligne =>
-      this.pdfService.getComments(ligne.EC_numCompte).pipe(
-        map(comment => ({ ...ligne, EC_comment: comment })),
-        catchError(() => of({ ...ligne, EC_comment: null }))
-      )
-    );
-    
+    console.log("avant", evoCharges);
+
+    const requests = evoCharges.map(ligne => {
+      if (ligne.EC_comment) {
+        return this.pdfService.getComments(ligne.EC_numCompte).pipe(
+          switchMap((rawComment: any) => {
+            let comptes: string[] = [];
+            let comment_tab: any[] = [];
+
+            if (rawComment && typeof rawComment === 'object' && Array.isArray(rawComment.comments)) {
+              comptes = rawComment.comments.map((c: any) => c.compte);
+              comment_tab = rawComment.comments.map((c: any) => {
+                const libelle = c.libelle ? ` - ${c.libelle}` : '';
+                const texte = c.commentaireReformule ? ` - ${c.commentaireReformule}` : '';
+                return { compte: c.compte, texte: `${c.compte}${libelle}${texte}` };
+              });
+            }
+
+            if (comptes.length > 0) {
+              return this.db.GetMontantCharges(comptes).pipe(
+                map((montants: any) => {
+                  const montantDict: any = {};
+                  montants.forEach((m: any) => {
+                    montantDict[m.CompteNum.trim()] = Number(Math.round(m.montant)).toLocaleString('fr-FR');
+                  });
+
+                  const final_comments = comment_tab.map((c: any) => {
+                    const texte = c.texte ?? '';
+                    const montant = montantDict[c.compte] ? ` - ${montantDict[c.compte]} €` : '';
+                    return `${texte}${montant}`;
+                  });
+
+                  return {
+                    EC_lib: ligne.EC_lib,
+                    EC_valN: ligne.EC_valN,
+                    EC_valN1: ligne.EC_valN1,
+                    EC_valVar: ligne.EC_valVar,
+                    "EC_%Var": ligne["EC_%Var"],
+                    EC_comment_tab: final_comments,
+                    EC_comment: ligne.EC_comment
+                  };
+                })
+              );
+            } else {
+              return of({
+                EC_lib: ligne.EC_lib,
+                EC_valN: ligne.EC_valN,
+                EC_valN1: ligne.EC_valN1,
+                EC_valVar: ligne.EC_valVar,
+                "EC_%Var": ligne["EC_%Var"],
+                EC_comment_tab: comment_tab,
+                EC_comment: ligne.EC_comment
+              });
+            }
+          }),
+          catchError(() =>
+            of({
+              EC_lib: ligne.EC_lib,
+              EC_valN: ligne.EC_valN,
+              EC_valN1: ligne.EC_valN1,
+              EC_valVar: ligne.EC_valVar,
+              "EC_%Var": ligne["EC_%Var"],
+              EC_comment_tab: [],
+          EC_comment: ligne.EC_comment
+            })
+          )
+        );
+      } else {
+        // ✅ si pas de commentaire → on renvoie direct sans commentaire
+        return of({
+          EC_lib: ligne.EC_lib,
+          EC_valN: ligne.EC_valN,
+          EC_valN1: ligne.EC_valN1,
+          EC_valVar: ligne.EC_valVar,
+          "EC_%Var": ligne["EC_%Var"],
+          EC_comment_tab: [],
+          EC_comment: ligne.EC_comment
+        });
+      }
+    });
+
     forkJoin(requests).subscribe(result => {
       this.infoEvolutionCharges = result;
+      console.log("après", this.infoEvolutionCharges);
     });
   }
 

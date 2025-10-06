@@ -30,4 +30,10 @@ export class DbService {
 
     return this.http.get(`${this.baseUrl}/getInfoFiscale`, { headers: { Authorization: `Bearer ${token}` } })
   };
+
+  GetMontantCharges(comptes: any) {
+    const token = localStorage.getItem('token');
+    
+    return this.http.get(`${this.baseUrl}/getMontantCharges`, { headers: { Authorization: `Bearer ${token}` }, params: { comptes: comptes.join(',') } })
+  };
 }

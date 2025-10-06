@@ -1,5 +1,7 @@
 import { extractCumuls, extractComments, extractImmobEntree, extractImmobSortie, extractAnaSectorielle } from "../services/pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
+import { generateAIComment } from "../services/aiService.js";
+import pLimit from "p-limit";
 
 export async function getCumuls(req, res) {
   try {
@@ -16,10 +18,25 @@ export async function getCumuls(req, res) {
 export async function getComments(req, res) {
   try {
     const { compte } = req.query;
-    const filePath = "./note de synthèse 1.pdf";
+    const filePath = "./CC0758 EFM 12-2024.pdf";
+    const limit = pLimit(3);
     const comments = await extractComments(filePath, compte);
-
-    res.json({ compte, comments });
+    
+    const withAI = await Promise.all(
+      comments.map(c =>
+        limit(async () => {
+          try {
+            const aiText = await generateAIComment("reformuler", { texte: c.commentaire });
+            return { ...c, commentaireReformule: aiText?.trim() || c.commentaire };
+          } catch (err) {
+            console.warn("Erreur IA sur", c.commentaire);
+            return { ...c, commentaireReformule: c.commentaire };
+          }
+        })
+      )
+    );
+    console.log(withAI);
+    res.json({ compte, comments: withAI });
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les commentaires" });

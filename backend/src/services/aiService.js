@@ -46,6 +46,83 @@ export function formatTranches(obj) {
   };
 }
 
+export async function generateAIComment(type, contexte) {
+  let template, prompt;
+
+  if (type === "CA_marge") {
+    const { anneeN, anneeN1, millesimeSecteur, maTranche, CA, MARGE, produitsFinanciers } = contexte;
+
+    if (CA.caN === 0 && produitsFinanciers) {
+      return "L’absence de chiffre d’affaires et la présence exclusive de produits financiers indiquent que la société exerce une activité de type holding non animatrice. Elle ne réalise pas d’activité opérationnelle propre, mais tire ses revenus de placements financiers, de dividendes ou d’intérêts perçus sur ses participations.";
+    }
+
+    template = prompts.generateComment.CA_marge;
+
+    const { intensite: intensiteVariationCA, sens: sensVariationCA } = checkIntensiteVariation(CA.variationPrcCA);
+    const { intensite: intensiteVariationMarge, sens: sensVariationMarge } = checkIntensiteVariation(MARGE.variationPrcMarge);
+
+    const caSecteurStr = formatTranches(CA.caSecteur);
+    const margeSecteurStr = formatTranches(MARGE.margeSecteur);
+
+    const payload = {
+      anneeN,
+      anneeN1,
+      millesimeSecteur,
+      maTranche,
+      caN: CA.caN,
+      caN1: CA.caN1,
+      variationCA: CA.variationCA,
+      variationPrcCA: CA.variationPrcCA,
+      intensiteVariationCA,
+      sensVariationCA,
+      caSecteurGlobale: caSecteurStr.globale,
+      caSecteurDetails: caSecteurStr.details,
+      FDC: "",
+      margeN: MARGE.margeN,
+      margeN1: MARGE.margeN1,
+      margeNPrcCA: MARGE.margeNPrcCA,
+      margeN1PrcCA: MARGE.margeN1PrcCA,
+      variationMarge: MARGE.variationMarge,
+      variationPrcMarge: MARGE.variationPrcMarge,
+      intensiteVariationMarge,
+      sensVariationMarge,
+      margeSecteurGlobale: margeSecteurStr.globale,
+      margeSecteurDetails: margeSecteurStr.details,
+    };
+
+    if (intensiteVariationCA === "forte") {
+      payload.FDC = CA.FDC;
+    }
+
+    prompt = fillTemplate(template, payload);
+  }
+
+  if (type === "investissement") {
+    const { total_entrees, entrees, total_sorties, sorties } = contexte;
+    template = prompts.generateComment.investissement;
+
+    const entreesStr = (entrees || [])
+      .map(e => `${e.libelle} [${(e.designations || []).join(", ")}] (${e.cumul} EUR)`)
+      .join("; ");
+
+    const sortiesStr = (sorties || [])
+      .map(s => `${s.libelle} [${(s.designations || []).join(", ")}] (${s.cumul} EUR)`)
+      .join("; ");
+
+    prompt = fillTemplate(template, { total_entrees, entrees: entreesStr, total_sorties, sorties: sortiesStr });
+  }
+
+  if (type === "reformuler") {
+    const { texte } = contexte;
+    template = prompts.generateComment.reformuler;
+    prompt = fillTemplate(template, { texte });
+  }
+
+  const raw = await callMistral(prompt);
+  return raw;
+}
+
+
 export async function callOllama(message) {
   const resp = await axios.post(
     `${process.env.OLLAMA_BASE_URL}/api/chat`,

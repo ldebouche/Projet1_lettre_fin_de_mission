@@ -46,9 +46,9 @@
           <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valVar) }}</td>
           <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_%Var'], true) }}</td>
         </tr>
-        <ng-container *ngIf="ec.EC_comment.comments.length">
-          <tr *ngFor="let comment of ec.EC_comment.comments">
-            <td class="first-row" colspan="5"><small><i>{{ comment.compte }} - {{ comment.libelle }} - {{ comment.commentaire }}</i></small></td>
+        <ng-container *ngIf="ec.EC_comment">
+          <tr *ngFor="let comment of ec.EC_comment_tab">
+            <td class="first-row" colspan="5"><small><i>{{ comment }}</i></small></td>
           </tr>
         </ng-container>
       </ng-container>

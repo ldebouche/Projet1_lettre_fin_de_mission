@@ -1,3 +1,4 @@
+import { type } from 'os';
 import { poolPromise, sql } from '../config/db.js';
 
 class dbService {
@@ -230,6 +231,22 @@ class dbService {
           WHERE code_ape = @code_ape
         );`,
       { code_ape },
+      false,
+    );
+  }
+
+  async GetMontantCharges(code_client, dateFinEx, comptes) {
+    return this.executeQuery(
+      `SELECT 
+        f.CompteNum,
+        SUM(f.Debit - f.Credit) AS montant
+      FROM FEC f
+      WHERE f.code_client = @code_client
+        AND YEAR(f.datefinex) = YEAR(@dateFinEx)
+        AND f.CompteNum IN (
+          SELECT value FROM STRING_SPLIT(@comptes, ','))
+      GROUP BY f.CompteNum;`,
+      { code_client, dateFinEx, comptes },
       false,
     );
   }
