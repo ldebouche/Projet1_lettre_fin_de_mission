@@ -28,6 +28,7 @@ export class FormulaireComponent implements OnInit {
   loading = true;
   anneeN1Existe = true;
   I_classe2 = true;
+  IS_tot = 0;
   MD_salaries = true;
   imposable = true;
   moisClotureArray = [''];
@@ -100,6 +101,7 @@ export class FormulaireComponent implements OnInit {
         this.anneeN1Existe = data.anneeN1Existe;
         this.resEx = data.resEx;
         this.I_classe2 = data.I_classe2;
+        this.IS_tot = data.IS_tot;
         this.MD_salaries = data.MD_salaries;
         this.imposable = data.imposable;
         this.forme_societe = data.forme_societe;

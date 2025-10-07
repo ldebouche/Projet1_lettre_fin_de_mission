@@ -7,34 +7,34 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 
     <!-- ===== CHIFFRES CLÉS ===== -->
-    <section-chiffres-cles [group]="f.CC" [infoChiffresCles]="infoChiffresCles" [anneeN1Existe]="anneeN1Existe" [dataPerspective]="f.CC.get('comPerspective')" [dataCA]="dataCA" [anaSectorielle]="anaSectorielle"></section-chiffres-cles>
+    <section-chiffres-cles [group]="f.CC" [infoChiffresCles]="infoChiffresCles" [anneeN1Existe]="anneeN1Existe" [dataPerspective]="f.CC.get('comPerspective')" [dataCA]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe"></section-chiffres-cles>
 
     <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
     <section-evolution-charges-component [group]="f.EC" [infoEvolutionCharges]="infoEvolutionCharges" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
 
     <!-- ===== CHARGES DE PERSONNEL ===== -->
-    <section-charges-personnel-component [group]="f.CP"></section-charges-personnel-component>
+    <section-charges-personnel-component [group]="f.CP" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
     
     <!-- ===== INVESTISSEMENTS ===== -->
-    <section-investissement-component [group]="f.I" [dotations]="dotations"></section-investissement-component>
+    <section-investissement-component [group]="f.I" [dotations]="dotations" *ngIf="I_classe2"></section-investissement-component>
 
     <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
     <section-impot-societes-tab-component [group]="f.IS"></section-impot-societes-tab-component>
 
     <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
-    <section-acompte-impot-component [group]="f.AI"  [moisCloture]="moisClotureArray"></section-acompte-impot-component>
+    <section-acompte-impot-component [group]="f.AI"  [moisCloture]="moisClotureArray" *ngIf="imposable && resEx >= 0 && IS_tot > 3000"></section-acompte-impot-component>
 
     <!-- ===== INFORMATION FISCALE ===== -->
     <section-info-fiscale-component [formArray]="IF" [items]="informations_fiscales" ></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" ></section-projet-affect-resultat-component>
+    <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
 
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
     <section-estim-autofinancement-component [group]="f.EA" [resEx]="resEx" [dotation]="dotations[1]"></section-estim-autofinancement-component>
 
     <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
-    <section-majdoc-unique-eval-component [group]="f.MD"></section-majdoc-unique-eval-component>
+    <section-majdoc-unique-eval-component [group]="f.MD" *ngIf="MD_salaries"></section-majdoc-unique-eval-component>
 
     <!-- ===== FAITS MARQUANTS ===== -->
     <section-faits-marquants-component [group]="f.FM" [data]="f.FM.get('commentaire')"></section-faits-marquants-component>
