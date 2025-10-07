@@ -1,27 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-
-import { ChiffresClesComponent } from './sections/ChiffresClesComponent/chiffres-cles-component';
-import { EvolutionChargesComponent } from './sections/EvolutionChargesComponent/evolution-charges-component';
-import { ChargesPersonnelComponent } from './sections/ChargesPersonnelComponent/charges-personnel-component';
-import { InvestissementComponent } from './sections/InvestissementComponent/investissement-component';
-import { ImpotSocietesTabComponent } from './sections/ImpotSocietesTabComponent/impot-societes-tab-component';
-import { AcompteImpotComponent } from './sections/AcompteImpotComponent/acompte-impot-component';
-import { InfoFiscaleComponent } from './sections/InfoFiscaleComponent/info-fiscale-component';
-import { ProjetAffectResultatComponent } from './sections/ProjetAffectResultatComponent/projet-affect-resultat-component';
-import { EstimAutofinancementComponent } from './sections/EstimAutofinancementComponent/estim-autofinancement-component';
-import { MAJDocUniqueEvalComponent } from './sections/MAJDocUniqueEvalComponent/majdoc-unique-eval-component';
-import { FaitsMarquantsComponent } from './sections/FaitsMarquantsComponent/faits-marquants-component';
-import { PerspectivesComponent } from './sections/PerspectivesComponent/perspectives-component';
-import { SignataireComponent } from './sections/SignataireComponent/signataire-component';
+import { forkJoin } from 'rxjs';
 
 import { DbService } from '../../services/db-service';
 import { WordService } from '../../services/word-service';
 import { PdfService } from '../../services/pdf-service';
-import { of, forkJoin } from 'rxjs';
-import { map, catchError, switchMap } from 'rxjs/operators';
-import { PointsImportantsComponent } from './sections/PointsImportantsComponent/points-importants-component';
+import { FormulaireService } from '../../services/formulaire-service';
+import { FiscaliteService } from '../../services/fiscalite-service';
+import { ChargesService } from '../../services/charges-service';
+import { FormatService } from '../../services/format-service';
+import { SectionsModule } from './sections/sections-module';
 
 @Component({
   selector: 'app-formulaire',
@@ -29,29 +18,14 @@ import { PointsImportantsComponent } from './sections/PointsImportantsComponent/
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    ChiffresClesComponent,
-    EvolutionChargesComponent,
-    ChargesPersonnelComponent,
-    InvestissementComponent,
-    ImpotSocietesTabComponent,
-    AcompteImpotComponent,
-    InfoFiscaleComponent,
-    ProjetAffectResultatComponent,
-    EstimAutofinancementComponent,
-    MAJDocUniqueEvalComponent,
-    FaitsMarquantsComponent,
-    PerspectivesComponent,
-    PointsImportantsComponent,
-    SignataireComponent
+    SectionsModule
   ],
   templateUrl: './formulaire.html',
   styleUrls: ['./formulaire.scss']
 })
 export class FormulaireComponent implements OnInit {
-  commentaire = '';
   form!: FormGroup;
   loading = true;
-
   anneeN1Existe = true;
   I_classe2 = true;
   MD_salaries = true;
@@ -60,15 +34,6 @@ export class FormulaireComponent implements OnInit {
   resEx = 0;
   forme_societe = '';
   categorie_revenu = '';
-
-  phraseAcomptes = '';
-
-  signataire = {
-    nomExpert: '',
-    prenomExpert: '',
-    nomReviseur: '',
-    prenomReviseur: ''
-  };
 
   choixAffectation = [
     "Fonds associatifs",
@@ -89,49 +54,35 @@ export class FormulaireComponent implements OnInit {
 
   dotations = [0, 0, 0];
 
-  informations_fiscales = [
-      'Rénovation et taux réduit de TVA',
-      "Prestataire sous-traitant : l\'attestation de vigilence",
-      'Utilisation de une ou plusieurs caisses enregistreuses ou d\'un système informatique de caisse',
-      'Créances irrécouvrables',
-      'Rupture dans une séquence de numérotation de facturation',
-      'Perte de la moitié de capital social',
-      'Comptes courants débiteurs',
-      'Obligation FEC (pour les comptabilités externes)',
-      'Obligation des entreprises individuelles',
-      'Déclaration de revenus : obligation du gérant de transmettre les documents aux associés',
-      'Non affiliation à la médecine du travail',
-      'Retard dépot déclaration fiscale : retard dépot documents',
-      'Retard dépot déclaration fiscale : retard règlement honoraires',
-      'Protection sociale'
-    ];
-
-  infoChargesPersonnel: any;
-  infoImpotSociete: any;
-  infoClient: any;
-  infoChiffresCles: any;
-  infoAutofinancement: any;
-  infoEvolutionCharges: any;
+  infoChargesPersonnel: any = {};
+  infoImpotSociete: any = {};
+  infoClient: any = {};
+  infoChiffresCles: any = {};
+  infoAutofinancement: any = {};
+  infoEvolutionCharges: any = {};
+  informations_fiscales!: string[];
 
   dataCA = {};
   dataMarge = {};
   anaSectorielle: any;
-  CC_textePerspective = '';
   
   constructor(
-    private fb: FormBuilder,
+    private pdfService: PdfService,
+    private formService: FormulaireService,
+    private fiscaliteService: FiscaliteService,
+    private chargesService: ChargesService,
+    private formatService: FormatService,
     private db: DbService,
-    private wordService: WordService,
-    private pdfService: PdfService
+    private wordService: WordService
   ) {
-    this.form = this.buildForm();
+    this.informations_fiscales = this.formService.informations_fiscales;
   }
 
-  private texteRefactor(texte: string): string {
-    return texte[0].replace(/ - /g, '\n - ').trim();
-  }
+  
 
   ngOnInit(): void {
+    this.form = this.formService.buildForm();
+
     forkJoin({
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations()
@@ -145,8 +96,8 @@ export class FormulaireComponent implements OnInit {
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
-        this.loadEvoChargesWithComments(data.evolutionCharges);
-        
+        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges)
+          .subscribe(res => (this.infoEvolutionCharges = res));
 
         this.anneeN1Existe = data.anneeN1Existe;
         this.resEx = data.resEx;
@@ -155,7 +106,6 @@ export class FormulaireComponent implements OnInit {
         this.imposable = data.imposable;
         this.forme_societe = data.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
-        this.signataire = data.signataire;
 
         this.dataCA = {
           caN: data.chiffreCles.CC_caN,
@@ -175,60 +125,23 @@ export class FormulaireComponent implements OnInit {
         };
 
         this.anaSectorielle = data.anaSectorielle.valeurs;
-        this.CC_textePerspective = this.texteRefactor(data.anaSectorielle.commentaire);
+        const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
-        if (data.mois_cloture == 12 || data.mois_cloture == 1 || data.mois_cloture == 2) {
-          this.moisClotureArray = ['03', '06', '09', '12'];
-        } else if (data.mois_cloture == 3 || data.mois_cloture == 4 || data.mois_cloture == 5) {
-          this.moisClotureArray = ['06', '09', '12', '03'];
-        } else if (data.mois_cloture == 6 || data.mois_cloture == 7 || data.mois_cloture == 8) {
-          this.moisClotureArray = ['09', '12', '03', '06'];
-        } else if (data.mois_cloture == 9 || data.mois_cloture == 10 || data.mois_cloture == 11) {
-          this.moisClotureArray = ['12', '03', '06', '09'];
-        }
+        this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
 
-        if (this.forme_societe.startsWith("ASS")){
-          this.PA_affectation = this.choixAffectation[0];
-          this.valeurAffectation = data.resEx;
-        } else if (this.forme_societe == "SCI" && this.categorie_revenu == "rfonc") {
-          this.PA_affectation = this.choixAffectation[2];
-          if (data.resEx > 0) {
-            this.valeurAffectation = data.resEx;
-          } else {
-            this.valeurReportNouveau = data.resEx;
-          }
-        } else {
-          this.PA_affectation = this.choixAffectation[1];
-          this.valeurAffectation = this.montantDividendesN1;
-          if (data.resEx > 0) {
-            if (this.montantReserveLegale == this.capitalSocial * 0.1) {
-              this.valeurReserveLegale = 0;
-              this.valeurReserveOrdinaire = data.resEx;
-            } else if (this.montantReserveLegale < this.capitalSocial * 0.1 && this.capitalSocial * 0.1 - this.montantReserveLegale - data.resEx <= 0) {
-              this.valeurReserveLegale = this.capitalSocial * 0.1 - this.montantReserveLegale;
-              this.valeurReserveOrdinaire = data.resEx - this.valeurReserveLegale;
-            } else if (this.montantReserveLegale < this.capitalSocial * 0.1 && this.capitalSocial * 0.1 - this.montantReserveLegale - data.resEx > 0) {
-              this.valeurReserveLegale = data.resEx;
-              this.valeurReserveOrdinaire = 0;
-            }
-          } else if (data.resEx < 0) {
-            if (data.resEx + this.montantReserveOrdinaire >= 0) {
-              this.valeurReserveOrdinaire -= data.resEx;
-            } else {
-              this.valeurReportNouveau = data.resEx + this.montantReserveOrdinaire;
-            }
-          }
-        };
+        const affectation = this.fiscaliteService.calculAffectation(
+          data,
+          data.capitalSocial ?? 0,
+          data.montantDividendesN1 ?? 0
+        );
 
-        if (data.resEx < 0) {
-          this.phraseAcomptes = 'Compte tenu du déficit constaté, aucun acompte d\'impôt sur les sociétés n\'est exigible au titre de l\'exercice à venir.'
-        } else if (data.resEx >= 0 && this.infoImpotSociete.IS_tot <= 3000) {
-          this.phraseAcomptes = 'Le montant total de l\'impot sur les sociétés dû au titre de cet exercice étant inférieur à 3000 €, aucun acompte n\'est exigible pour l\'exercice suivant.'
-        }
+        const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.IS_tot);
+
+        
 
         this.form.patchValue({
           CC: {
-            comPerspective: this.CC_textePerspective
+            comPerspective
           },
           I: {
             masquerSection: data.I_classe2,
@@ -237,7 +150,7 @@ export class FormulaireComponent implements OnInit {
             prevAmoN2: Math.round(this.dotations[2])
           },
           IS: {
-            phraseAcomptes: this.phraseAcomptes
+            phraseAcomptes
           },
           AI: {
             acompte1: Math.round(data.acompte_total/4),
@@ -247,11 +160,11 @@ export class FormulaireComponent implements OnInit {
           },
           PA: {
             resEx: Math.round(data.resEx),
-            resLeg: Math.round(this.valeurReserveLegale),
-            resOrd: Math.round(this.valeurReserveOrdinaire),
-            report: Math.round(this.valeurReportNouveau),
-            affectation: this.PA_affectation,
-            affect: Math.round(this.valeurAffectation)
+            resLeg: Math.round(affectation.resLeg),
+            resOrd: Math.round(affectation.resOrd),
+            report: Math.round(affectation.report),
+            affectation: affectation.affectation,
+            affect: Math.round(affectation.affect)
           },
           AF: {
             enabled: data.tabAutofinancement
@@ -264,10 +177,8 @@ export class FormulaireComponent implements OnInit {
             enabled: data.MD_salaries
           },
           S: {
-            nomExpert: `${this.signataire.nomExpert} ${this.signataire.prenomExpert}`,
-            qualiteExpert: 'Expert-Comptable',
-            nomReviseur: `${this.signataire.nomReviseur} ${this.signataire.prenomReviseur}`,
-            qualiteReviseur: 'Chef de groupe'
+            nomExpert: `${data.signataire.nomExpert} ${data.signataire.prenomExpert}`,
+            nomReviseur: `${data.signataire.nomReviseur} ${data.signataire.prenomReviseur}`,
           }
         });
         
@@ -280,267 +191,14 @@ export class FormulaireComponent implements OnInit {
     })
   }
 
-
-  private buildForm(): FormGroup {
-    return this.fb.group({
-      // ===== CHIFFRES CLÉS =====
-      CC: this.fb.group({
-        comPerspective: [''],
-        commentaire: ['']
-      }),
-
-      // ===== ÉVOLUTION CHARGES EXTERNES & AUTRES ACHATS =====
-      EC: this.fb.group({
-        masquerSection: [false],
-        montantVariationMin: [0.00],
-        montantVariationMinPourcentage: [0.00],
-        montantMinAffiché: [0.00],
-        commentaire: ['']
-      }),
-
-      // ===== CHARGES DE PERSONNEL =====
-      CP: this.fb.group({
-        heuresRemunN: [0.00],
-        heuresRemunN1: [0.00],
-        annexeCotisationsEnabled: [false]
-      }),
-
-      // ===== INVESTISSEMENTS =====
-      I: this.fb.group({
-        masquerSection: [false],
-        commentaire: [''],
-        prevAmoN: [0.00],
-        prevAmoN1: [0.00],
-        prevAmoN2: [0.00]
-      }),
-
-      // ===== IMPÔT SUR LES SOCIÉTÉS =====
-      IS: this.fb.group({
-        masquerSection: [false],
-        acomptes: [0.00],
-        montant: [0.00],
-        choixMontant: [''],
-        phraseAcomptes: ['']
-      }),
-
-      // ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 =====
-      AI: this.fb.group({
-        masquerSection: [false],
-        acompte1: [0.00],
-        acompte2: [0.00],
-        acompte3: [0.00],
-        acompte4: [0.00]
-      }),
-
-      // ===== INFORMATION FISCALE =====
-      IF: this.fb.array(
-        this.informations_fiscales.map(() => this.fb.control(false))
-      ),
-
-      // ===== PROJET D’AFFECTATION DU RÉSULTAT =====
-      PA: this.fb.group({
-        resEx: [0.00],
-        resLeg: [0.00],
-        resOrd: [0.00],
-        report: [0.00],
-        affectation: [''],
-        affect: [0.00]
-      }),
-
-      // ===== TABLEAU D’AUTOFINANCEMENT =====
-      AF: this.fb.group({
-        enabled: [true]
-      }),
-
-      // ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL =====
-      EA: this.fb.group({
-        enabled: [false],
-        resEx: [0.00],
-        dot: [0.00],
-        rembours: [0.00],
-        divi: [0.00],
-        capa: [0.00]
-      }),
-
-      // ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE =====
-      MD: this.fb.group({
-        enabled: [false]
-      }),
-
-      // ===== FAITS MARQUANTS DE L'EXERCICE =====
-      FM: this.fb.group({
-        enabled: [false],
-        commentaire: [''],
-        commentairesRevision: [false],
-        justificationsDemandes: [false]
-      }),
-
-      // ===== LES PERSPECTIVES =====
-      P: this.fb.group({
-        commentaire: ['']
-      }),
-
-      // ===== POINTS IMPORTANTs =====
-      PI: this.fb.group({
-        commentaire: ['']
-      }),
-
-      // ===== SIGNATAIRE =====
-      S: this.fb.group({
-        nomExpert: [this.signataire?.nomExpert],
-        qualiteExpert: ['Expert-Comptable'],
-        nomReviseur: [this.signataire?.nomReviseur],
-        qualiteReviseur: ['Chef de groupe']
-      })
-    });
-  }
-
   get f() { return this.form.controls as any; }
   get IF(): FormArray { return this.form.get('IF') as FormArray; }
 
-  private loadEvoChargesWithComments(evoCharges: any[]) {
-    console.log("avant", evoCharges);
-
-    const requests = evoCharges.map(ligne => {
-      if (ligne.EC_comment) {
-        return this.pdfService.getComments(ligne.EC_numCompte).pipe(
-          switchMap((rawComment: any) => {
-            let comptes: string[] = [];
-            let comment_tab: any[] = [];
-
-            if (rawComment && typeof rawComment === 'object' && Array.isArray(rawComment.comments)) {
-              comptes = rawComment.comments.map((c: any) => c.compte);
-              comment_tab = rawComment.comments.map((c: any) => {
-                const libelle = c.libelle ? ` - ${c.libelle}` : '';
-                const texte = c.commentaireReformule ? ` - ${c.commentaireReformule}` : '';
-                return { compte: c.compte, texte: `${c.compte}${libelle}${texte}` };
-              });
-            }
-
-            if (comptes.length > 0) {
-              return this.db.GetMontantCharges(comptes).pipe(
-                map((montants: any) => {
-                  const montantDict: any = {};
-                  montants.forEach((m: any) => {
-                    montantDict[m.CompteNum.trim()] = Number(Math.round(m.montant)).toLocaleString('fr-FR');
-                  });
-
-                  const final_comments = comment_tab.map((c: any) => {
-                    const texte = c.texte ?? '';
-                    const montant = montantDict[c.compte] ? ` - ${montantDict[c.compte]} €` : '';
-                    return `${texte}${montant}`;
-                  });
-
-                  return {
-                    EC_lib: ligne.EC_lib,
-                    EC_valN: ligne.EC_valN,
-                    EC_valN1: ligne.EC_valN1,
-                    EC_valVar: ligne.EC_valVar,
-                    "EC_%Var": ligne["EC_%Var"],
-                    EC_comment_tab: final_comments,
-                    EC_comment: ligne.EC_comment
-                  };
-                })
-              );
-            } else {
-              return of({
-                EC_lib: ligne.EC_lib,
-                EC_valN: ligne.EC_valN,
-                EC_valN1: ligne.EC_valN1,
-                EC_valVar: ligne.EC_valVar,
-                "EC_%Var": ligne["EC_%Var"],
-                EC_comment_tab: comment_tab,
-                EC_comment: ligne.EC_comment
-              });
-            }
-          }),
-          catchError(() =>
-            of({
-              EC_lib: ligne.EC_lib,
-              EC_valN: ligne.EC_valN,
-              EC_valN1: ligne.EC_valN1,
-              EC_valVar: ligne.EC_valVar,
-              "EC_%Var": ligne["EC_%Var"],
-              EC_comment_tab: [],
-          EC_comment: ligne.EC_comment
-            })
-          )
-        );
-      } else {
-        // ✅ si pas de commentaire → on renvoie direct sans commentaire
-        return of({
-          EC_lib: ligne.EC_lib,
-          EC_valN: ligne.EC_valN,
-          EC_valN1: ligne.EC_valN1,
-          EC_valVar: ligne.EC_valVar,
-          "EC_%Var": ligne["EC_%Var"],
-          EC_comment_tab: [],
-          EC_comment: ligne.EC_comment
-        });
-      }
-    });
-
-    forkJoin(requests).subscribe(result => {
-      this.infoEvolutionCharges = result;
-      console.log("après", this.infoEvolutionCharges);
-    });
-  }
-
-  private formatPayload(obj: any, parentKey?: string): any {
-    const formatNumber = (val: any, key?: string) => {
-      if (typeof val !== 'number' || isNaN(val)) return val;
-
-      // Si c’est un pourcentage
-      if (key && key.includes('%')) {
-        if (val < -100 || val > 100) {
-          return 'NS';
-        }
-        return Number(val.toFixed(2)).toLocaleString('fr-FR');
-      }
-
-      // Sinon, arrondi normal
-      return Math.round(val).toLocaleString('fr-FR');
-    };
-
-    if (Array.isArray(obj)) {
-      return obj.map((item) => this.formatPayload(item, parentKey));
-    } else if (typeof obj === 'object' && obj !== null) {
-      return Object.keys(obj).reduce((acc, key) => {
-        acc[key] = this.formatPayload(obj[key], key);
-        return acc;
-      }, {} as any);
-    } else {
-      return formatNumber(obj, parentKey);
-    }
-  }
-
-  private formatEvoCharges(obj: any[], form: any) {
-    return obj.filter(ligne => {
-      let validPrc = true;
-      if (Math.abs(ligne['EC_%Var']) > 100) {
-        validPrc = false;
-      }
-      const displayPrcVar =
-        form['EC']['montantVariationMinPourcentage'] === 0 ||
-        (ligne['EC_%Var'] &&
-          validPrc &&
-          Math.abs(ligne['EC_%Var']) >= form['EC']['montantVariationMinPourcentage']);
-      
-      console.log(form['EC']['montantVariationMinPourcentage']);
-
-      return (
-        ligne['EC_valN'] >= form['EC']['montantMinAffiché'] &&
-        Math.abs(ligne['EC_valVar']) >= form['EC']['montantVariationMin'] &&
-        displayPrcVar
-      );
-    });
-  }
-
-
   onSubmit() {
+    const EA = this.form.value.EA;
     this.form.patchValue({
       EA: {
-        capa: this.form.value.EA.resEx + this.form.value.EA.dot - this.form.value.EA.rembours - this.form.value.EA.divi
+        capa: EA.resEx + EA.dot - EA.rembours - EA.divi
       }
     });
 
@@ -562,22 +220,19 @@ export class FormulaireComponent implements OnInit {
 
     const infoArray: boolean[] = formData.IF;
 
-    const hasAny = infoArray.some(v => v === true);
-
     const infoFlags = this.informations_fiscales.reduce((acc, label, idx) => {
       const key = label.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
       acc[key] = infoArray[idx];
       return acc;
     }, {} as Record<string, boolean>);
 
-    const evoChargesApresAffichage = this.formatEvoCharges(this.infoEvolutionCharges, formData);
-
+    const evoChargesApresAffichage = this.chargesService.formatEvoCharges(this.infoEvolutionCharges, formData);
 
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
       informationFiscale: infoFlags,
-      informationFiscale_hasAny: hasAny,
+      informationFiscale_hasAny: infoArray.some(v => v === true),
       anneeN1Existe: this.anneeN1Existe,
       ...this.infoClient,
       ...this.infoChiffresCles,
@@ -587,16 +242,16 @@ export class FormulaireComponent implements OnInit {
       EC_tab: evoChargesApresAffichage
     };
 
-    const formattedPayload = this.formatPayload(payload);
-    console.log(formattedPayload);
+    const formattedPayload = this.formatService.formatPayload(payload);
+    this.wordService.generateWord(formattedPayload).subscribe(blob => this.downloadWord(blob));
+  }
 
-    this.wordService.generateWord(formattedPayload).subscribe((blob) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'LFM_test.docx'; 
-      a.click();
-      window.URL.revokeObjectURL(url);
-    });
+  private downloadWord(blob: Blob): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Lettre_fin_de_mission.docx';
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 }

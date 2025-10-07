@@ -1,4 +1,4 @@
-import dbService from '../services/dbService.js';
+import dbService, { selectSite } from '../services/dbService.js';
 import { comptesMapping } from '../utils/comptesMapping.js';
 
 export const GetDossierInfos = async (req, res) => {
@@ -7,18 +7,21 @@ export const GetDossierInfos = async (req, res) => {
     const anneeN = new Date(dateFinEx).getFullYear();
     const anneeN1 = anneeN - 1;
 
-    // Récupération des infos
-    const [infoClients, signataire, aggregats, infoEvoCharges, anaSectorielle] = await Promise.all([
-      dbService.GetInfoClients(code_client, dateFinEx),
+    const infoClients = await dbService.GetInfoClients(code_client, dateFinEx);
+    console.log("infoClients =", infoClients);
+
+    const [signataire, aggregats, infoEvoCharges, anaSectorielle] = await Promise.all([
       dbService.GetSignataire(code_client, dateFinEx),
       dbService.GetAggregats(code_client, dateFinEx),
       dbService.GetInfoEvoCharges(code_client, dateFinEx),
-      dbService.GetAnaSectorielle((await dbService.GetInfoClients(code_client))?.code_ape)
+      dbService.GetAnaSectorielle(infoClients.code_ape)
     ]);
 
     const aggN = aggregats.find(a => a.annee === anneeN) || {};
     const aggN1 = aggregats.find(a => a.annee === anneeN1) || {};
-
+    
+    const siteSelectionne = selectSite(infoClients.site.trim());
+    console.log(siteSelectionne);
     res.json({
       // === Infos générales ===
       anneeN1Existe: !!aggN1.annee,
@@ -47,7 +50,8 @@ export const GetDossierInfos = async (req, res) => {
         villeClient: infoClients.villeClient,
         lieuCreation: infoClients.lieuCreation,
         dateCreation: new Date().toLocaleDateString('fr-FR'),
-        initialesChefGroupe: infoClients.initialesChefGroupe
+        initialesChefGroupe: infoClients.initialesChefGroupe,
+        site: siteSelectionne,
       },
 
       // === Chiffres clés ===

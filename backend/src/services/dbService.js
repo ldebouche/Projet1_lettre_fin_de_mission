@@ -58,7 +58,8 @@ class dbService {
         TRIM(c.ville_siege) AS villeClient,
         TRIM(c.site) AS lieuCreation,
         CONCAT(LEFT(collab.nom, 1), LEFT(collab.prenom, 1), ' ', TRIM(c.code_client)) AS initialesChefGroupe,
-        CASE WHEN c.forme_societe LIKE 'ass%' AND regime_fiscal = 'a' THEN CAST(0 AS bit) ELSE CAST(1 AS bit) END AS tabAutofinancement
+        CASE WHEN c.forme_societe LIKE 'ass%' AND regime_fiscal = 'a' THEN CAST(0 AS bit) ELSE CAST(1 AS bit) END AS tabAutofinancement,
+        c.site AS site
       FROM clients AS c
       INNER JOIN collaborateurs AS collab ON c.chef_de_mission = collab.id_sellsy
       WHERE c.code_client = @code_client;`,
@@ -253,3 +254,24 @@ class dbService {
 }
 
 export default new dbService();
+
+export function selectSite(ville) {
+  const site = {
+    'Baume les Dames' : {
+      adresse: '6 RUE ERNEST NICOLAS',
+      cp: '25110',
+      ville: 'BAUME LES DAMES'
+    },
+    'Besançon' : {
+      adresse: '9 RUE JACQUARD',
+      cp: '25000',
+      ville: 'BESANCON'
+    },
+    'Morteau' : {
+      adresse: '13 RUE RENE PAYOT',
+      cp: '25500',
+      ville: 'MORTEAU'
+    }
+  };
+  return site[ville];
+}
