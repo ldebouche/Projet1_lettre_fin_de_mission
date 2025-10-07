@@ -1,3 +1,8 @@
+<div *ngIf="loading" class="loading-screen">
+  <div class="spinner"></div>
+  <p>Chargement des données en cours...</p>
+</div>
+
 <div *ngIf="!loading">
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 

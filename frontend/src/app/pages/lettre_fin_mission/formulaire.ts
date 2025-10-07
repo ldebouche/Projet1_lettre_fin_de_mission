@@ -96,8 +96,6 @@ export class FormulaireComponent implements OnInit {
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
-        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges)
-          .subscribe(res => (this.infoEvolutionCharges = res));
 
         this.anneeN1Existe = data.anneeN1Existe;
         this.resEx = data.resEx;
@@ -182,7 +180,16 @@ export class FormulaireComponent implements OnInit {
           }
         });
         
-        this.loading = false;
+        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
+          next: (res) => {
+            this.infoEvolutionCharges = res;
+            this.loading = false;
+          },
+          error: (err) => {
+            console.error("Erreur lors du chargement des charges :", err);
+            this.loading = false;
+          }
+        });
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
