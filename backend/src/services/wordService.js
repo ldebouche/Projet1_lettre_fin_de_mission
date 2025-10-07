@@ -31,7 +31,7 @@ function flattenObject(obj, parentKey = "", result = {}) {
 
 export function genererWord(variables) {
   const templateName = variables.anneeN1Existe
-    ? "modele_complet_formate.docx"
+    ? "modele_complet.docx"
     : "modele_simple.docx";
 
   const templatePath = path.join(process.cwd(), "templates", templateName);
