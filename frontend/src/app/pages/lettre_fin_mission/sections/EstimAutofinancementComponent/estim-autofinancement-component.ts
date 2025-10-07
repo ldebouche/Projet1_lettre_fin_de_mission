@@ -1,12 +1,14 @@
 import { Component , Input } from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 
 @Component({
   selector: 'section-estim-autofinancement-component',
   imports: [
     CommonModule, 
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    ZeroIfEmpty
   ],
   templateUrl: './estim-autofinancement-component.html',
   styleUrl: './estim-autofinancement-component.scss'

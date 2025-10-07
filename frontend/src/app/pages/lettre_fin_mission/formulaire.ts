@@ -509,10 +509,17 @@ export class FormulaireComponent implements OnInit {
 
   private formatEvoCharges(obj: any[], form: any) {
     return obj.filter(ligne => {
+      let validPrc = true;
+      if (Math.abs(ligne['EC_%Var']) > 100) {
+        validPrc = false;
+      }
       const displayPrcVar =
         form['EC']['montantVariationMinPourcentage'] === 0 ||
         (ligne['EC_%Var'] &&
+          validPrc &&
           Math.abs(ligne['EC_%Var']) >= form['EC']['montantVariationMinPourcentage']);
+      
+      console.log(form['EC']['montantVariationMinPourcentage']);
 
       return (
         ligne['EC_valN'] >= form['EC']['montantMinAffiché'] &&

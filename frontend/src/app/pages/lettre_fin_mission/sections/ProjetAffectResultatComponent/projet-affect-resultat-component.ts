@@ -3,12 +3,14 @@ import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 import { DbService } from '../../../../services/db-service';
+import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 
 @Component({
   selector: 'section-projet-affect-resultat-component',
   imports: [
     CommonModule, 
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    ZeroIfEmpty
   ],
   templateUrl: './projet-affect-resultat-component.html',
   styleUrl: './projet-affect-resultat-component.scss'

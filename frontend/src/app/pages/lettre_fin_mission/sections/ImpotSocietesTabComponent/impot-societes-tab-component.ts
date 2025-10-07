@@ -1,12 +1,14 @@
 import { Component , Input} from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 
 @Component({
   selector: 'section-impot-societes-tab-component',
   imports: [
     CommonModule, 
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    ZeroIfEmpty
   ],
   templateUrl: './impot-societes-tab-component.html',
   styleUrl: './impot-societes-tab-component.scss'
