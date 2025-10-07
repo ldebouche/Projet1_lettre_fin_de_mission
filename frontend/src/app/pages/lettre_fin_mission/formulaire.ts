@@ -21,6 +21,7 @@ import { WordService } from '../../services/word-service';
 import { PdfService } from '../../services/pdf-service';
 import { of, forkJoin } from 'rxjs';
 import { map, catchError, switchMap } from 'rxjs/operators';
+import { PointsImportantsComponent } from './sections/PointsImportantsComponent/points-importants-component';
 
 @Component({
   selector: 'app-formulaire',
@@ -40,6 +41,7 @@ import { map, catchError, switchMap } from 'rxjs/operators';
     MAJDocUniqueEvalComponent,
     FaitsMarquantsComponent,
     PerspectivesComponent,
+    PointsImportantsComponent,
     SignataireComponent
   ],
   templateUrl: './formulaire.html',
@@ -375,6 +377,11 @@ export class FormulaireComponent implements OnInit {
 
       // ===== LES PERSPECTIVES =====
       P: this.fb.group({
+        commentaire: ['']
+      }),
+
+      // ===== POINTS IMPORTANTs =====
+      PI: this.fb.group({
         commentaire: ['']
       }),
 

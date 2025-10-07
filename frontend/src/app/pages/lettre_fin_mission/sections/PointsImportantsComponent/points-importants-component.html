@@ -1,0 +1,9 @@
+<fieldset class="block" [formGroup]="group">
+    <legend><span class="titre">POINTS IMPORTANTS</span></legend>
+    <textarea 
+        rows="4" 
+        class="area"
+        formControlName="commentaire">
+    </textarea>
+    <bouton-textarea class="reformuler" formControlName="commentaire" buttonLabel="Reformuler" categorie="reformuler" [data]="data"></bouton-textarea>
+</fieldset>
