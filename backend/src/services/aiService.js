@@ -1,5 +1,12 @@
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 import fs from 'fs';
+
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: retryCount => retryCount * 2000,
+  retryCondition: error => error.response?.status === 429
+});
 
 const prompts = JSON.parse(fs.readFileSync('./config/prompts.json', 'utf-8'));
 
