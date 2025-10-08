@@ -42,6 +42,8 @@ export const GetDossierInfos = async (req, res) => {
 
       // === Infos client ===
       client: {
+        code_client,
+        anneeN: String(anneeN).replace(/\D/g, ''),
         nomEntreprise: infoClients.nomEntreprise,
         adrEntreprise1: infoClients.adresseEntreprise1,
         adrEntreprise2: infoClients.adresseEntreprise2,

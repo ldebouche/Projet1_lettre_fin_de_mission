@@ -1,8 +1,8 @@
 import express from "express";
-import { generateWordFile } from "../controllers/wordController.js";
+import { generateWord } from "../controllers/wordController.js";
 
 const router = express.Router();
 
-router.post("/generate", generateWordFile);
+router.post("/generateWord", generateWord);
 
 export default router;

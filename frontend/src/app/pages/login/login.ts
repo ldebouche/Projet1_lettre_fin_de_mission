@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { DbService } from '../../services/db-service';
+import { DataService } from '../../services/data-service';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +22,7 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private db: DbService,
+    private dataService: DataService,
     private router: Router
   ) {
     this.form = this.buildForm();
@@ -43,6 +45,7 @@ export class LoginComponent {
     .subscribe({
       next: (res) => {
         localStorage.setItem('token', res.token);
+        this.dataService.setCodeClient(this.form.value.code_client);
         this.errorMessage = '';
         this.router.navigate(['/formulaire']);
       },

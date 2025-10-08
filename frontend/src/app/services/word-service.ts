@@ -8,7 +8,7 @@ export class WordService {
 
   constructor(private http: HttpClient) {}
 
-  generateWord(data: any): Observable<Blob> {
-    return this.http.post(`${this.apiUrl}/generate`, data, {responseType: 'blob'});
+  generateWord(variables: any, folderPath: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/generateWord`, { variables, folderPath });
   }
 }

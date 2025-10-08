@@ -11,6 +11,7 @@ import { FiscaliteService } from '../../services/fiscalite-service';
 import { ChargesService } from '../../services/charges-service';
 import { FormatService } from '../../services/format-service';
 import { SectionsModule } from './sections/sections-module';
+import { DataService } from '../../services/data-service';
 
 @Component({
   selector: 'app-formulaire',
@@ -26,6 +27,8 @@ import { SectionsModule } from './sections/sections-module';
 export class FormulaireComponent implements OnInit {
   form!: FormGroup;
   loading = true;
+  code_client = '';
+  anneeN = 0;
   anneeN1Existe = true;
   I_classe2 = true;
   IS_tot = 0;
@@ -74,9 +77,11 @@ export class FormulaireComponent implements OnInit {
     private chargesService: ChargesService,
     private formatService: FormatService,
     private db: DbService,
-    private wordService: WordService
+    private wordService: WordService,
+    private dataService: DataService
   ) {
     this.informations_fiscales = this.formService.informations_fiscales;
+    this.code_client = this.dataService.getCodeClient();
   }
 
   
@@ -98,6 +103,7 @@ export class FormulaireComponent implements OnInit {
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
 
+        this.anneeN = data.anneeN;
         this.anneeN1Existe = data.anneeN1Existe;
         this.resEx = data.resEx;
         this.I_classe2 = data.I_classe2;
@@ -256,15 +262,9 @@ export class FormulaireComponent implements OnInit {
     };
 
     const formattedPayload = this.formatService.formatPayload(payload);
-    this.wordService.generateWord(formattedPayload).subscribe(blob => this.downloadWord(blob));
-  }
+    console.log(formattedPayload);
 
-  private downloadWord(blob: Blob): void {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Lettre_fin_de_mission.docx';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    const folderPath = 'C:\\Users\\DEBOUCHELucas\\lfm\\word';
+    this.wordService.generateWord(formattedPayload, folderPath).subscribe();
   }
 }

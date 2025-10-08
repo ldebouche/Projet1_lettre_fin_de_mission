@@ -1,16 +1,36 @@
 import { genererWord } from "../services/wordService.js";
+import { exec } from "child_process";
+import path from "path";
+import fs from "fs";
 
-export const generateWordFile = (req, res) => {
+export const generateWord = (req, res) => {
   try {
-    const variables = req.body; 
+    const variables = req.body.variables;
+    const folderPath = req.body.folderPath;
 
-    const fileBuffer = genererWord(variables);
+    if (!folderPath || folderPath.trim() === "") {
+      return res.status(400).json({ message: "Le dossier de destination est requis." });
+    }
 
-    res.setHeader("Content-Disposition", "attachment; filename=resultat.docx");
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-    res.send(fileBuffer);
+    const wordBuffer = genererWord(variables);
+
+    const resolvedFolder = path.resolve(folderPath);
+    if (!fs.existsSync(resolvedFolder)) {
+      fs.mkdirSync(resolvedFolder, { recursive: true });
+    }
+
+    const fileName = `lfm_${variables.code_client}_${variables.anneeN}.docm`;
+    const filePath = path.join(resolvedFolder, fileName);
+
+    fs.writeFileSync(filePath, wordBuffer);
+
+    exec(`cmd /c start "" "${filePath}"`, (error) => {
+      if (error) {
+        console.error("Erreur ouverture Word :", error);
+      }
+    });
   } catch (err) {
-    console.error("Erreur génération Word:", err);
-    res.status(500).send("Erreur lors de la génération du fichier Word");
+    console.error("Erreur génération Word :", err);
+    res.status(500).json({ message: "Erreur génération Word" });
   }
 };
