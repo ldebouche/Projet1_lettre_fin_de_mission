@@ -5,7 +5,7 @@
       class="area"
       formControlName="comPerspective">
   </textarea>
-  <bouton-textarea class="reformuler" formControlName="commentaire" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective"></bouton-textarea>
+  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective"></bouton-textarea>
   <table class="table">
     <thead>
       <tr>
@@ -41,5 +41,5 @@
       </tr>
     </tbody>
   </table>
-  <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle"></bouton-textarea>
+  <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe"></bouton-textarea>
 </fieldset>

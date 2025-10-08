@@ -205,9 +205,13 @@ export class FormulaireComponent implements OnInit {
 
   onSubmit() {
     const EA = this.form.value.EA;
+
     this.form.patchValue({
       EA: {
         capa: EA.resEx + EA.dot - EA.rembours - EA.divi
+      },
+      FM: {
+        enabled: !!(this.form.value.FM.commentaire || this.form.value.FM.justificationsDemandes)
       }
     });
 

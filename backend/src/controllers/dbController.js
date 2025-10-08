@@ -8,20 +8,19 @@ export const GetDossierInfos = async (req, res) => {
     const anneeN1 = anneeN - 1;
 
     const infoClients = await dbService.GetInfoClients(code_client, dateFinEx);
-    console.log("infoClients =", infoClients);
 
     const [signataire, aggregats, infoEvoCharges, anaSectorielle] = await Promise.all([
       dbService.GetSignataire(code_client, dateFinEx),
       dbService.GetAggregats(code_client, dateFinEx),
       dbService.GetInfoEvoCharges(code_client, dateFinEx),
-      dbService.GetAnaSectorielle(infoClients.code_ape)
+      dbService.GetAnaSectorielle("9602A")
     ]);
 
     const aggN = aggregats.find(a => a.annee === anneeN) || {};
     const aggN1 = aggregats.find(a => a.annee === anneeN1) || {};
     
     const siteSelectionne = selectSite(infoClients.site.trim());
-    console.log(siteSelectionne);
+    
     res.json({
       // === Infos générales ===
       anneeN1Existe: !!aggN1.annee,

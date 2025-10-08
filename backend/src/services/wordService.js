@@ -47,59 +47,46 @@ export function genererWord(variables) {
     },
   });
 
-  // 🔄 Aplatir les données
   const flatVariables = flattenObject(variables);
   console.log("Variables utilisées :", flatVariables);
 
-  // 🧩 Rendu du document
   doc.render(flatVariables);
 
-  // 🧹 Supprimer les lignes de tableau vides uniquement dans le tableau des charges externes
   let xml = doc.getZip().file("word/document.xml").asText();
 
-  // Trouver tous les tableaux
   const tables = [...xml.matchAll(/<w:tbl>[\s\S]*?<\/w:tbl>/g)];
 
   if (tables.length >= 2) {
-    console.log("🧾 Tableau des charges externes détecté !");
-    const firstPart = xml.split(tables[1])[0]; // avant le 2ᵉ tableau
-    const lastPart = xml.split(tables[1])[1]; // après le 2ᵉ tableau
+    const firstPart = xml.split(tables[1])[0];
+    const lastPart = xml.split(tables[1])[1];
     const targetTable = tables[1][0];
 
-    // Supprimer les lignes de tableau (w:tr) qui ne contiennent aucun texte (w:t)
     const cleanedTable = targetTable.replace(
       /<w:tr[\s\S]*?<\/w:tr>/g,
       (row) => (/<w:t[^>]*>[^<]+<\/w:t>/.test(row) ? row : "")
     );
 
-    // Recompose le XML complet
     xml = firstPart + cleanedTable + lastPart;
   } else {
-    console.warn("⚠️ Tableau des charges externes non trouvé !");
+    console.warn("Tableau des charges externes non trouvé !");
   }
 
 
-  // 🔁 Réinjection du XML nettoyé dans un nouveau zip
   const newZip = new PizZip();
   Object.entries(doc.getZip().files).forEach(([fileName, file]) => {
     if (fileName === "word/document.xml") {
-      // Remplace par la version nettoyée
       newZip.file(fileName, xml);
     } else if (file._data && typeof file._data.getContent === "function") {
-      // Fichier binaire (image, font, etc.)
       newZip.file(fileName, file._data.getContent(), { binary: true });
     } else if (file.asText) {
-      // Fichier XML ou texte
       newZip.file(fileName, file.asText());
     }
   });
 
-  // 🏁 Génération finale
   const finalBuf = newZip.generate({
     type: "nodebuffer",
     compression: "DEFLATE",
   });
 
-  console.log("✅ Document Word généré sans lignes vides");
   return finalBuf;
 }

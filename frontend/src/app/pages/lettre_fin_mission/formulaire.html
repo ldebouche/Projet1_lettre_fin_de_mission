@@ -7,7 +7,7 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 
     <!-- ===== CHIFFRES CLÉS ===== -->
-    <section-chiffres-cles [group]="f.CC" [infoChiffresCles]="infoChiffresCles" [anneeN1Existe]="anneeN1Existe" [dataPerspective]="f.CC.get('comPerspective')" [dataCA]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe"></section-chiffres-cles>
+    <section-chiffres-cles [group]="f.CC" [infoChiffresCles]="infoChiffresCles" [anneeN1Existe]="anneeN1Existe" [dataPerspective]="f.CC.get('comPerspective')" [dataCA]="dataCA" [anaSectorielle]="anaSectorielle"></section-chiffres-cles>
 
     <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
     <section-evolution-charges-component [group]="f.EC" [infoEvolutionCharges]="infoEvolutionCharges" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>

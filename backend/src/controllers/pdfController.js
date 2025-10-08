@@ -35,7 +35,6 @@ export async function getComments(req, res) {
         })
       )
     );
-    console.log(withAI);
     res.json({ compte, comments: withAI });
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
@@ -72,7 +71,6 @@ export async function getAnaSectorielle(req, res) {
     const pool = await poolPromise;
 
     for (const row of analyse.rows) {
-      console.log(row);
       await pool.request()
         .input("code_ape", sql.NVarChar, analyse.code_ape)
         .input("millesime", sql.Int, analyse.millesime)
