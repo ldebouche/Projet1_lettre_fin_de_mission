@@ -91,12 +91,13 @@ export class FormulaireComponent implements OnInit {
 
     forkJoin({
       data: this.db.GetDossierInfos(),
-      dotations: this.pdfService.getDotations()
+      dotations: this.pdfService.getDotations(),
+      //bilanSocial: this.pdfService.getBilanSocial()
     }).subscribe({
       next: ({ data, dotations }: any) => {
         console.log(data);
         this.dotations = Object.values(dotations);
-
+        
         this.infoChargesPersonnel = data.chargesPersonnel;
         this.infoImpotSociete = data.impotSociete;
         this.infoClient = data.client;
@@ -227,8 +228,6 @@ export class FormulaireComponent implements OnInit {
     this.infoChargesPersonnel["CP_%heureVar"] = this.infoChargesPersonnel.CP_heuresRemunN - this.infoChargesPersonnel.CP_heuresRemunN1 < 0 ? (-1 + (this.infoChargesPersonnel.CP_heuresRemunN / this.infoChargesPersonnel.CP_heuresRemunN1)) * 100 : (1 - this.infoChargesPersonnel.CP_heuresRemunNN / this.infoChargesPersonnel.CP_heuresRemunN1) * 100;
     this.infoChargesPersonnel.CP_coutHorN = this.infoChargesPersonnel.CP_N / formData.CP.heuresRemunN;
     this.infoChargesPersonnel.CP_coutHorN1 = this.infoChargesPersonnel.CP_N1 / formData.CP.heuresRemunN1;
-    this.infoChargesPersonnel.CP_N = this.infoChargesPersonnel.CP_N;
-    this.infoChargesPersonnel.CP_N1 = this.infoChargesPersonnel.CP_N1;
 
     this.infoImpotSociete.IS_montant = this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - formData.IS.acomptes; 
     if (this.infoImpotSociete.IS_montant > 0) {

@@ -1,4 +1,4 @@
-import { extractCumuls, extractComments, extractImmobEntree, extractImmobSortie, extractAnaSectorielle } from "../services/pdfService.js";
+import { extractCumuls, extractComments, extractImmobEntree, extractImmobSortie, extractAnaSectorielle, extractBilanSocial } from "../services/pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
 import { generateAIComment } from "../services/aiService.js";
 import pLimit from "p-limit";
@@ -93,5 +93,15 @@ export async function getAnaSectorielle(req, res) {
   } catch (err) {
     console.error("Erreur analyseSectorielle:", err);
     res.status(500).json({ error: "Impossible d'extraire/insérer les données" });
+  }
+}
+
+export async function getBilanSocial(req, res) {
+  try {
+    const filePath = "./bilan social.pdf";
+    await extractBilanSocial(filePath);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire le bilan social" });
   }
 }

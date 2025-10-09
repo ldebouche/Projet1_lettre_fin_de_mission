@@ -21,21 +21,31 @@ export class ChargesPersonnelComponent implements OnInit {
   indicateurs: any[] = [];
 
   ngOnInit() {
-    this.indicateurs = [
-      { label: "Charges personnel", keys: { n: "CP_N", n1: "CP_N1", var: "CP_Var", pctVar: "CP_%Var" } },
-      { label: "% du chiffre d'affaires", keys: { n: "CP_%caN", n1: "CP_%caN1" } },
-      { label: "% de la marge brute globale", keys: { n: "CP_%margeN", n1: "CP_%margeN1" } },
-      { 
-        label: "Nombre d'heures rémunérées", 
-        keys: { 
-          n: this.group.get('heuresRemunN')?.value, 
-          n1: this.group.get('heuresRemunN1')?.value, 
-          var: "CP_heureVar", 
-          pctVar: "CP_%heureVar" 
-        } 
-      },
-      { label: "Coût de revient horaire", keys: { n: "CP_coutHorN", n1: "CP_coutHorN1" } },
-    ];
+    this.group.get('heuresRemunN')?.valueChanges.subscribe(() => this.updateComputedValues());
+    this.group.get('heuresRemunN1')?.valueChanges.subscribe(() => this.updateComputedValues());
+
+    this.updateComputedValues();
+  }
+
+  updateComputedValues(): void {
+    const heuresN = Number(this.group.get('heuresRemunN')?.value) || 0;
+    const heuresN1 = Number(this.group.get('heuresRemunN1')?.value) || 0;
+    const CP_N = Number(this.infoChargesPersonnel?.CP_N) || 0;
+    const CP_N1 = Number(this.infoChargesPersonnel?.CP_N1) || 0;
+
+    this.infoChargesPersonnel.CP_heureVar = heuresN - heuresN1;
+
+    if (heuresN1 !== 0) {
+      this.infoChargesPersonnel["CP_%heureVar"] =
+        this.infoChargesPersonnel.CP_heureVar < 0
+          ? (-1 + (heuresN / heuresN1)) * 100
+          : (1 - (heuresN1 / heuresN)) * 100;
+    } else {
+      this.infoChargesPersonnel["CP_%heureVar"] = 0;
+    }
+
+    this.infoChargesPersonnel.CP_coutHorN = heuresN !== 0 ? CP_N / heuresN : 0;
+    this.infoChargesPersonnel.CP_coutHorN1 = heuresN1 !== 0 ? CP_N1 / heuresN1 : 0;
   }
 
   getValue(key?: string, isPercent: boolean = false): string {

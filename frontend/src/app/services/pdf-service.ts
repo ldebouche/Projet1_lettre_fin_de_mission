@@ -24,4 +24,8 @@ export class PdfService {
   getImmob() {
     return this.http.get(`${this.baseUrl}/immob`);
   }
+
+  getBilanSocial() {
+    return this.http.get(`${this.baseUrl}/bilan-social`);
+  }
 }

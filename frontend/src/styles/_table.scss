@@ -47,6 +47,10 @@
     background: var(--color-light);
     font-weight: 600;
   }
+
+  .emptyCell {
+    background: var(--color-light);
+  }
 }
 
 .table .row-affectations ~ tr td:first-child {
