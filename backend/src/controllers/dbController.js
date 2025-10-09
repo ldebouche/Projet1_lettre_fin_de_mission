@@ -132,8 +132,8 @@ export const GetDossierInfos = async (req, res) => {
       chargesPersonnel: {
         CP_N: aggN.CP_N || 0,
         CP_N1: aggN1.CP_N || 0,
-        CP_Val: (aggN.CP_N || 0) - (aggN1.CP_N || 0),
-        "CP_%": aggN1.CP_N
+        CP_Var: (aggN.CP_N || 0) - (aggN1.CP_N || 0),
+        "CP_%Var": aggN1.CP_N
           ? ((aggN.CP_N - aggN1.CP_N) / aggN1.CP_N) * 100
           : null,
         "CP_%caN": aggN.ca

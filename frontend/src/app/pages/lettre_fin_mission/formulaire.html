@@ -13,7 +13,7 @@
     <section-evolution-charges-component [group]="f.EC" [infoEvolutionCharges]="infoEvolutionCharges" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
 
     <!-- ===== CHARGES DE PERSONNEL ===== -->
-    <section-charges-personnel-component [group]="f.CP" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
+    <section-charges-personnel-component [group]="f.CP" [infoChargesPersonnel]="infoChargesPersonnel" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
     
     <!-- ===== INVESTISSEMENTS ===== -->
     <section-investissement-component [group]="f.I" [dotations]="dotations" *ngIf="I_classe2"></section-investissement-component>
