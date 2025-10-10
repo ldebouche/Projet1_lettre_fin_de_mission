@@ -1,4 +1,4 @@
-import { Component , Input} from '@angular/core';
+import { Component , Input, OnInit} from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
@@ -14,7 +14,7 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
   templateUrl: './chiffres-cles-component.html',
   styleUrls: ['./chiffres-cles-component.scss']
 })
-export class ChiffresClesComponent {
+export class ChiffresClesComponent implements OnInit {
   @Input({ required: true }) group!: FormGroup;
   @Input() infoChiffresCles: any;
   @Input() anneeN1Existe: boolean = true;
@@ -30,6 +30,12 @@ export class ChiffresClesComponent {
     { label: "Résultat net", keys: { n: "CC_resNetN", n1: "CC_resNetN1", var: "CC_resNetVar", pctN: "CC_%resNetN", pctN1: "CC_%resNetN1", pctVar: "CC_%resNetVar" } },
   ];
 
+  ngOnInit() {
+    this.anaSectorielle = [this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
+        this.anaSectorielle.find((a: any) => a.libelle === 'Marge brute globale')];
+    console.log(this.anaSectorielle);
+  }
+
   getValue(key?: string, isPercent: boolean = false): string {
     if (!key) return '';
     const val = this.infoChiffresCles[key];
@@ -42,6 +48,15 @@ export class ChiffresClesComponent {
       : Math.round(Number(val)).toLocaleString('fr-FR'); 
   }
 
+  getTrancheKeys(tranches: any): string[] {
+    const keys = Object.keys(tranches);
+    // On met le dernier élément en premier
+    if (keys.length > 1) {
+      const last = keys.pop();
+      if (last) keys.unshift(last);
+    }
+    return keys;
+  }
   get progressionChiffre(): FormGroup {
     return this.group.get('progressionChiffre') as FormGroup;
   }

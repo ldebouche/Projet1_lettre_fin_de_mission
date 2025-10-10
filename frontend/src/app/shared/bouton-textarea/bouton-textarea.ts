@@ -88,8 +88,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     this.loading = true;
     switch (typeComment) {
       case 'CA_marge':
-        let caSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €').tranches;
-        let margeSecteur = this.anaSectorielle.find((a: any) => a.libelle === 'Marge brute globale').tranches;
+        let caSecteur = this.anaSectorielle[0].tranches;
+        let margeSecteur = this.anaSectorielle[1].tranches;
         this.callAI(
           'CA_marge',
           {

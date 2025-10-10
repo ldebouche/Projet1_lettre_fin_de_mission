@@ -132,6 +132,7 @@ export class FormulaireComponent implements OnInit {
         };
 
         this.anaSectorielle = data.anaSectorielle.valeurs;
+        console.log(this.anaSectorielle);
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
@@ -147,7 +148,6 @@ export class FormulaireComponent implements OnInit {
         this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
           next: (res) => {
             this.infoEvolutionCharges = this.chargesService.formatEvoCharges(res, this.form.value);
-            console.log(this.infoEvolutionCharges);
             this.loading = false;
           },
           error: (err) => {

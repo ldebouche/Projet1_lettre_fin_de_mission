@@ -41,5 +41,29 @@
       </tr>
     </tbody>
   </table>
+  <table class="table">
+    <thead>
+      <tr>
+        <th colspan="7">Données sectorielles {{ anaSectorielle[0].millesime }}</th>
+      </tr>
+      <tr>
+        <th rowspan="2"></th>
+        <th>Global</th>
+        <th>Tranche 1</th>
+        <th>Tranche 2</th>
+        <th>Tranche 3</th>
+        <th>Tranche 4</th>
+        <th>Tranche 5</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ana of anaSectorielle">
+        <td class="first-row">{{ ana.libelle }}</td>
+        <td *ngFor="let key of getTrancheKeys(ana.tranches)">
+          {{ ana.tranches[key] }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
   <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe"></bouton-textarea>
 </fieldset>
