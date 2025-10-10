@@ -49,3 +49,35 @@
     }
   }
 }
+
+.comment-area {
+  width: -webkit-fill-available;
+  min-height: 60px;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px 10px;
+  resize: vertical;
+  background-color: #fafafa;
+  color: var(--color-dark, #333);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  font-style: italic;
+
+  &:focus {
+    border-color: var(--color-blue-petrol, #006b8f);
+    background-color: #fff;
+    box-shadow: 0 0 0 2px rgba(0, 107, 143, 0.15);
+    outline: none;
+  }
+
+  &:hover {
+    border-color: var(--color-blue-light);
+  }
+}
+
+.comment-container + .comment-container {
+  margin-top: 8px;
+  border-top: 1px dashed #a3a2a2;
+  padding-top: 6px;
+}

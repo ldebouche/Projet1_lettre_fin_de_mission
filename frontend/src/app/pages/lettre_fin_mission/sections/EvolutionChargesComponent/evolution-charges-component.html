@@ -38,7 +38,7 @@
       </tr>
     </thead>
     <tbody>
-      <ng-container *ngFor="let ec of infoEvolutionCharges">
+      <ng-container *ngFor="let ec of infoEvolutionCharges; let i = index; trackBy: trackByIndex">
         <tr>
           <td class="first-row">{{ ec.EC_lib }}</td>
           <td>{{ getValue(ec.EC_valN) }}</td>
@@ -46,11 +46,18 @@
           <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valVar) }}</td>
           <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_%Var'], true) }}</td>
         </tr>
-        <ng-container *ngIf="ec.EC_comment">
-          <tr *ngFor="let comment of ec.EC_comment_tab">
-            <td class="first-row" colspan="5"><small><i>{{ comment }}</i></small></td>
-          </tr>
-        </ng-container>
+        <tr *ngIf="ec.EC_comment_tab?.length">
+          <td colspan="5">
+            <div *ngFor="let comment of ec.EC_comment_tab; let j = index; trackBy: trackByIndex" class="comment-container">
+              <textarea
+                [(ngModel)]="infoEvolutionCharges[i].EC_comment_tab[j]"
+                [ngModelOptions]="{standalone: true}"
+                rows="2"
+                class="comment-area"
+              ></textarea>
+            </div>
+          </td>
+        </tr>
       </ng-container>
     </tbody>
   </table>

@@ -144,7 +144,17 @@ export class FormulaireComponent implements OnInit {
 
         const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.IS_tot);
 
-        
+        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
+          next: (res) => {
+            this.infoEvolutionCharges = this.chargesService.formatEvoCharges(res, this.form.value);
+            console.log(this.infoEvolutionCharges);
+            this.loading = false;
+          },
+          error: (err) => {
+            console.error("Erreur lors du chargement des charges :", err);
+            this.loading = false;
+          }
+        });
 
         this.form.patchValue({
           CC: {
@@ -188,17 +198,6 @@ export class FormulaireComponent implements OnInit {
             nomReviseur: `${data.signataire.nomReviseur} ${data.signataire.prenomReviseur}`,
           }
         });
-        
-        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
-          next: (res) => {
-            this.infoEvolutionCharges = res;
-            this.loading = false;
-          },
-          error: (err) => {
-            console.error("Erreur lors du chargement des charges :", err);
-            this.loading = false;
-          }
-        });
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
@@ -224,12 +223,6 @@ export class FormulaireComponent implements OnInit {
 
     const formData = this.form.value;
 
-//   this.infoChargesPersonnel.CP_heureVar = formData.CP.heuresRemunN - formData.CP.heuresRemunN1;
-//   this.infoChargesPersonnel["CP_%heureVar"] = this.infoChargesPersonnel.CP_heuresRemunN - this.infoChargesPersonnel.CP_heuresRemunN1 < 0 ? (-1 + (this.infoChargesPersonnel.CP_heuresRemunN / this.infoChargesPersonnel.CP_heuresRemunN1)) * 100 : (1 - this.infoChargesPersonnel.CP_heuresRemunNN / this.infoChargesPersonnel.CP_heuresRemunN1) * 100;
-//   this.infoChargesPersonnel.CP_coutHorN = this.infoChargesPersonnel.CP_N / formData.CP.heuresRemunN;
-//   this.infoChargesPersonnel.CP_coutHorN1 = this.infoChargesPersonnel.CP_N1 / formData.CP.heuresRemunN1;
-
-
     this.infoImpotSociete.IS_montant = this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - formData.IS.acomptes; 
     if (this.infoImpotSociete.IS_montant > 0) {
       formData.IS.choixMontant = "payer";
@@ -245,8 +238,6 @@ export class FormulaireComponent implements OnInit {
       return acc;
     }, {} as Record<string, boolean>);
 
-    const evoChargesApresAffichage = this.chargesService.formatEvoCharges(this.infoEvolutionCharges, formData);
-
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
@@ -258,7 +249,7 @@ export class FormulaireComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
-      EC_tab: evoChargesApresAffichage
+      EC_tab: this.infoEvolutionCharges
     };
 
     const formattedPayload = this.formatService.formatPayload(payload);

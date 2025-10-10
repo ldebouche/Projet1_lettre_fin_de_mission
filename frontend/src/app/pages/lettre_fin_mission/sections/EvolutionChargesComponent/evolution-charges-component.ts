@@ -1,14 +1,16 @@
 import { Component , Input} from '@angular/core';
-import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
+
 
 @Component({
   selector: 'section-evolution-charges-component',
   imports: [
     CommonModule, 
     ReactiveFormsModule,
-    ZeroIfEmpty
+    ZeroIfEmpty,
+    FormsModule
   ],
   templateUrl: './evolution-charges-component.html',
   styleUrl: './evolution-charges-component.scss'
@@ -30,5 +32,9 @@ export class EvolutionChargesComponent {
 
   get variation(): FormGroup {
     return this.group.get('variation') as FormGroup;
+  }
+
+  trackByIndex(index: number, _: any): number {
+    return index;
   }
 }
