@@ -131,7 +131,8 @@ export class FormulaireComponent implements OnInit {
           "%margeVar": data.chiffreCles["CC_%margeVar"],
         };
 
-        this.anaSectorielle = data.anaSectorielle.valeurs;
+        this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
+          data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
         console.log(this.anaSectorielle);
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
@@ -249,6 +250,7 @@ export class FormulaireComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
+      AS: this.formatService.formatASData(this.anaSectorielle),
       EC_tab: this.infoEvolutionCharges
     };
 

@@ -1,4 +1,4 @@
-import { Component , Input, OnInit} from '@angular/core';
+import { Component , Input} from '@angular/core';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
@@ -14,7 +14,7 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
   templateUrl: './chiffres-cles-component.html',
   styleUrls: ['./chiffres-cles-component.scss']
 })
-export class ChiffresClesComponent implements OnInit {
+export class ChiffresClesComponent {
   @Input({ required: true }) group!: FormGroup;
   @Input() infoChiffresCles: any;
   @Input() anneeN1Existe: boolean = true;
@@ -29,12 +29,6 @@ export class ChiffresClesComponent implements OnInit {
     { label: "Résultat courant", keys: { n: "CC_resCourantN", n1: "CC_resCourantN1", var: "CC_resCourantVar", pctN: "CC_%resCourantN", pctN1: "CC_%resCourantN1", pctVar: "CC_%resCourantVar" } },
     { label: "Résultat net", keys: { n: "CC_resNetN", n1: "CC_resNetN1", var: "CC_resNetVar", pctN: "CC_%resNetN", pctN1: "CC_%resNetN1", pctVar: "CC_%resNetVar" } },
   ];
-
-  ngOnInit() {
-    this.anaSectorielle = [this.anaSectorielle.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
-        this.anaSectorielle.find((a: any) => a.libelle === 'Marge brute globale')];
-    console.log(this.anaSectorielle);
-  }
 
   getValue(key?: string, isPercent: boolean = false): string {
     if (!key) return '';
