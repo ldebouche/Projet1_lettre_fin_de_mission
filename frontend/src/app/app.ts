@@ -24,6 +24,6 @@ export class AppComponent {
 
   get showNavbar() {
     // cache la navbar uniquement si on est sur /login
-    return this.router.url !== '/login';
+    return !(this.router.url == '/login');
   }
 }
