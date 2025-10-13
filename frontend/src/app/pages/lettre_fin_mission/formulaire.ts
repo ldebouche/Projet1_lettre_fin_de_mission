@@ -148,7 +148,9 @@ export class FormulaireComponent implements OnInit {
         if (this.infoImpotSociete.IS_montant < 0) {
           choixMontant = "rembourser";
         }
-        const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.IS_tot);
+        const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.impotSociete.IS_tot);
+        const acomptes = data.impotSociete.IS_acomptes;
+        console.log(data.impotSociete.IS_tot, acomptes);
 
         this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
           next: (res) => {
@@ -172,6 +174,7 @@ export class FormulaireComponent implements OnInit {
             prevAmoN2: Math.round(this.dotations[2])
           },
           IS: {
+            acomptes,
             choixMontant,
             phraseAcomptes
           },
