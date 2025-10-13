@@ -3,14 +3,31 @@
     <label class="clickable">
       <input type="checkbox" formControlName="masquerSection" />
       <span class="titre">IMPOT SUR LES SOCIETES</span>
-      <small class="note">(Cocher la case pour présenter cette partie dans la lettre de fin de mission)</small>
     </label>
   </legend>
   <table class="table" >
+    <thead>
+      <tr>
+        <th rowspan="2"></th>
+        <th>N</th>
+      </tr>
+    </thead>
     <tbody>
       <tr>
+        <td class="first-row">Impôt sociétés total</td>
+        <td>{{ getValue('IS_tot') }}</td>
+      </tr>
+      <tr>
+        <td class="first-row">Crédits d'impôts</td>
+        <td>{{ getValue('IS_credit') }}</td>
+      </tr>
+      <tr>
         <td class="first-row">Acomptes versés</td>
-        <td><input type="number" step="0.01" class="inputNumber" formControlName="acomptes"></td>
+        <td><input type="number" step="1" class="inputNumber" formControlName="acomptes"></td>
+      </tr>
+      <tr>
+        <td class="first-row">Montant à {{ choixMontant }}</td>
+        <td>{{ getValue('IS_montant') }}</td>
       </tr>
     </tbody>
   </table>

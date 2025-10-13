@@ -144,6 +144,10 @@ export class FormulaireComponent implements OnInit {
           data.montantDividendesN1 ?? 0
         );
 
+        let choixMontant = "payer";
+        if (this.infoImpotSociete.IS_montant < 0) {
+          choixMontant = "rembourser";
+        }
         const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.IS_tot);
 
         this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
@@ -168,6 +172,7 @@ export class FormulaireComponent implements OnInit {
             prevAmoN2: Math.round(this.dotations[2])
           },
           IS: {
+            choixMontant,
             phraseAcomptes
           },
           AI: {
@@ -223,13 +228,6 @@ export class FormulaireComponent implements OnInit {
     });
 
     const formData = this.form.value;
-
-    this.infoImpotSociete.IS_montant = this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - formData.IS.acomptes; 
-    if (this.infoImpotSociete.IS_montant > 0) {
-      formData.IS.choixMontant = "payer";
-    } else if (this.infoImpotSociete.IS_montant < 0) {
-      formData.IS.choixMontant = "rembourser";
-    }
 
     const infoArray: boolean[] = formData.IF;
 

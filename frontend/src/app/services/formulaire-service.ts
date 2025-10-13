@@ -60,7 +60,6 @@ export class FormulaireService {
       IS: this.fb.group({
         masquerSection: [false],
         acomptes: [0],
-        montant: [0],
         choixMontant: [''],
         phraseAcomptes: ['']
       }),

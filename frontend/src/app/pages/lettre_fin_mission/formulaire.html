@@ -19,7 +19,7 @@
     <section-investissement-component [group]="f.I" [dotations]="dotations" *ngIf="I_classe2"></section-investissement-component>
 
     <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
-    <section-impot-societes-tab-component [group]="f.IS"></section-impot-societes-tab-component>
+    <section-impot-societes-tab-component [group]="f.IS" [infoIS]="infoImpotSociete"></section-impot-societes-tab-component>
 
     <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
     <section-acompte-impot-component [group]="f.AI"  [moisCloture]="moisClotureArray" *ngIf="imposable && resEx >= 0 && IS_tot > 3000"></section-acompte-impot-component>

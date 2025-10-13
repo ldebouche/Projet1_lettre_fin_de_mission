@@ -157,8 +157,7 @@ export const GetDossierInfos = async (req, res) => {
       // === Impôt sur les sociétés ===
       impotSociete: {
         IS_tot: aggN.IS_tot || 0,
-        IS_credit: aggN.IS_credit || 0,
-        IS_montant: (aggN.IS_tot || 0) - (aggN.IS_credit || 0)
+        IS_credit: aggN.IS_credit || 0
       },
 
       // === Autofinancement ===
