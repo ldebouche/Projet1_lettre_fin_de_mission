@@ -58,7 +58,25 @@
   </table>
 
   <label class="checkline inline">
-    <input type="checkbox" formControlName="annexeCotisationsEnabled" />
+    <input type="checkbox" formControlName="annexeCotisationsEnabled" (click)="checked()"/>
     <span>Annexe “Tableau des cotisations de travailleurs non-salariés provisionnelles pour l’année suivante”</span>
   </label>
+  <label class="btn file-upload-btn" *ngIf="isChecked && !selectedFile">
+    📁 Sélectionner un fichier
+    <input type="file" accept="application/pdf" (change)="onFileSelected($event)" hidden />
+  </label>
+  <div *ngIf="selectedFile">
+    <div class="selected-file">
+      <span class="file-icon">📎</span>
+      <span
+        class="file-name clickable"
+        (click)="openSelectedFile()"
+        title="Ouvrir le PDF"
+      >
+        {{ selectedFile.name }}
+      </span>
+      <button class="remove-btn" (click)="removeSelectedFile()">❌ Supprimer</button>
+    </div>
+    <bouton-textarea formControlName="annexeCommentaire" categorie="resumePDF"></bouton-textarea>
+  </div>
 </fieldset>

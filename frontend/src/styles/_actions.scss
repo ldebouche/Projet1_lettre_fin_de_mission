@@ -9,3 +9,39 @@
     margin-top: 1rem;
   }
 }
+
+.selected-file {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-dark);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: fit-content;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+  .file-icon {
+    font-size: 1.1rem;
+  }
+
+  .file-name {
+    font-weight: 500;
+    color: var(--color-blue-petrol);
+    cursor: default;
+
+    &.clickable {
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--color-blue-light);
+      }
+    }
+  }
+}

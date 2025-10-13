@@ -2,13 +2,15 @@ import { Component , Input, OnInit} from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
+import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
 
 @Component({
   selector: 'section-charges-personnel-component',
   imports: [
     CommonModule, 
     ReactiveFormsModule,
-    ZeroIfEmpty
+    ZeroIfEmpty,
+    BtnToTextareaComponent
   ],
   templateUrl: './charges-personnel-component.html',
   styleUrl: './charges-personnel-component.scss'
@@ -17,6 +19,10 @@ export class ChargesPersonnelComponent implements OnInit {
   @Input({ required: true }) group!: FormGroup;
   @Input() anneeN1Existe: boolean = true;
   @Input() infoChargesPersonnel: any
+
+  isChecked: boolean = false;
+  selectedFile: File | null = null;
+  fileUrl: string | null = null;
 
   indicateurs: any[] = [];
 
@@ -58,5 +64,41 @@ export class ChargesPersonnelComponent implements OnInit {
     return isPercent 
       ? Number(val).toFixed(2)
       : Math.round(Number(val)).toLocaleString('fr-FR'); 
+  }
+
+  checked() { 
+    if (this.isChecked) {
+      this.isChecked = false;
+    } else {
+      this.isChecked = true;
+    }
+  }
+  
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+
+      if (file.type !== 'application/pdf') {
+        alert('Veuillez sélectionner un fichier PDF.');
+        return;
+      }
+
+      this.selectedFile = file;
+      this.fileUrl = URL.createObjectURL(file);
+    }
+  }
+
+  openSelectedFile() {
+    if (this.fileUrl) {
+      window.open(this.fileUrl, '_blank');
+    }
+  }
+  removeSelectedFile() {
+    if (this.fileUrl) {
+      URL.revokeObjectURL(this.fileUrl);
+    }
+    this.selectedFile = null;
+    this.fileUrl = null;
   }
 }
