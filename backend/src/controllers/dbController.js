@@ -5,7 +5,6 @@ export const GetDossierInfos = async (req, res) => {
   try {
     const { code_client, dateFinEx } = req.user;
     const anneeN = new Date(dateFinEx).getFullYear();
-    const anneeN1 = anneeN - 1;
 
     const infoClients = await dbService.GetInfoClients(code_client, dateFinEx);
 
@@ -16,14 +15,15 @@ export const GetDossierInfos = async (req, res) => {
       dbService.GetAnaSectorielle("9602A")
     ]);
 
-    const aggN = aggregats.find(a => a.annee === anneeN) || {};
-    const aggN1 = aggregats.find(a => a.annee === anneeN1) || {};
+    
+    const aggN = aggregats[0] || {};
+    const aggN1 = aggregats[1] || {};
     
     const siteSelectionne = selectSite(infoClients.site.trim());
     
     res.json({
       // === Infos générales ===
-      anneeN1Existe: !!aggN1.annee,
+      anneeN1Existe: !!aggN1.datefinex,
       I_classe2: aggN.I_classe2,
       MD_salaries: aggN.MD_salaries,
       imposable: infoClients.imposable,

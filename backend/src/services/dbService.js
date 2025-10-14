@@ -5,7 +5,6 @@ class dbService {
   async executeQuery(query, params = {}, single = true) {
     const pool = await poolPromise;
     const request = pool.request();
-
     for (const [key, value] of Object.entries(params)) {
       if (value instanceof Date) {
         request.input(key, sql.Date, value);
@@ -23,7 +22,16 @@ class dbService {
       `SELECT *
       FROM Aggregats_FEC
       WHERE code_client = @code_client
-        AND annee IN (YEAR(@dateFinEx), YEAR(@dateFinEx)-1);`,
+        AND datefinex IN (
+          @dateFinEx,
+          (
+            SELECT MAX(datefinex)
+            FROM FEC
+            WHERE code_client = @code_client
+              AND datefinex < @dateFinEx
+          )
+        )
+      ORDER BY datefinex DESC;`,
       { code_client, dateFinEx },
       false,
     );
@@ -34,7 +42,7 @@ class dbService {
       `SELECT code_client 
       FROM FEC 
       WHERE code_client = @code_client 
-        AND YEAR(datefinex) = YEAR(@dateFinEx);`,
+        AND datefinex = @dateFinEx;`,
       { code_client, dateFinEx },
     );
   }
@@ -110,7 +118,7 @@ class dbService {
 
       FROM clients c
       INNER JOIN FEC f ON c.code_client = f.code_client
-      WHERE c.code_client = @code_client AND YEAR(f.datefinex) = YEAR(@dateFinEx)
+      WHERE c.code_client = @code_client AND f.datefinex = @dateFinEx
       GROUP BY c.ape, c.forme_societe, c.categorie_revenu;`,
       { code_client, dateFinEx },
     );
@@ -146,7 +154,15 @@ class dbService {
 
       FROM FEC f
       WHERE f.code_client = @code_client
-        AND YEAR(f.datefinex) IN (YEAR(@dateFinEx), YEAR(@dateFinEx) - 1)
+        AND f.datefinex IN (
+            @dateFinEx,
+            (
+              SELECT MAX(datefinex)
+              FROM FEC
+              WHERE code_client = @code_client
+                AND datefinex < @dateFinEx
+            )
+        )
         AND (
             f.CompteNum LIKE '606%' OR f.CompteNum LIKE '611%' OR f.CompteNum LIKE '612%'
             OR f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' OR f.CompteNum LIKE '615%'
@@ -243,7 +259,7 @@ class dbService {
         SUM(f.Debit - f.Credit) AS montant
       FROM FEC f
       WHERE f.code_client = @code_client
-        AND YEAR(f.datefinex) = YEAR(@dateFinEx)
+        AND f.datefinex = @dateFinEx
         AND f.CompteNum IN (
           SELECT value FROM STRING_SPLIT(@comptes, ','))
       GROUP BY f.CompteNum;`,
