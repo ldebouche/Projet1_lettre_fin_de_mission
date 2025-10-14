@@ -165,38 +165,3 @@ function mergeBrokenLabels(rows) {
 
   return fixed;
 }
-
-export async function extractBilanSocial(pdfPath) {
-  const buffer = fs.readFileSync(pdfPath);
-  const data = await pdf(buffer);
-  const text = data.text;
-  console.log(text); 
-//  const regex = /(\d{8})\s*([^\n]+)\n([\s\S]*?)(\d[\d\s,.]+)Cumul sorties du compte/g;
-//
-//  const comptes = [];
-//  let totalGeneral = 0;
-//  let match;
-//
-//  while ((match = regex.exec(text)) !== null) {
-//    const numero = match[1].trim();
-//    const libelle = match[2].trim();
-//    const bloc = match[3];
-//    const cumul = match[4].trim().replace(/(\d+,\d{2})[\d\s,]*/g, "$1");
-//    let cumulNum = parseFloat(cumul.replace(/\s/g, "").replace(",", "."));
-//
-//    const designations = [...bloc.matchAll(
-//      /^\d+\s*([A-Za-z0-9éèêàâçëïôùû\- ]+?)(?=\d{2}\/\d{2}\/\d{2})/gm
-//    )].map(d => d[1].trim());
-//
-//    comptes.push({
-//      compte: numero,
-//      libelle,
-//      designations,
-//      cumul
-//    });
-//    totalGeneral += cumulNum;
-//  }
-//
-//  totalGeneral = totalGeneral.toLocaleString('fr-FR');
-//  return { comptes, totalGeneral };
-}
