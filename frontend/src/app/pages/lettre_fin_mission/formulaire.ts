@@ -258,6 +258,15 @@ export class FormulaireComponent implements OnInit {
     const formattedPayload = this.formatService.formatPayload(payload);
     console.log(formattedPayload);
 
+    const paGroup = this.form.get('PA') as FormGroup;
+    const values = paGroup.value;
+    const total = (values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0);
+
+    if (total > this.resEx) {
+      alert("La somme des affectations dépasse le résultat de l'exercice !");
+      return;
+    }
+
     const folderPath = 'C:\\Users\\DEBOUCHELucas\\lfm\\word';
     this.wordService.generateWord(formattedPayload, folderPath).subscribe();
   }
