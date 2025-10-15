@@ -4,6 +4,10 @@ import path from "path";
 import { exec } from "child_process";
 
 export async function extractCumuls(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return null;
+  }
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
   const text = data.text;
@@ -25,6 +29,10 @@ export async function extractCumuls(filePath) {
 }
 
 export async function extractComments(filePath, numComptes) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return null;
+  }
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
   const text = data.text;
@@ -60,6 +68,10 @@ export async function extractComments(filePath, numComptes) {
 }
 
 export async function extractImmobEntree(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return { comptes: "aucunes informations", totalGeneral: "aucunes informations" };
+  }
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
   const text = data.text;
@@ -94,6 +106,10 @@ export async function extractImmobEntree(filePath) {
 }
 
 export async function extractImmobSortie(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return { comptes: "aucunes informations", totalGeneral: "aucunes informations" };
+  }
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
   const text = data.text;

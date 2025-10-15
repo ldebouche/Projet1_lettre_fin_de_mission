@@ -54,12 +54,12 @@ export class ChargesPersonnelComponent implements OnInit {
     this.infoChargesPersonnel.CP_coutHorN1 = heuresN1 !== 0 ? CP_N1 / heuresN1 : 0;
   }
 
-  getValue(key?: string, isPercent: boolean = false): string {
+  getValue(key?: string, isPercent: boolean = false, isVariation: boolean = false): string {
     if (!key) return '';
     const val = this.infoChargesPersonnel[key];
     if (val == null || val === '') return '';
 
-    if (isPercent && (val < -100 || val > 100)) return 'NS'; 
+    if (isPercent && isVariation && (val < -100 || val > 100)) return 'NS'; 
 
     return isPercent 
       ? Number(val).toFixed(2)

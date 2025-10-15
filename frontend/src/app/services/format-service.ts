@@ -42,7 +42,7 @@ export class FormatService {
 
   formatASData(AS: any[]) {
     const result: any = {};
-
+    if (!AS) return result;
     result["millesime"] = AS[0]?.millesime ? String(AS[0].millesime).replace(/\s+/g, '') : "";
     AS.forEach((item) => {
       const prefix =
