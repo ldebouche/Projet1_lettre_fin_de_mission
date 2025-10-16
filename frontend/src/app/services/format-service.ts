@@ -63,4 +63,12 @@ export class FormatService {
 
     return result;
   }
+
+  formatPointsImportants(pointsImportants: any[]) {
+    return pointsImportants.map((p: any) => {
+      const libelle = p.libelle ? ` - ${p.libelle}` : '';
+      const commentaire = p.commentaire ? ` - ${p.commentaire}` : '';
+      return `${p.compte}${libelle}${commentaire}`;
+    }).join('\n');
+  }
 }

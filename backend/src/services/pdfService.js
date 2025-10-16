@@ -67,6 +67,42 @@ export async function extractComments(filePath, numComptes) {
   return result;
 }
 
+export async function extractPointsImportants(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+
+  const data = await pdf(fs.readFileSync(filePath));
+  const text = data.text
+    .replace(/\r\n/g, '\n')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\uF06A/g, '')
+    .replace(/\uF0A6/g, '')
+    .replace(/\uF020|\uF021|\uF026|\uF02A/g, '');
+
+  // on découpe le texte par blocs CODE - Libellé
+  const regex = /([A-Z0-9]{2,15})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n[A-Z0-9]{2,15}\s*-|$)/g;
+  const result = [];
+
+  for (const m of text.matchAll(regex)) {
+    const bloc = m[3].trim().split('\n');
+    const ligneSymbole = bloc.find(l => (l.match(/[]/g) || []).length >= 2);
+    if (!ligneSymbole) continue;
+
+    // ligne suivante non vide = commentaire
+    const idx = bloc.indexOf(ligneSymbole);
+    let commentaire = bloc.slice(idx + 1).find(l => l.trim());
+    if (!commentaire) continue;
+
+    result.push({
+      compte: m[1].trim(),
+      libelle: m[2].trim(),
+      commentaire: commentaire.trim()
+    });
+  }
+
+  return result;
+}
+
+
 export async function extractImmobEntree(filePath) {
   if (!fs.existsSync(filePath)) {
     console.warn(`Fichier introuvable : ${filePath}`);

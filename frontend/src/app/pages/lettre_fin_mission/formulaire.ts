@@ -72,7 +72,8 @@ export class FormulaireComponent implements OnInit {
   dotations = [];
   immobs: any;
   anaSectorielle: any;
-  
+  pointsImportants: any;
+
   constructor(
     private pdfService: PdfService,
     private formService: FormulaireService,
@@ -95,9 +96,10 @@ export class FormulaireComponent implements OnInit {
     forkJoin({
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations(),
-      immobs: this.pdfService.getImmob()
+      immobs: this.pdfService.getImmob(),
+      pointsImportants: this.pdfService.getPointsImportants()
     }).subscribe({
-      next: ({ data, dotations, immobs }: any) => {
+      next: ({ data, dotations, immobs, pointsImportants }: any) => {
         if (dotations) {        
           this.dotations = Object.values(dotations);
         }
@@ -105,6 +107,11 @@ export class FormulaireComponent implements OnInit {
         if (immobs) {
           this.immobs = immobs;
         }
+
+        if (pointsImportants) {
+          this.pointsImportants = this.formatService.formatPointsImportants(pointsImportants);
+        }
+        console.log(this.pointsImportants);
 
         if (data.anaSectorielle.valeurs.length) {
           this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
@@ -211,6 +218,9 @@ export class FormulaireComponent implements OnInit {
           MD: {
             enabled: data.MD_salaries
           },
+          PI: {
+            commentaire: this.pointsImportants
+          },
           S: {
             nomExpert: `${data.signataire.nomExpert} ${data.signataire.prenomExpert}`,
             nomReviseur: `${data.signataire.nomReviseur} ${data.signataire.prenomReviseur}`,
@@ -248,7 +258,7 @@ export class FormulaireComponent implements OnInit {
       acc[key] = infoArray[idx];
       return acc;
     }, {} as Record<string, boolean>);
-    console.log(this.infoChargesPersonnel);
+    
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,

@@ -21,6 +21,10 @@ export class PdfService {
     });
   }
 
+  getPointsImportants() {
+    return this.http.get(`${this.baseUrl}/points-importants`);
+  }
+
   getImmob() {
     return this.http.get(`${this.baseUrl}/immob`);
   }
