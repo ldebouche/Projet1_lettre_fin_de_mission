@@ -116,7 +116,7 @@ export async function generateAIComment(type, contexte) {
 
   if (type === "investissement") {
     let { total_entrees, entrees, total_sorties, sorties } = contexte;
-    console.log(total_entrees, entrees, total_sorties, sorties);
+    
     if (!total_entrees && !entrees && !total_sorties && !sorties) {
       console.log("aucunes informations");
       return "L’absence d'immobilisations d'entrées et de sorties ne permet pas de générer de commentaire.";
