@@ -3,9 +3,9 @@
   <textarea 
       rows="4" 
       class="area"
-      formControlName="comPerspective">
+      formControlName="comPerspective" *ngIf="anaSectorielle">
   </textarea>
-  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective"></bouton-textarea>
+  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective" *ngIf="anaSectorielle"></bouton-textarea>
   <table class="table">
     <thead>
       <tr>
@@ -37,11 +37,11 @@
         
         <!-- Variation -->
         <td *ngIf="anneeN1Existe">{{ getValue(ind.keys.var) }}</td>
-        <td *ngIf="anneeN1Existe">{{ getValue(ind.keys.pctVar, true) }}</td>
+        <td *ngIf="anneeN1Existe">{{ getValue(ind.keys.pctVar, true, true) }}</td>
       </tr>
     </tbody>
   </table>
-  <table class="table">
+  <table class="table" *ngIf="anaSectorielle">
     <thead>
       <tr>
         <th colspan="7">Données sectorielles {{ anaSectorielle[0].millesime }}</th>
@@ -65,5 +65,5 @@
       </tr>
     </tbody>
   </table>
-  <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe"></bouton-textarea>
+  <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe || anaSectorielle"></bouton-textarea>
 </fieldset>

@@ -30,7 +30,7 @@ export function fillTemplate(template, variables) {
 }
 
 export function checkIntensiteVariation(variationPrc) {
-  const seuil = 50;
+  const seuil = 15;
 
   return {
     intensite: Math.abs(variationPrc) > seuil ? "forte" : "faible",
@@ -62,8 +62,18 @@ export async function generateAIComment(type, contexte) {
     if (CA.caN === 0 && produitsFinanciers) {
       return "L’absence de chiffre d’affaires et la présence exclusive de produits financiers indiquent que la société exerce une activité de type holding non animatrice. Elle ne réalise pas d’activité opérationnelle propre, mais tire ses revenus de placements financiers, de dividendes ou d’intérêts perçus sur ses participations.";
     }
-
-    template = prompts.generateComment.CA_marge;
+    console.log(anneeN1);
+    if (millesimeSecteur && maTranche && CA.caSecteur && MARGE.margeSecteur) {
+      if (!anneeN1) {
+      template = prompts.generateComment.CA_marge_n_as;
+      } else {
+        template = prompts.generateComment.CA_marge_n1_as;
+      }    
+    }
+    else {
+      template = prompts.generateComment.CA_marge;
+    }
+    
 
     const { intensite: intensiteVariationCA, sens: sensVariationCA } = checkIntensiteVariation(CA.variationPrcCA);
     const { intensite: intensiteVariationMarge, sens: sensVariationMarge } = checkIntensiteVariation(MARGE.variationPrcMarge);
@@ -105,18 +115,22 @@ export async function generateAIComment(type, contexte) {
   }
 
   if (type === "investissement") {
-    const { total_entrees, entrees, total_sorties, sorties } = contexte;
+    let { total_entrees, entrees, total_sorties, sorties } = contexte;
     template = prompts.generateComment.investissement;
+    
+    if (typeof entrees !== "string") {
+      entrees = (entrees || [])
+        .map(e => `${e.libelle} [${(e.designations || []).join(", ")}] (${e.cumul} EUR)`)
+        .join("; ");
+    }
 
-    const entreesStr = (entrees || [])
-      .map(e => `${e.libelle} [${(e.designations || []).join(", ")}] (${e.cumul} EUR)`)
-      .join("; ");
+    if (typeof sorties !== "string") {
+      sorties = (sorties || [])
+        .map(s => `${s.libelle} [${(s.designations || []).join(", ")}] (${s.cumul} EUR)`)
+        .join("; ");
+    }
 
-    const sortiesStr = (sorties || [])
-      .map(s => `${s.libelle} [${(s.designations || []).join(", ")}] (${s.cumul} EUR)`)
-      .join("; ");
-
-    prompt = fillTemplate(template, { total_entrees, entrees: entreesStr, total_sorties, sorties: sortiesStr });
+    prompt = fillTemplate(template, { total_entrees, entrees, total_sorties, sorties });
   }
 
   if (type === "reformuler") {
@@ -124,7 +138,6 @@ export async function generateAIComment(type, contexte) {
     template = prompts.generateComment.reformuler;
     prompt = fillTemplate(template, { texte });
   }
-
   const raw = await callMistral(prompt);
   return raw;
 }
@@ -136,7 +149,7 @@ export async function callOllama(message) {
     {
       model: process.env.OLLAMA_MODEL,
       messages: [
-        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour.' },
+        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Ecris avec un ton simple et humaine. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour.' },
         { role: 'user', content: JSON.stringify(message) }
       ],
       stream: false,

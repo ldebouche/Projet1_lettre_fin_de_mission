@@ -27,12 +27,12 @@ export class ImpotSocietesTabComponent implements OnInit {
     this.updateComputedValues();
   }
 
-  getValue(key?: string, isPercent: boolean = false): string {
+  getValue(key?: string, isPercent: boolean = false, isVariation: boolean = false): string {
   if (!key) return '';
   const val = this.infoIS[key];
   if (val == null || val === '') return '';
 
-  if (isPercent && (val < -100 || val > 100)) return 'NS'; 
+  if (isPercent && isVariation && (val < -100 || val > 100)) return 'NS'; 
 
   return isPercent 
     ? Number(val).toFixed(2)

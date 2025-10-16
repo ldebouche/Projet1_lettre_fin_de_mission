@@ -1,27 +1,22 @@
 <fieldset class="block" [formGroup]="group">
-    <legend>
-      <label class="clickable">
-        <input type="checkbox" formControlName="masquerSection" />
-        <span class="titre">INVESTISSEMENTS</span>
-      </label>
-    </legend>
-    <table class="table">
-      <thead>
-        <tr>
-          <th></th>
-          <th class="col-n">N</th>
-          <th class="col-n1">N+1</th>
-          <th class="col-n2">N+2</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="first-row">Dotations aux amortisssements</td>
-          <td>{{ dotations[0] | number:'1.0-0':'fr-FR' }}</td>
-          <td>{{ dotations[1] | number:'1.0-0':'fr-FR' }}</td>
-          <td>{{ dotations[2] | number:'1.0-0':'fr-FR' }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <bouton-textarea formControlName="commentaire" categorie="investissement"></bouton-textarea>
-  </fieldset>
+  <legend><span class="titre">INVESTISSEMENTS</span></legend>
+  <table class="table" *ngIf="dotations.length">
+    <thead>
+      <tr>
+        <th></th>
+        <th class="col-n">N</th>
+        <th class="col-n1">N+1</th>
+        <th class="col-n2">N+2</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="first-row">Dotations aux amortisssements</td>
+        <td>{{ dotations[0] | number:'1.0-0':'fr-FR' }}</td>
+        <td>{{ dotations[1] | number:'1.0-0':'fr-FR' }}</td>
+        <td>{{ dotations[2] | number:'1.0-0':'fr-FR' }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <bouton-textarea formControlName="commentaire" categorie="investissement" [data]="immobs" *ngIf="immobs"></bouton-textarea>
+</fieldset>

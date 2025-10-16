@@ -3,25 +3,34 @@ import { poolPromise, sql } from "../config/db.js";
 import { generateAIComment } from "../services/aiService.js";
 import pLimit from "p-limit";
 
+
 export async function getCumuls(req, res) {
   try {
     const filePath = "./Simul des amorts sur 3 ans.pdf";
-    const cumuls = await extractCumuls(filePath);
+    const result = await extractCumuls(filePath);
 
-    res.json(cumuls);
+    if (!result) {
+      return res.status(200).json(null);
+    }
+
+    res.status(200).json(result);
   } catch (err) {
-    console.error("Erreur extraction PDF:", err);
-    res.status(500).json({ error: "Impossible d'extraire les cumuls" });
+    console.error("Erreur dans getCumuls :", err);
+    res.status(500).json({ message: "Erreur interne serveur" });
   }
 }
 
 export async function getComments(req, res) {
   try {
     const { compte } = req.query;
-    const filePath = "./CC0758 EFM 12-2024.pdf";
+    const filePath = "./efm cdt.pdf";
     const limit = pLimit(3);
     const comments = await extractComments(filePath, compte);
-    
+    console.log(comments, "aaaa");
+    if (!comments) {
+      return res.status(200).json(null);
+    }
+
     const withAI = await Promise.all(
       comments.map(c =>
         limit(async () => {
@@ -35,7 +44,7 @@ export async function getComments(req, res) {
         })
       )
     );
-    res.json({ compte, comments: withAI });
+    res.status(200).json({ compte, comments: withAI });
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les commentaires" });
@@ -49,10 +58,14 @@ export async function getImmob(req, res) {
     const filePathSortie = "./Immobs Sorties de l'exercice.pdf";
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
+    
+    if (immobEntree.comptes == "aucunes informations" && immobSortie.comptes == "aucunes informations") {
+      return res.status(200).json(null);
+    }
 
     const immob = { immobEntree, immobSortie };
 
-    res.json(immob);
+    res.status(200).json(immob);
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les immobilisations" });

@@ -30,18 +30,18 @@ export class ChiffresClesComponent {
     { label: "Résultat net", keys: { n: "CC_resNetN", n1: "CC_resNetN1", var: "CC_resNetVar", pctN: "CC_%resNetN", pctN1: "CC_%resNetN1", pctVar: "CC_%resNetVar" } },
   ];
 
-  getValue(key?: string, isPercent: boolean = false): string {
+  getValue(key?: string, isPercent: boolean = false, isVariation: boolean = false): string {
     if (!key) return '';
     const val = this.infoChiffresCles[key];
     if (val == null || val === '') return '';
 
-    if (isPercent && (val < -100 || val > 100)) return 'NS'; 
+    if (isPercent && isVariation && (val < -100 || val > 100)) return 'NS'; 
 
     return isPercent 
       ? Number(val).toFixed(2)
       : Math.round(Number(val)).toLocaleString('fr-FR'); 
   }
-
+  
   getTrancheKeys(tranches: any): string[] {
     const keys = Object.keys(tranches);
     // On met le dernier élément en premier

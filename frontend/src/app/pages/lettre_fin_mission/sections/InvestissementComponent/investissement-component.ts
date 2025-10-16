@@ -15,5 +15,6 @@ import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouto
 })
 export class InvestissementComponent {
   @Input({ required: true }) group!: FormGroup;
-  @Input() dotations = [0, 0, 0];
+  @Input() dotations = [];
+  @Input() immobs: any;
 }

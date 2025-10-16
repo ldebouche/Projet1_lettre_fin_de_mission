@@ -24,19 +24,19 @@
           <td>{{ getValue('CP_N') }}</td>
           <td *ngIf="anneeN1Existe">{{ getValue('CP_N1') }}</td>
           <td *ngIf="anneeN1Existe">{{ getValue('CP_Var') }}</td>
-          <td *ngIf="anneeN1Existe">{{ getValue('CP_%Var', true) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue('CP_%Var', true, true) }}</td>
       </tr>
       <tr>
           <td class="first-row">% du chiffre d'affaires</td>
-          <td>{{ getValue('CP_%caN', true) }}</td>
-          <td *ngIf="anneeN1Existe">{{ getValue('CP_%caN1', true) }}</td>
+          <td>{{ getValue('CP_caN') }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue('CP_caN1') }}</td>
           <td class="emptyCell" *ngIf="anneeN1Existe"></td>
           <td class="emptyCell" *ngIf="anneeN1Existe"></td>
       </tr>
       <tr>
           <td class="first-row">% de la marge brute globale</td>
-          <td>{{ getValue('CP_%margeN', true) }}</td>
-          <td *ngIf="anneeN1Existe">{{ getValue('CP_%margeN1', true) }}</td>
+          <td>{{ getValue('CP_margeN') }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue('CP_margeN1') }}</td>
           <td class="emptyCell" *ngIf="anneeN1Existe"></td>
           <td class="emptyCell" *ngIf="anneeN1Existe"></td>
       </tr>
@@ -45,7 +45,7 @@
           <td><input type="number" class="inputNumber" formControlName="heuresRemunN" step="1" /></td>
           <td *ngIf="anneeN1Existe"><input type="number" class="inputNumber" formControlName="heuresRemunN1" step="1" /></td>
           <td *ngIf="anneeN1Existe">{{ getValue('CP_heureVar') }}</td>
-          <td *ngIf="anneeN1Existe">{{ getValue('CP_%heureVar', true) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue('CP_%heureVar', true, true) }}</td>
       </tr>
       <tr>
           <td class="first-row">Coût de revient horaire</td>

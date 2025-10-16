@@ -88,31 +88,59 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
     this.loading = true;
     switch (typeComment) {
       case 'CA_marge':
-        let caSecteur = this.anaSectorielle[0].tranches;
-        let margeSecteur = this.anaSectorielle[1].tranches;
+        let caSecteur = "";
+        let margeSecteur = "";
+        let millesimeSecteur = ""; 
+        let maTranche = "";
+        if (this.anaSectorielle) {
+          caSecteur = this.anaSectorielle[0].tranches;
+          margeSecteur = this.anaSectorielle[1].tranches;
+          millesimeSecteur = this.anaSectorielle[0]?.millesime ?? null;
+          maTranche = this.getTrancheCA(this.data.caN, caSecteur);
+        }
+
+        let caN1 = "";
+        let variationCA = "";
+        let variationPrcCA = "";
+
+        let margeN1 = "";
+        let margeN1PrcCA = "";
+        let variationMarge = "";
+        let variationPrcMarge = "";
+        if (this.data.anneeN1) {
+          caN1 = Math.round(this.data.caN1).toLocaleString('fr-FR');
+          variationCA = Math.round(this.data.caVar).toLocaleString('fr-FR');
+          variationPrcCA = this.data["%caVar"].toFixed(2);
+
+          margeN1 = Math.round(this.data.margeN1).toLocaleString('fr-FR');
+          margeN1PrcCA = this.data["%margeN1"].toFixed(2);
+          variationMarge = Math.round(this.data.margeVar).toLocaleString('fr-FR');
+          variationPrcMarge = this.data["%margeVar"].toFixed(2);
+        }
+        console.log(this.data);
         this.callAI(
           'CA_marge',
           {
             anneeN: this.data.anneeN,
             anneeN1: this.data.anneeN1,
-            millesimeSecteur: this.anaSectorielle[0]?.millesime ?? null,
-            maTranche: this.getTrancheCA(this.data.caN, caSecteur),
+            millesimeSecteur,
+            maTranche,
             'CA': {
               caN: Math.round(this.data.caN).toLocaleString('fr-FR'),
-              caN1: Math.round(this.data.caN1).toLocaleString('fr-FR'),
-              variationCA: Math.round(this.data.caVar).toLocaleString('fr-FR'),
-              variationPrcCA: this.data["%caVar"].toFixed(2),
-              caSecteur: caSecteur,
+              caN1,
+              variationCA,
+              variationPrcCA,
+              caSecteur,
               FDC: this.checkFDC(this.data.compte207Var),
             },
             'MARGE': {
               margeN: Math.round(this.data.margeN).toLocaleString('fr-FR'),
-              margeN1: Math.round(this.data.margeN1).toLocaleString('fr-FR'),
+              margeN1,
               margeNPrcCA: this.data["%margeN"].toFixed(2),
-              margeN1PrcCA: this.data["%margeN1"].toFixed(2),
-              variationMarge: Math.round(this.data.margeVar).toLocaleString('fr-FR'),
-              variationPrcMarge: this.data["%margeVar"].toFixed(2),
-              margeSecteur: margeSecteur,
+              margeN1PrcCA,
+              variationMarge,
+              variationPrcMarge,
+              margeSecteur,
             },
             produitsFinanciers: this.data.produitsFinanciers,
           }
@@ -120,20 +148,15 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
         break;
 
       case 'investissement':
-        this.pdf.getImmob().subscribe({
-          next: (data: any) => {
-            this.callAI(
-              'investissement',
-              {
-                total_entrees: data.immobEntree.totalGeneral,
-                entrees: data.immobEntree.comptes,
-                total_sorties: data.immobSortie.totalGeneral,
-                sorties: data.immobSortie.comptes,
-              }
-            );
-          },
-          error: () => this.setError()
-        });
+        this.callAI(
+          'investissement',
+          {
+            total_entrees: this.data.immobEntree.totalGeneral,
+            entrees: this.data.immobEntree.comptes,
+            total_sorties: this.data.immobSortie.totalGeneral,
+            sorties: this.data.immobSortie.comptes,
+          }
+        );
         break;
 
       case 'reformuler':

@@ -15,7 +15,6 @@ export const GetDossierInfos = async (req, res) => {
       dbService.GetAnaSectorielle("9602A")
     ]);
 
-    
     const aggN = aggregats[0] || {};
     const aggN1 = aggregats[1] || {};
     
@@ -136,16 +135,16 @@ export const GetDossierInfos = async (req, res) => {
         "CP_%Var": aggN1.CP_N
           ? ((aggN.CP_N - aggN1.CP_N) / aggN1.CP_N) * 100
           : null,
-        "CP_%caN": aggN.ca
+        "CP_caN": aggN.ca
           ? (aggN.CP_N / aggN.ca) * 100
           : null,
-        "CP_%caN1": aggN1.ca
+        "CP_caN1": aggN1.ca
           ? (aggN1.CP_N / aggN1.ca) * 100
           : null,
-        "CP_%margeN": aggN.marge
+        "CP_margeN": aggN.marge
           ? (aggN.CP_N / aggN.marge) * 100
           : null,
-        "CP_%margeN1": aggN1.marge
+        "CP_margeN1": aggN1.marge
           ? (aggN1.CP_N / aggN1.marge) * 100
           : null,
         CP_heureVar: 0,
@@ -189,23 +188,23 @@ export const GetDossierInfos = async (req, res) => {
       // === Analyse sectorielle ===
       anaSectorielle: {
         valeurs: anaSectorielle.filter(r => r.type_donnee === 'valeur').map(r => ({
-          libelle: r.libelle,
-          millesime: r.millesime,
+          libelle: r.libelle || null,
+          millesime: r.millesime || null,
           tranches: {
-            tranche_1: r.tranche_1,
-            tranche_2: r.tranche_2,
-            tranche_3: r.tranche_3,
-            tranche_4: r.tranche_4,
-            tranche_5: r.tranche_5,
-            globale: r.tranche_globale
-          }
+            tranche_1: r.tranche_1 || null,
+            tranche_2: r.tranche_2 || null,
+            tranche_3: r.tranche_3 || null,
+            tranche_4: r.tranche_4 || null,
+            tranche_5: r.tranche_5 || null,
+            globale: r.tranche_globale || null
+          } 
         })),
-        commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives)
+        commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives) || null
       },
 
       // === Commentaires ===
-      anneeN: aggN.annee,
-      anneeN1: aggN1.annee?? null,
+      anneeN: aggN.datefinex,
+      anneeN1: aggN1.datefinex,
       produitsFinanciers: !!aggN.produitsFinanciers,
       compte207Var: aggN.compte207 - aggN1.compte207 ?? null,
     });

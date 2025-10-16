@@ -56,7 +56,7 @@ export class FormulaireComponent implements OnInit {
   montantReportNouveau = 0;
   montantDividendesN1 = 0;
 
-  dotations = [0, 0, 0];
+  
 
   infoChargesPersonnel: any = {};
   infoImpotSociete: any = {};
@@ -68,6 +68,9 @@ export class FormulaireComponent implements OnInit {
 
   dataCA = {};
   dataMarge = {};
+  
+  dotations = [];
+  immobs: any;
   anaSectorielle: any;
   
   constructor(
@@ -92,11 +95,21 @@ export class FormulaireComponent implements OnInit {
     forkJoin({
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations(),
-      //bilanSocial: this.pdfService.getBilanSocial()
+      immobs: this.pdfService.getImmob()
     }).subscribe({
-      next: ({ data, dotations }: any) => {
-        console.log(data);
-        this.dotations = Object.values(dotations);
+      next: ({ data, dotations, immobs }: any) => {
+        if (dotations) {        
+          this.dotations = Object.values(dotations);
+        }
+
+        if (immobs) {
+          this.immobs = immobs;
+        }
+
+        if (data.anaSectorielle.valeurs.length) {
+          this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
+        }
         
         this.infoChargesPersonnel = data.chargesPersonnel;
         this.infoImpotSociete = data.impotSociete;
@@ -113,7 +126,7 @@ export class FormulaireComponent implements OnInit {
         this.imposable = data.imposable;
         this.forme_societe = data.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
-
+        
         this.dataCA = {
           caN: data.chiffreCles.CC_caN,
           caN1: data.chiffreCles.CC_caN1,
@@ -130,10 +143,7 @@ export class FormulaireComponent implements OnInit {
           margeVar: data.chiffreCles.CC_margeVar,
           "%margeVar": data.chiffreCles["CC_%margeVar"],
         };
-
-        this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
-          data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
-        console.log(this.anaSectorielle);
+        
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
@@ -150,8 +160,7 @@ export class FormulaireComponent implements OnInit {
         }
         const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.impotSociete.IS_tot);
         const acomptes = data.impotSociete.IS_acomptes;
-        console.log(data.impotSociete.IS_tot, acomptes);
-
+        
         this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
           next: (res) => {
             this.infoEvolutionCharges = this.chargesService.formatEvoCharges(res, this.form.value);
@@ -185,7 +194,7 @@ export class FormulaireComponent implements OnInit {
             acompte4: Math.round(data.acompte_total/4)            
           },
           PA: {
-            resEx: Math.round(data.resEx),
+            resEx: Math.round(this.resEx),
             resLeg: Math.round(affectation.resLeg),
             resOrd: Math.round(affectation.resOrd),
             report: Math.round(affectation.report),
@@ -196,7 +205,7 @@ export class FormulaireComponent implements OnInit {
             enabled: data.tabAutofinancement
           },
           EA: {
-            resEx: Math.round(data.resEx),
+            resEx: Math.round(this.resEx),
             dot: Math.round(this.dotations[1])
           },
           MD: {
@@ -239,7 +248,7 @@ export class FormulaireComponent implements OnInit {
       acc[key] = infoArray[idx];
       return acc;
     }, {} as Record<string, boolean>);
-
+    console.log(this.infoChargesPersonnel);
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
@@ -261,8 +270,8 @@ export class FormulaireComponent implements OnInit {
     const paGroup = this.form.get('PA') as FormGroup;
     const values = paGroup.value;
     const total = (values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0);
-
-    if (total > this.resEx) {
+    
+    if (total > values.resEx) {
       alert("La somme des affectations dépasse le résultat de l'exercice !");
       return;
     }
