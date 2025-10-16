@@ -95,8 +95,6 @@ export async function extractPointsImportants(filePath) {
     if (!commentaire) continue;
 
     result.push({
-      compte: m[1].trim(),
-      libelle: m[2].trim(),
       commentaire: commentaire.trim()
     });
   }
