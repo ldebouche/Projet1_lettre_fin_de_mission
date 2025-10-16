@@ -78,7 +78,7 @@ export async function extractImmobEntree(filePath) {
 
   const regex = /(\d{8})([^\n]+)\n([\s\S]*?)(?:Cumul du compte\s*([\d\s,.]+))(?:\s|$)/g;
 
-  const comptes = [];
+  let comptes;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
@@ -116,8 +116,8 @@ export async function extractImmobSortie(filePath) {
 
   const regex = /(\d{8})\s*([^\n]+)\n([\s\S]*?)(\d[\d\s,.]+)Cumul sorties du compte/g;
 
-  const comptes = [];
-  let totalGeneral = 0;
+  let comptes;
+  let totalGeneral;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
@@ -140,7 +140,7 @@ export async function extractImmobSortie(filePath) {
     totalGeneral += cumulNum;
   }
 
-  totalGeneral = totalGeneral.toLocaleString('fr-FR');
+  totalGeneral = totalGeneral ? totalGeneral.toLocaleString('fr-FR') : null;
   return { comptes, totalGeneral };
 }
 

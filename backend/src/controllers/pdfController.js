@@ -54,8 +54,8 @@ export async function getComments(req, res) {
 
 export async function getImmob(req, res) {
   try {
-    const filePathEntree = "./Immobs Entrées de l'exercice.pdf";
-    const filePathSortie = "./Immobs Sorties de l'exercice.pdf";
+    const filePathEntree = "./Immobs Entrées de l'exercice 1.pdf";
+    const filePathSortie = "./Immobs Sorties de l'exercice 1.pdf";
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
     
