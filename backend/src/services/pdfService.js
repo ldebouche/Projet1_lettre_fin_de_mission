@@ -17,14 +17,16 @@ export async function extractCumuls(filePath) {
 
   const match = text.match(regex);
 
-  if (!match) {
-    throw new Error("Impossible de trouver les cumuls dans le PDF");
+  let cumul2025;
+  let cumul2026;
+  let cumul2027;
+
+  if (match) {
+    cumul2025 = parseFloat(match[1].replace(/\s/g, "").replace(",", "."));
+    cumul2026 = parseFloat(match[2].replace(/\s/g, "").replace(",", "."));
+    cumul2027 = parseFloat(match[3].replace(/\s/g, "").replace(",", "."));
   }
-
-  const cumul2025 = parseFloat(match[1].replace(/\s/g, "").replace(",", "."));
-  const cumul2026 = parseFloat(match[2].replace(/\s/g, "").replace(",", "."));
-  const cumul2027 = parseFloat(match[3].replace(/\s/g, "").replace(",", "."));
-
+  
   return { cumul2025, cumul2026, cumul2027 };
 }
 

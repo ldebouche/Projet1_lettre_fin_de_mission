@@ -111,7 +111,6 @@ export class FormulaireComponent implements OnInit {
         if (pointsImportants) {
           this.pointsImportants = this.formatService.formatPointsImportants(pointsImportants);
         }
-        console.log(this.pointsImportants);
 
         if (data.anaSectorielle.valeurs.length) {
           this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),

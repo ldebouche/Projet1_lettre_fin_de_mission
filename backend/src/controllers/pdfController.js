@@ -6,9 +6,9 @@ import pLimit from "p-limit";
 
 export async function getCumuls(req, res) {
   try {
-    const filePath = "./Simul des amorts sur 3 ans.pdf";
+    const filePath = "./Simul des amorts sur 3 ans 2.pdf";
     const result = await extractCumuls(filePath);
-
+    
     if (!result) {
       return res.status(200).json(null);
     }
@@ -55,7 +55,7 @@ export async function getPointsImportants(req, res) {
   try {
     const filePath = "./Liste pts imp, N. syn, Report 1.pdf";
     const points = await extractPointsImportants(filePath);
-    console.log(points);
+
     res.status(200).json(points);
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
