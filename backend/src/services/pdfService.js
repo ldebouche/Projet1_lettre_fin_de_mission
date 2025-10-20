@@ -203,6 +203,56 @@ export function extractAnaSectorielle(pdfPath) {
   });
 }
 
+export async function extractEmprunts(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return { emprunts: [], remboursement_emprunt: null };
+  }
+
+  const buffer = fs.readFileSync(filePath);
+  const data = await pdf(buffer);
+  const text = data.text;
+
+  const regexEmprunt =
+    /\d{6,10}\s+(?<T_designation>.+?)Entreprise[\s\S]*?\n\d+\s*(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s+(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=\n\d{6,10}|\nCumul|$)/g;
+
+  const emprunts = [];
+  const regexNombre = /\d{1,3}(?: ?\d{3})*,\d{1,2}/g;
+
+  for (const match of text.matchAll(regexEmprunt)) {
+    const { T_designation, T_date_debut, T_date_fin, bloc } = match.groups;
+
+    const blocAvantK = bloc.split("K")[0];
+
+    const nombres = [...blocAvantK.matchAll(regexNombre)].map((x) => x[0]);
+
+    let montant_emprunt = "0,00";
+    let montant_restant = "0,00";
+
+    if (nombres.length === 2) {
+      montant_emprunt = nombres[0];
+      montant_restant = "0,00";
+    } else if (nombres.length >= 3) {
+      montant_emprunt = nombres[0];
+      montant_restant = nombres[1];
+    }
+
+    emprunts.push({
+      T_designation: T_designation.replace(/\s+/g, " ").trim(),
+      T_date_debut,
+      T_date_fin,
+      T_montant_emprunt : montant_emprunt.replace(/\s/g, "").replace(",", "."),
+      T_montant_restant : montant_restant.replace(/\s/g, "").replace(",", ".")
+    });
+  }
+
+  const rembMatches = [...text.matchAll(/I[\s\u00A0]*?(\d{1,3}(?: ?\d{3})*,\d{2})/g)];
+  const T_remboursement_emprunt =
+    rembMatches.length ? rembMatches[rembMatches.length - 1][1].replace(/\s/g, "").replace(",", ".") : null;
+
+  return { emprunts, T_remboursement_emprunt };
+}
+
 function mergeBrokenLabels(rows) {
   const fixed = [];
   

@@ -144,6 +144,13 @@ export async function generateAIComment(type, contexte) {
     template = prompts.generateComment.reformuler;
     prompt = fillTemplate(template, { texte });
   }
+
+  if (type === "emprunts") {
+    const { emprunts } = contexte;
+    template = prompts.generateComment.emprunts;
+    prompt = fillTemplate(template, { emprunts });
+    console.log(prompt);
+  }
   const raw = await callMistral(prompt);
   return raw;
 }

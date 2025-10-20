@@ -1,4 +1,4 @@
-import { extractCumuls, extractComments, extractPointsImportants, extractImmobEntree, extractImmobSortie, extractAnaSectorielle } from "../services/pdfService.js";
+import { extractCumuls, extractComments, extractPointsImportants, extractImmobEntree, extractImmobSortie, extractAnaSectorielle, extractEmprunts } from "../services/pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
 import { generateAIComment } from "../services/aiService.js";
 import pLimit from "p-limit";
@@ -6,7 +6,7 @@ import pLimit from "p-limit";
 
 export async function getCumuls(req, res) {
   try {
-    const filePath = "./Simul des amorts sur 3 ans 2.pdf";
+    const filePath = "./Simul des amorts sur 3 ans.pdf";
     const result = await extractCumuls(filePath);
     
     if (!result) {
@@ -117,5 +117,17 @@ export async function getAnaSectorielle(req, res) {
   } catch (err) {
     console.error("Erreur analyseSectorielle:", err);
     res.status(500).json({ error: "Impossible d'extraire/insérer les données" });
+  }
+}
+
+export async function getEmprunts(req, res) {
+  try {
+    const filePath = "./EMPRUNT 1.pdf";
+    const emprunts = await extractEmprunts(filePath);
+    console.log(emprunts);
+    res.status(200).json(emprunts);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire les emprunts" });
   }
 }

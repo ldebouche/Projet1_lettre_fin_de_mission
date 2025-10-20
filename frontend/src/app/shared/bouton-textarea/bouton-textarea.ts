@@ -161,11 +161,30 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
 
       case 'reformuler':
         console.log(this.data);
+        
         if (this.data instanceof FormControl) {
           this.value = this.data.value;
         }
         this.callAI('reformuler', { texte: this.value });
         break;
+
+      case 'emprunts':
+        const json = JSON.stringify(
+          this.data.map((e: any) => ({
+            ...e,
+            date_debut: `20${e.T_date_debut.split('/').reverse().join('-')}`,
+            date_fin: `20${e.T_date_fin.split('/').reverse().join('-')}`,
+            montant_emprunt: Math.round(Number(e.T_montant_emprunt)),
+            montant_restant: Math.round(Number(e.T_montant_restant))
+          })),
+          null,
+          2
+        );
+
+        console.log(json);
+        this.callAI('emprunts', { emprunts: json });
+        break;
+
       default:
         this.loading = false;
         this.errorMessage = 'Catégorie non reconnue';

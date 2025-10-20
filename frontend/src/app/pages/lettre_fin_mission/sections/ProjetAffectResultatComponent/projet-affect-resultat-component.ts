@@ -34,4 +34,10 @@ export class ProjetAffectResultatComponent {
       }
     });
   }
+
+  getValue(val?: any): string {
+    if (val == null || val === '') return '0';
+
+    return Math.round(Number(val)).toLocaleString('fr-FR'); 
+  }
 }

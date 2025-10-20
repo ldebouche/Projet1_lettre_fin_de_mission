@@ -30,8 +30,11 @@
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
     <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
 
+    <!-- ===== TRESORERIE ===== -->
+    <section-tresorerie-component [group]="f.T" *ngIf="emprunts"></section-tresorerie-component>
+
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
-    <section-estim-autofinancement-component [group]="f.EA" [resEx]="resEx" [dotation]="dotations[1]"></section-estim-autofinancement-component>
+    <section-estim-autofinancement-component [group]="f.EA"></section-estim-autofinancement-component>
 
     <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
     <section-majdoc-unique-eval-component [group]="f.MD" *ngIf="MD_salaries"></section-majdoc-unique-eval-component>

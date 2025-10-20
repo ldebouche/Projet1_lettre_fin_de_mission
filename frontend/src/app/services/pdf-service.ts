@@ -29,7 +29,7 @@ export class PdfService {
     return this.http.get(`${this.baseUrl}/immob`);
   }
 
-  getBilanSocial() {
-    return this.http.get(`${this.baseUrl}/bilan-social`);
+  getEmprunts() {
+    return this.http.get(`${this.baseUrl}/emprunts`);
   }
 }

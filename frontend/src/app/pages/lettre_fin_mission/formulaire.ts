@@ -73,6 +73,7 @@ export class FormulaireComponent implements OnInit {
   immobs: any;
   anaSectorielle: any;
   pointsImportants: any;
+  emprunts: any;
 
   constructor(
     private pdfService: PdfService,
@@ -97,9 +98,10 @@ export class FormulaireComponent implements OnInit {
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations(),
       immobs: this.pdfService.getImmob(),
-      pointsImportants: this.pdfService.getPointsImportants()
+      pointsImportants: this.pdfService.getPointsImportants(),
+      emprunts: this.pdfService.getEmprunts()
     }).subscribe({
-      next: ({ data, dotations, immobs, pointsImportants }: any) => {
+      next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
         if (dotations) {        
           this.dotations = Object.values(dotations);
         }
@@ -115,6 +117,10 @@ export class FormulaireComponent implements OnInit {
         if (data.anaSectorielle.valeurs.length) {
           this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
             data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
+        }
+
+        if (emprunts.T_remboursement_emprunt) {
+          this.emprunts = emprunts;
         }
         
         this.infoChargesPersonnel = data.chargesPersonnel;
@@ -177,7 +183,7 @@ export class FormulaireComponent implements OnInit {
             this.loading = false;
           }
         });
-
+        
         this.form.patchValue({
           CC: {
             comPerspective
@@ -210,9 +216,14 @@ export class FormulaireComponent implements OnInit {
           AF: {
             enabled: data.tabAutofinancement
           },
+          T: {
+            enabled: this.emprunts ? true : false,
+            emprunts: emprunts.emprunts
+          },
           EA: {
             resEx: Math.round(this.resEx),
-            dot: Math.round(this.dotations[1])
+            dot: Math.round(this.dotations[1]),
+            rembours: emprunts.remboursement_emprunt ? Math.round(emprunts.remboursement_emprunt) : 0,
           },
           MD: {
             enabled: data.MD_salaries
