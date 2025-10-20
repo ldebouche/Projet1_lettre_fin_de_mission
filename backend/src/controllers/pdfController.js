@@ -23,7 +23,7 @@ export async function getCumuls(req, res) {
 export async function getComments(req, res) {
   try {
     const { compte } = req.query;
-    const filePath = "./Liste pts imp, N. syn, Report 2.pdf";
+    const filePath = "./efm cdt.pdf";
     const limit = pLimit(3);
     const comments = await extractComments(filePath, compte);
     

@@ -223,7 +223,7 @@ export class FormulaireComponent implements OnInit {
           EA: {
             resEx: Math.round(this.resEx),
             dot: Math.round(this.dotations[1]),
-            rembours: emprunts.remboursement_emprunt ? Math.round(emprunts.remboursement_emprunt) : 0,
+            rembours: emprunts.T_remboursement_emprunt ? Math.round(emprunts.T_remboursement_emprunt) : 0,
           },
           MD: {
             enabled: data.MD_salaries
