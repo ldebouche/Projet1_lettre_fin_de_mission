@@ -32,7 +32,7 @@ function flattenObject(obj, parentKey = "", result = {}) {
 export function genererWord(variables) {
   const templateName = variables.anneeN1Existe
     ? "modele_complet1.docm"
-    : "modele_simple.docm";
+    : "modele_simple1.docm";
 
   const templatePath = path.join(process.cwd(), "templates", templateName);
   const content = fs.readFileSync(templatePath, "binary");

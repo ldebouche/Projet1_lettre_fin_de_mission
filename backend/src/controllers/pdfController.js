@@ -124,7 +124,7 @@ export async function getEmprunts(req, res) {
   try {
     const filePath = "./EMPRUNT 1.pdf";
     const emprunts = await extractEmprunts(filePath);
-    console.log(emprunts);
+
     res.status(200).json(emprunts);
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
