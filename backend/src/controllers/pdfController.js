@@ -1,4 +1,4 @@
-import { extractCumuls, extractComments, extractPointsImportants, extractImmobEntree, extractImmobSortie, extractAnaSectorielle, extractEmprunts } from "../services/pdfService.js";
+import { extractCumuls, extractComments, extractPointsImportants, extractImmobEntree, extractImmobSortie, extractAnaSectorielle, extractEmprunts, extractEcheancier } from "../services/pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
 import { generateAIComment } from "../services/aiService.js";
 import pLimit from "p-limit";
@@ -65,8 +65,8 @@ export async function getPointsImportants(req, res) {
 
 export async function getImmob(req, res) {
   try {
-    const filePathEntree = "./Immobs Entrées de l'exercice 1.pdf";
-    const filePathSortie = "./Immobs Sorties de l'exercice 1.pdf";
+    const filePathEntree = "./Immobs Entrées de l'exercice.pdf";
+    const filePathSortie = "./Immobs Sorties de l'exercice.pdf";
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
     
@@ -129,5 +129,17 @@ export async function getEmprunts(req, res) {
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les emprunts" });
+  }
+}
+
+export async function getEcheancier(req, res) {
+  try {
+    const file = req.file.path;
+    const echeancier = await extractEcheancier(file);
+
+    res.status(200).json(echeancier);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire l'echeancier" });
   }
 }

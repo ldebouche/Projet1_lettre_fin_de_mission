@@ -30,6 +30,18 @@ function flattenObject(obj, parentKey = "", result = {}) {
 }
 
 export function genererWord(variables) {
+  //const folderPath = "C:\\temp";
+  //const filePath = path.join(folderPath, "data.json");
+
+  // crée le dossier s’il n’existe pas
+  //if (!fs.existsSync(folderPath)) {
+  //  fs.mkdirSync(folderPath, { recursive: true });
+  //}
+//
+  //// écrit ton JSON
+  //fs.writeFileSync(filePath, JSON.stringify(variables), "utf8");
+  //console.log("✅ JSON créé :", filePath);
+
   const templateName = variables.anneeN1Existe
     ? "modele_complet1.docm"
     : "modele_simple1.docm";

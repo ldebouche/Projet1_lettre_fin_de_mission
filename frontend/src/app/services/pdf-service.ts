@@ -32,4 +32,11 @@ export class PdfService {
   getEmprunts() {
     return this.http.get(`${this.baseUrl}/emprunts`);
   }
+
+  getEcheancier(file: any): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post(this.baseUrl + '/echeancier', formData);
+  }
 }

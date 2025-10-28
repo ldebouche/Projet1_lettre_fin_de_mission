@@ -70,4 +70,21 @@ export class FormatService {
       return `${commentaire}`;
     }).join('\n');
   }
+
+  formatCP(cp: any) {
+    console.log(cp);
+    return {
+      annee: cp.annee ?? null,
+      echeanciers: (cp.echeanciers || []).map((ech: any) => ({
+        caisse: ech.caisse ?? null,
+        lignes: (ech.lignes || []).map((ligne: any) => ({
+          periode: ligne.periode ?? null,
+          date: ligne.date ?? null,
+          montant: ligne.montant ?? null,
+        })),
+        total: ech.total ?? null,
+      })),
+      totalAnnee: cp.totalAnnee ?? null,
+    };
+  }
 }

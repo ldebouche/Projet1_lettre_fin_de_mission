@@ -2,6 +2,7 @@ import fs from "fs";
 import pdf from "pdf-parse-fork";
 import path from "path";
 import { exec } from "child_process";
+import { text } from "stream/consumers";
 
 export async function extractCumuls(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -114,7 +115,7 @@ export async function extractImmobEntree(filePath) {
 
   const regex = /(\d{8})([^\n]+)\n([\s\S]*?)(?:Cumul du compte\s*([\d\s,.]+))(?:\s|$)/g;
 
-  let comptes;
+  let comptes = [];
   let match;
 
   while ((match = regex.exec(text)) !== null) {
@@ -152,7 +153,7 @@ export async function extractImmobSortie(filePath) {
 
   const regex = /(\d{8})\s*([^\n]+)\n([\s\S]*?)(\d[\d\s,.]+)Cumul sorties du compte/g;
 
-  let comptes;
+  let comptes = [];
   let totalGeneral;
   let match;
 
@@ -266,4 +267,63 @@ function mergeBrokenLabels(rows) {
   }
 
   return fixed;
+}
+
+export async function extractEcheancier(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return [];
+  }
+
+  const buffer = fs.readFileSync(filePath);
+  const data = await pdf(buffer);
+  const text = data.text.replace(/\r\n/g, '\n');
+  fs.unlinkSync(filePath);
+
+  const result = [];
+
+  const regexAnnee = /Année\s+(\d{4})([\s\S]*?)(?=Année\s+\d{4}|$)/g;
+
+  for (const match of text.matchAll(regexAnnee)) {
+    const annee = match[1];
+    const blocAnnee = match[2];
+    const echeanciers = [];
+
+    const regexCaisse =
+      /^([A-ZÉÈÎÏÂÔÛÙÀÇ][A-Za-zÉÈÊËÎÏÔÛÙÀÂÇ' ]+)\n([\s\S]*?Total[\d\s.,]+\n)/gm;
+
+    for (const c of blocAnnee.matchAll(regexCaisse)) {
+      const caisse = c[1].trim();
+      const contenu = c[2];
+
+      const regexLigne = /^([^\n]*?)\s*(\d{2}\/\d{2}\/\d{4})\s*([\d\s.,]+)$/gm;
+      const lignes = [];
+
+      for (const l of contenu.matchAll(regexLigne)) {
+        const periode = l[1].trim();
+        const date = l[2];
+        const montant = l[3].trim();
+        if (!periode || /total/i.test(periode)) continue;
+        lignes.push({ periode, date, montant });
+      }
+
+      const totalMatch = contenu.match(/Total\s*([\d\s.,]+)/);
+      const total = totalMatch ? totalMatch[1].trim() : null;
+
+      if (lignes.length > 0) {
+        echeanciers.push({ caisse, lignes, total });
+      }
+    }
+
+    const totalAnneeMatch = blocAnnee.match(
+      new RegExp(`([\\d\\s.,]+)\\s*Total\\s*année\\s*${annee}`, 'm')
+    );
+    const totalAnnee = totalAnneeMatch
+      ? totalAnneeMatch[1].trim().split('\n').pop().trim()
+      : null;
+
+    result.push({ annee, echeanciers, totalAnnee });
+  }
+  
+  return result;
 }

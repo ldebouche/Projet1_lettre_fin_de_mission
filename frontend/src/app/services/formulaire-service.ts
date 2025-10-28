@@ -43,8 +43,8 @@ export class FormulaireService {
       CP: this.fb.group({
         heuresRemunN: [0],
         heuresRemunN1: [0],
-        annexeCotisationsEnabled: [false],
-        annexeCommentaire: ['']
+        annexe1TNS: [],
+        annexe2TNS: []
       }),
 
       // ===== INVESTISSEMENTS =====

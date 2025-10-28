@@ -51,6 +51,25 @@
   .emptyCell {
     background: var(--color-light);
   }
+
+  .caisse td{
+    font-weight: bold;
+    border-bottom: 1px solid #fff;
+    background-color: var(--color-blue-light);
+    color: #fff;
+    text-align: left;
+  }
+
+  .total td {
+    background-color: var(--color-light);
+    font-weight: bold;
+    border-bottom: 0px;
+  }
+  .totalAnnee td {
+    border-top: 1px solid #000;
+    background-color: var(--color-light);
+    font-weight: bold;
+  }
 }
 
 .table .row-affectations ~ tr td:first-child {
