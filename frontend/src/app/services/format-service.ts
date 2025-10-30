@@ -7,7 +7,7 @@ export class FormatService {
       if (typeof val === 'boolean') return val;
       if (typeof val !== 'number' || isNaN(val)) return val;
 
-      if (key && key.includes('%')) {
+      if (key && (key.includes('%') || key.includes('VA/MS'))) {
         if (val < -100 || val > 100) return 'NS';
         return Number(val.toFixed(2)).toLocaleString('fr-FR');
       }
@@ -72,7 +72,6 @@ export class FormatService {
   }
 
   formatCP(cp: any) {
-    console.log(cp);
     return {
       annee: cp.annee ?? null,
       echeanciers: (cp.echeanciers || []).map((ech: any) => ({

@@ -96,8 +96,7 @@ export class FormulaireService {
       // ===== FISCALITE =====
       T: this.fb.group({
         enabled: [false],
-        emprunts: [],
-        commentaire: ['']
+        emprunts: []
       }),
 
       // ===== ESTIMATION D’AUTOFINANCEMENT =====

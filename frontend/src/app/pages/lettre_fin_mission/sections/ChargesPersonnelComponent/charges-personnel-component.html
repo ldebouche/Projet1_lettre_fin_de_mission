@@ -54,6 +54,13 @@
           <td class="emptyCell" *ngIf="anneeN1Existe"></td>
           <td class="emptyCell" *ngIf="anneeN1Existe"></td>
       </tr>
+      <tr>
+          <td class="first-row">VA/MS</td>
+          <td>{{ getValue('CP_VA/MS_N', true) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue('CP_VA/MS_N1', true) }}</td>
+          <td class="emptyCell" *ngIf="anneeN1Existe"></td>
+          <td class="emptyCell" *ngIf="anneeN1Existe"></td>
+      </tr>
     </tbody>
   </table>
 

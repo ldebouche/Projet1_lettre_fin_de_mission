@@ -96,7 +96,8 @@ export const GetDossierInfos = async (req, res) => {
         CC_resNetVar: (aggN.resNet || 0) - (aggN1.resNet || 0),
         "CC_%resNetVar": (aggN1.resNet
           ? ((aggN.resNet - aggN1.resNet) / aggN1.resNet) * 100
-          : null)
+          : null),
+        
       },
 
       // === Evolution charges ===
@@ -150,7 +151,9 @@ export const GetDossierInfos = async (req, res) => {
         CP_heureVar: 0,
         "CP_%heureVar": 0,
         CP_coutHorN: 0,
-        CP_coutHorN1: 0
+        CP_coutHorN1: 0,
+        "CP_VA/MS_N":aggN.valeurAjoutee /aggN.CP_N || 0,
+        "CP_VA/MS_N1":aggN1.valeurAjoutee /aggN1.CP_N || 0 
       },
 
       // === Impôt sur les sociétés ===
