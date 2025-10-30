@@ -256,11 +256,7 @@ export async function extractEmprunts(filePath) {
     });
   }
 
-  const rembMatches = [...text.matchAll(/I[\s\u00A0]*?(\d{1,3}(?: ?\d{3})*,\d{2})/g)];
-  const T_remboursement_emprunt =
-    rembMatches.length ? rembMatches[rembMatches.length - 1][1].replace(/\s/g, "").replace(",", ".") : null;
-
-  return { emprunts, T_remboursement_emprunt };
+  return { emprunts };
 }
 
 function mergeBrokenLabels(rows) {

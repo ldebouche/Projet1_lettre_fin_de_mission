@@ -1,14 +1,12 @@
 import { Component , Input, OnInit} from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
 
 @Component({
   selector: 'section-tresorerie-component',
   imports: [
     CommonModule, 
-    ReactiveFormsModule, 
-    BtnToTextareaComponent
+    ReactiveFormsModule
   ],
   templateUrl: './tresorerie-component.html',
   styleUrl: './tresorerie-component.scss'
@@ -19,7 +17,8 @@ export class TresorerieComponent implements OnInit {
   emprunts: any[] = [];
 
   ngOnInit() {
-    this.emprunts = this.group.get('emprunts')?.value;
+    const raw = this.group.get('emprunts')?.value;
+    this.emprunts = raw?.global.emprunts || [];
   }
   getValue(val: any): string {
     if (val == null || val === '') return '';

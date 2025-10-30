@@ -27,7 +27,8 @@ import { DataService } from '../../services/data-service';
 export class FormulaireComponent implements OnInit {
   form!: FormGroup;
   loading = true;
-  code_client = '';
+  code_client: string | null;
+  dateDebutEx: string | null;
   anneeN = 0;
   anneeN1Existe = true;
   I_classe2 = true;
@@ -87,6 +88,7 @@ export class FormulaireComponent implements OnInit {
   ) {
     this.informations_fiscales = this.formService.informations_fiscales;
     this.code_client = this.dataService.getCodeClient();
+    this.dateDebutEx = this.dataService.getDateDebutEx();
   }
 
   
@@ -119,8 +121,9 @@ export class FormulaireComponent implements OnInit {
             data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
         }
 
-        if (emprunts.T_remboursement_emprunt) {
-          this.emprunts = emprunts;
+        if (emprunts) {
+          this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
+          console.log(this.emprunts);
         }
         
         this.infoChargesPersonnel = data.chargesPersonnel;
@@ -218,7 +221,7 @@ export class FormulaireComponent implements OnInit {
           },
           T: {
             enabled: this.emprunts ? true : false,
-            emprunts: emprunts.emprunts
+            emprunts: this.emprunts
           },
           EA: {
             resEx: Math.round(this.resEx),

@@ -9,8 +9,8 @@ export class DbService {
   private http = inject(HttpClient);
   baseUrl = 'http://localhost:4000/api/db';
   
-  VerifDossier(code_client: any, dateFinEx: Date) {
-    return this.http.post<{ token: string }>(`${this.baseUrl}/verifDossier`, { code_client, dateFinEx })
+  VerifDossier(code_client: any, dateFinEx: Date, dateDebutEx: Date) {
+    return this.http.post<{ token: string }>(`${this.baseUrl}/verifDossier`, { code_client, dateFinEx, dateDebutEx });
   };
 
   getCAData() {
