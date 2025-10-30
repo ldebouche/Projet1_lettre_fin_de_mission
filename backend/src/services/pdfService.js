@@ -219,16 +219,19 @@ export async function extractEmprunts(filePath) {
 
   const emprunts = [];
   const regexNombre = /\d{1,3}(?: ?\d{3})*,\d{1,2}/g;
+  const regexRemboursN1 = /I[^\d]*(\d{1,3}(?: ?\d{3})*,\d{1,2})/;
 
   for (const match of text.matchAll(regexEmprunt)) {
     const { T_designation, T_date_debut, T_date_fin, bloc } = match.groups;
 
     const blocAvantK = bloc.split("K")[0];
-
+    const blocApresK = bloc.split("K")[1];
+    
     const nombres = [...blocAvantK.matchAll(regexNombre)].map((x) => x[0]);
 
     let montant_emprunt = "0,00";
     let montant_restant = "0,00";
+    let remboursN1 = "0,00";
 
     if (nombres.length === 2) {
       montant_emprunt = nombres[0];
@@ -238,12 +241,18 @@ export async function extractEmprunts(filePath) {
       montant_restant = nombres[1];
     }
 
+    const remboursMatch = blocApresK.match(regexRemboursN1);
+    if (remboursMatch) {
+      remboursN1 = remboursMatch[1];
+    }
+    
     emprunts.push({
       T_designation: T_designation.replace(/\s+/g, " ").trim(),
       T_date_debut,
       T_date_fin,
       T_montant_emprunt : montant_emprunt.replace(/\s/g, "").replace(",", "."),
-      T_montant_restant : montant_restant.replace(/\s/g, "").replace(",", ".")
+      T_montant_restant : montant_restant.replace(/\s/g, "").replace(",", "."),
+      T_remboursN1: remboursN1.replace(/\s/g, "").replace(",", ".")
     });
   }
 
