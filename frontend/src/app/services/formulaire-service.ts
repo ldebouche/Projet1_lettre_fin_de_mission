@@ -70,7 +70,12 @@ export class FormulaireService {
         acompte1: [0],
         acompte2: [0],
         acompte3: [0],
-        acompte4: [0]
+        acompte4: [0],
+        date1: [0],
+        date2: [0],
+        date3: [0],
+        date4: [0],
+        date5: [0]
       }),
 
       // ===== INFORMATION FISCALE =====

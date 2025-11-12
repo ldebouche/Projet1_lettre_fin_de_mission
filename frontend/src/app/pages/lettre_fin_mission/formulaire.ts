@@ -169,7 +169,7 @@ export class FormulaireComponent implements OnInit {
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
-
+        console.log(this.moisClotureArray[0]);
         const affectation = this.fiscaliteService.calculAffectation(
           data,
           data.capitalSocial ?? 0,
@@ -213,7 +213,12 @@ export class FormulaireComponent implements OnInit {
             acompte1: Math.round(data.acompte_total/4),
             acompte2: Math.round(data.acompte_total/4),
             acompte3: Math.round(data.acompte_total/4),
-            acompte4: Math.round(data.acompte_total/4)            
+            acompte4: Math.round(data.acompte_total/4),
+            date1: this.moisClotureArray[0],
+            date2: this.moisClotureArray[1],
+            date3: this.moisClotureArray[2],
+            date4: this.moisClotureArray[3], 
+            date5: this.moisClotureArray[4]           
           },
           PA: {
             resEx: Math.round(this.resEx),

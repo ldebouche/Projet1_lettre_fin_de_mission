@@ -24,7 +24,7 @@ export async function getComments(req, res) {
   try {
     const { compte } = req.query;
     const filePath = "./Liste pts imp, N. syn, Report3.pdf";
-    const limit = pLimit(5);
+    const limit = pLimit(2);
     const comments = await extractComments(filePath, compte);
     
     if (!comments) {
