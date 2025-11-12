@@ -57,7 +57,6 @@ export class ChargesService {
   }
 
   formatEvoCharges(obj: any[], form: any) {
-    console.log(obj);
     return obj.filter(ligne => {
       const prc = Number(ligne['EC_%Var']);
       const validPrc = !isNaN(prc) && Math.abs(prc) <= 100;

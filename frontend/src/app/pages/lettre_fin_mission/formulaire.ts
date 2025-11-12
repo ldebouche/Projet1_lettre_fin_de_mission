@@ -66,6 +66,8 @@ export class FormulaireComponent implements OnInit {
   infoAutofinancement: any = {};
   infoEvolutionCharges: any = {};
   informations_fiscales!: string[];
+  infoFluxTresorerie: any = {};
+  infoSeuilRenta: any = {};
 
   dataCA = {};
   dataMarge = {};
@@ -104,6 +106,7 @@ export class FormulaireComponent implements OnInit {
       emprunts: this.pdfService.getEmprunts()
     }).subscribe({
       next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
+        console.log(data);
         if (dotations) {        
           this.dotations = Object.values(dotations);
         }
@@ -123,7 +126,6 @@ export class FormulaireComponent implements OnInit {
 
         if (emprunts) {
           this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
-          console.log(this.emprunts);
         }
         
         this.infoChargesPersonnel = data.chargesPersonnel;
@@ -131,6 +133,11 @@ export class FormulaireComponent implements OnInit {
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
+        this.infoFluxTresorerie = data.tresorerie;
+        this.infoSeuilRenta = {
+          seuilRenta: data.seuilRentaFinan,
+          rentaJours: data.seuilRentaFinan / data.chiffreCles.CC_caN * 360,
+        }
 
         this.anneeN = data.anneeN;
         this.anneeN1Existe = data.anneeN1Existe;
@@ -283,7 +290,9 @@ export class FormulaireComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
+      FT: this.infoFluxTresorerie,
       AS: this.formatService.formatASData(this.anaSectorielle),
+      SR: this.infoSeuilRenta,
       EC_tab: this.infoEvolutionCharges
     };
 

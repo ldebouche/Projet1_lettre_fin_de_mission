@@ -29,16 +29,6 @@ export function fillTemplate(template, variables) {
   return template;
 }
 
-export function checkIntensiteVariation(variationPrc) {
-  const seuil = 15;
-
-  return {
-    intensite: Math.abs(variationPrc) > seuil ? "forte" : "faible",
-    sens: variationPrc < 0 ? "negative" : "positive"
-  };
-}
-
-
 export function formatTranches(obj) {
   if (!obj) return { globale: "", details: "" };
 
@@ -73,10 +63,6 @@ export async function generateAIComment(type, contexte) {
     else {
       template = prompts.generateComment.CA_marge;
     }
-    
-
-    const { intensite: intensiteVariationCA, sens: sensVariationCA } = checkIntensiteVariation(CA.variationPrcCA);
-    const { intensite: intensiteVariationMarge, sens: sensVariationMarge } = checkIntensiteVariation(MARGE.variationPrcMarge);
 
     const caSecteurStr = formatTranches(CA.caSecteur);
     const margeSecteurStr = formatTranches(MARGE.margeSecteur);
@@ -90,8 +76,6 @@ export async function generateAIComment(type, contexte) {
       caN1: CA.caN1,
       variationCA: CA.variationCA,
       variationPrcCA: CA.variationPrcCA,
-      intensiteVariationCA,
-      sensVariationCA,
       caSecteurGlobale: caSecteurStr.globale,
       caSecteurDetails: caSecteurStr.details,
       FDC: "",
@@ -101,13 +85,11 @@ export async function generateAIComment(type, contexte) {
       margeN1PrcCA: MARGE.margeN1PrcCA,
       variationMarge: MARGE.variationMarge,
       variationPrcMarge: MARGE.variationPrcMarge,
-      intensiteVariationMarge,
-      sensVariationMarge,
       margeSecteurGlobale: margeSecteurStr.globale,
       margeSecteurDetails: margeSecteurStr.details,
     };
 
-    if (intensiteVariationCA === "forte") {
+    if (CA.variationPrcCA > 15) {
       payload.FDC = CA.FDC;
     }
 

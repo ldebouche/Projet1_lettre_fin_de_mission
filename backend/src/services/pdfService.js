@@ -48,7 +48,7 @@ export async function extractComments(filePath, numComptes) {
   const comptes = matches.map(m => ({
     compte: m[1],
     libelle: m[2],
-    commentaire: m[3].trim()
+    commentaire: m[3].replace(/[★☆•]+/g, '').trim()
   }));
 
   const result = [];

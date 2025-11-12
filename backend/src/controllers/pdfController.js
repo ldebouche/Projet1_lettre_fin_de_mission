@@ -6,7 +6,7 @@ import pLimit from "p-limit";
 
 export async function getCumuls(req, res) {
   try {
-    const filePath = "./Simul des amorts sur 3 ans.pdf";
+    const filePath = "./Simul des amorts sur 3 ans3.pdf";
     const result = await extractCumuls(filePath);
     
     if (!result) {
@@ -23,8 +23,8 @@ export async function getCumuls(req, res) {
 export async function getComments(req, res) {
   try {
     const { compte } = req.query;
-    const filePath = "./efm cdt.pdf";
-    const limit = pLimit(3);
+    const filePath = "./Liste pts imp, N. syn, Report3.pdf";
+    const limit = pLimit(5);
     const comments = await extractComments(filePath, compte);
     
     if (!comments) {
@@ -53,7 +53,7 @@ export async function getComments(req, res) {
 
 export async function getPointsImportants(req, res) {
   try {
-    const filePath = "./Liste pts imp, N. syn, Report 1.pdf";
+    const filePath = "./Liste pts imp, N. syn, Report3.pdf";
     const points = await extractPointsImportants(filePath);
 
     res.status(200).json(points);
@@ -65,8 +65,8 @@ export async function getPointsImportants(req, res) {
 
 export async function getImmob(req, res) {
   try {
-    const filePathEntree = "./Immobs Entrées de l'exercice.pdf";
-    const filePathSortie = "./Immobs Sorties de l'exercice.pdf";
+    const filePathEntree = "./Immobs Entrées de l'exercice3.pdf";
+    const filePathSortie = "./Immobs Sorties de l'exercice3.pdf";
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
     
@@ -122,7 +122,7 @@ export async function getAnaSectorielle(req, res) {
 
 export async function getEmprunts(req, res) {
   try {
-    const filePath = "./EMPRUNT 1.pdf";
+    const filePath = "./Etat des emprunts3.pdf";
     const emprunts = await extractEmprunts(filePath);
 
     res.status(200).json(emprunts);

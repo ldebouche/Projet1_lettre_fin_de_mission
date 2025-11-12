@@ -38,6 +38,7 @@ export const GetDossierInfos = async (req, res) => {
       montantReserveOrdinaire: aggN.montantReserveOrdinaire || 0,
       montantReportNouveau: aggN.montantReportNouveau || 0,
       montantDividendesN1: aggN.montantDividendesN1 || 0,
+      seuilRentaFinan: ((aggN.coutsFixes - aggN.AF_dota - aggN.dotaProvision + aggN.IS_tot + aggN.AF_rembours + aggN.AF_divi) / ((aggN.marge / aggN.ca) * 100) * 100) || 0,
 
       // === Infos client ===
       client: {
@@ -166,6 +167,7 @@ export const GetDossierInfos = async (req, res) => {
       // === Autofinancement ===
       autofinancement: {
         AF_resEx: (aggN.totalProduits || 0) - (aggN.totalCharges || 0),
+        "AF_%resEx": ((aggN.totalProduits || 0) - (aggN.totalCharges || 0)) / aggN.ca * 100,
         AF_dota: aggN.AF_dota || 0,
         AF_reprises: aggN.AF_reprises || 0,
         AF_cessions: aggN.AF_cession || 0,
@@ -203,6 +205,26 @@ export const GetDossierInfos = async (req, res) => {
           } 
         })),
         commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives) || null
+      },
+
+      tresorerie: {
+        tresoN: aggN.treso || 0,
+        RF_apport: aggN.RF_apport || 0,
+        RF_emprunts: aggN.RF_emprunts || 0,
+        RF_invest: aggN.RF_invest || 0,
+        RF_autre: aggN.RF_autre || 0,
+        EF_invest: aggN.EF_invest || 0,
+        EF_emprunts: aggN.EF_emprunts || 0,
+        EF_retraits: aggN.EF_retraits || 0,
+        EF_divi: aggN.EF_divi || 0,
+        V_stock: aggN.V_stock || 0,
+        V_creances: aggN.V_creances || 0,
+        V_dettes: aggN.V_dettes || 0,
+        V_autresCreances: aggN.V_autresCreances || 0,
+        V_autresDettes: aggN.V_autresDettes || 0,
+        tresoN1: aggN1.treso || 0,
+        frng: aggN.RF_apport + aggN.RF_emprunts + aggN.RF_invest + aggN.RF_autre - aggN.EF_invest - aggN.EF_emprunts - aggN.EF_retraits - aggN.EF_divi || 0,
+        bfr: - aggN.V_stock - aggN.V_creances + aggN.V_dettes - aggN.V_autresCreances + aggN.V_autresDettes || 0
       },
 
       // === Commentaires ===
