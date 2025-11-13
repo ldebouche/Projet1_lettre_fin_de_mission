@@ -1,4 +1,4 @@
-import { extractCumuls, extractComments, extractImmobEntree, extractImmobSortie, extractAnaSectorielle } from "../services/pdfService.js";
+import { extractCumuls, extractComments, extractPointsImportants, extractImmobEntree, extractImmobSortie, extractAnaSectorielle, extractEmprunts, extractEcheancier } from "../services/pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
 import { generateAIComment } from "../services/aiService.js";
 import pLimit from "p-limit";
@@ -6,9 +6,9 @@ import pLimit from "p-limit";
 
 export async function getCumuls(req, res) {
   try {
-    const filePath = "./Simul des amorts sur 3 ans.pdf";
+    const filePath = "./Simul des amorts sur 3 ans3.pdf";
     const result = await extractCumuls(filePath);
-
+    
     if (!result) {
       return res.status(200).json(null);
     }
@@ -23,10 +23,10 @@ export async function getCumuls(req, res) {
 export async function getComments(req, res) {
   try {
     const { compte } = req.query;
-    const filePath = "./efm cdt.pdf";
-    const limit = pLimit(3);
+    const filePath = "./Liste pts imp, N. syn, Report3.pdf";
+    const limit = pLimit(2);
     const comments = await extractComments(filePath, compte);
-    console.log(comments, "aaaa");
+    
     if (!comments) {
       return res.status(200).json(null);
     }
@@ -51,11 +51,22 @@ export async function getComments(req, res) {
   }
 }
 
+export async function getPointsImportants(req, res) {
+  try {
+    const filePath = "./Liste pts imp, N. syn, Report3.pdf";
+    const points = await extractPointsImportants(filePath);
+
+    res.status(200).json(points);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire les points importants" });
+  }
+}
 
 export async function getImmob(req, res) {
   try {
-    const filePathEntree = "./Immobs Entrées de l'exercice.pdf";
-    const filePathSortie = "./Immobs Sorties de l'exercice.pdf";
+    const filePathEntree = "./Immobs Entrées de l'exercice3.pdf";
+    const filePathSortie = "./Immobs Sorties de l'exercice3.pdf";
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
     
@@ -106,5 +117,29 @@ export async function getAnaSectorielle(req, res) {
   } catch (err) {
     console.error("Erreur analyseSectorielle:", err);
     res.status(500).json({ error: "Impossible d'extraire/insérer les données" });
+  }
+}
+
+export async function getEmprunts(req, res) {
+  try {
+    const filePath = "./Etat des emprunts3.pdf";
+    const emprunts = await extractEmprunts(filePath);
+
+    res.status(200).json(emprunts);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire les emprunts" });
+  }
+}
+
+export async function getEcheancier(req, res) {
+  try {
+    const file = req.file.path;
+    const echeancier = await extractEcheancier(file);
+
+    res.status(200).json(echeancier);
+  } catch (err) {
+    console.error("Erreur extraction PDF:", err);
+    res.status(500).json({ error: "Impossible d'extraire l'echeancier" });
   }
 }

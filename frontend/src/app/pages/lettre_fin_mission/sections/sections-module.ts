@@ -11,6 +11,7 @@ import { ImpotSocietesTabComponent } from './ImpotSocietesTabComponent/impot-soc
 import { AcompteImpotComponent } from './AcompteImpotComponent/acompte-impot-component';
 import { InfoFiscaleComponent } from './InfoFiscaleComponent/info-fiscale-component';
 import { ProjetAffectResultatComponent } from './ProjetAffectResultatComponent/projet-affect-resultat-component';
+import { TresorerieComponent } from './TresorerieComponent/tresorerie-component';
 import { EstimAutofinancementComponent } from './EstimAutofinancementComponent/estim-autofinancement-component';
 import { MAJDocUniqueEvalComponent } from './MAJDocUniqueEvalComponent/majdoc-unique-eval-component';
 import { FaitsMarquantsComponent } from './FaitsMarquantsComponent/faits-marquants-component';
@@ -30,6 +31,7 @@ import { SignataireComponent } from './SignataireComponent/signataire-component'
     AcompteImpotComponent,
     InfoFiscaleComponent,
     ProjetAffectResultatComponent,
+    TresorerieComponent,
     EstimAutofinancementComponent,
     MAJDocUniqueEvalComponent,
     FaitsMarquantsComponent,
@@ -46,6 +48,7 @@ import { SignataireComponent } from './SignataireComponent/signataire-component'
     AcompteImpotComponent,
     InfoFiscaleComponent,
     ProjetAffectResultatComponent,
+    TresorerieComponent,
     EstimAutofinancementComponent,
     MAJDocUniqueEvalComponent,
     FaitsMarquantsComponent,

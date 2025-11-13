@@ -15,11 +15,19 @@
       </div>
 
       <label>
-        <span>Date de clôture</span>
+        <span>Date de début de mission</span>
+        <input type="date" formControlName="dateDebutEx" />
+      </label>
+      <div *ngIf="form.get('dateDebutEx')?.invalid && form.get('dateDebutEx')?.touched" class="error-formulaire">
+        La date de début de mission est requise
+      </div>
+
+      <label>
+        <span>Date de fin de mission</span>
         <input type="date" formControlName="dateFinEx" />
       </label>
       <div *ngIf="form.get('dateFinEx')?.invalid && form.get('dateFinEx')?.touched" class="error-formulaire">
-        La date de clôture est requise
+        La date de fin de mission est requise
       </div>
 
       <div class="actions">

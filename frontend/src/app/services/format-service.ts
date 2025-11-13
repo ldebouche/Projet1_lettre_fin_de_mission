@@ -7,7 +7,7 @@ export class FormatService {
       if (typeof val === 'boolean') return val;
       if (typeof val !== 'number' || isNaN(val)) return val;
 
-      if (key && key.includes('%')) {
+      if (key && (key.includes('%') || key.includes('VA/MS'))) {
         if (val < -100 || val > 100) return 'NS';
         return Number(val.toFixed(2)).toLocaleString('fr-FR');
       }
@@ -62,5 +62,94 @@ export class FormatService {
     });
 
     return result;
+  }
+
+  formatPointsImportants(pointsImportants: any[]) {
+    return pointsImportants.map((p: any) => {
+      const commentaire = p.commentaire ? ` - ${p.commentaire}` : '';
+      return `${commentaire}`;
+    }).join('\n');
+  }
+
+  formatCP(cp: any) {
+    return {
+      annee: cp.annee ?? null,
+      echeanciers: (cp.echeanciers || []).map((ech: any) => ({
+        caisse: ech.caisse ?? null,
+        lignes: (ech.lignes || []).map((ligne: any) => ({
+          periode: ligne.periode ?? null,
+          date: ligne.date ?? null,
+          montant: ligne.montant ?? null,
+        })),
+        total: ech.total ?? null,
+      })),
+      totalAnnee: cp.totalAnnee ?? null,
+    };
+  }
+
+  formatEmprunts(data: any, dateDebutEx: any, dateFinEx: any): any {
+    const parseDate = (str: string): Date | null => {
+      if (!str) return null;
+      str = str.trim();
+
+      if (str.includes("-")) {
+        const [y, m, d] = str.split("-").map((x) => parseInt(x, 10));
+        return new Date(y, m - 1, d);
+      }
+
+      if (str.includes("/")) {
+        const [d, m, yRaw] = str.split("/").map((x) => parseInt(x, 10));
+        let y = yRaw;
+        if (y < 100) y += y < 50 ? 2000 : 1900;
+        return new Date(y, m - 1, d);
+      }
+
+      return null;
+    };
+
+    const debutEx = parseDate(dateDebutEx)!;
+    const finEx = parseDate(dateFinEx)!;
+
+    const inRange = (d: Date | null): boolean =>
+      d !== null && d >= debutEx && d <= finEx;
+
+    const initSynthese = (): any => ({
+      totalMontantEmprunt: 0,
+      totalRemboursN1: 0,
+      nbEmprunts: 0,
+      emprunts: [],
+    });
+
+    const commences = initSynthese();
+    const termines = initSynthese();
+    const autres = initSynthese();
+
+    for (const e of data.emprunts) {
+      const debut = parseDate(e.T_date_debut);
+      const fin = parseDate(e.T_date_fin);
+      const montant = parseInt(e.T_montant_emprunt);
+      const rembN1 = parseInt(e.T_remboursN1);
+
+      
+      let cible;
+      if (inRange(debut)) cible = commences;
+      else if (inRange(fin)) cible = termines;
+      else cible = autres;
+
+      cible.totalMontantEmprunt += montant;
+      cible.totalRemboursN1 += rembN1;
+      cible.nbEmprunts++;
+    }
+
+    data.totalMontantEmprunt = commences.totalMontantEmprunt + termines.totalMontantEmprunt + autres.totalMontantEmprunt;
+    data.totalRemboursN1 = commences.totalRemboursN1 + termines.totalRemboursN1 + autres.totalRemboursN1;
+    data.nbEmprunts = commences.nbEmprunts + termines.nbEmprunts + autres.nbEmprunts;
+
+    return {
+      global: data,
+      commencesDansExercice: commences,
+      terminesDansExercice: termines,
+      autres: autres,
+    };
   }
 }

@@ -85,4 +85,4 @@ Thumbs.db
 *.txt
 *.pdf
 
-.tsbuildinfo
+*.tsbuildinfo

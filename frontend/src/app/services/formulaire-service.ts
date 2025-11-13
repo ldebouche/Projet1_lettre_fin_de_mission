@@ -43,8 +43,8 @@ export class FormulaireService {
       CP: this.fb.group({
         heuresRemunN: [0],
         heuresRemunN1: [0],
-        annexeCotisationsEnabled: [false],
-        annexeCommentaire: ['']
+        annexe1TNS: [],
+        annexe2TNS: []
       }),
 
       // ===== INVESTISSEMENTS =====
@@ -70,7 +70,12 @@ export class FormulaireService {
         acompte1: [0],
         acompte2: [0],
         acompte3: [0],
-        acompte4: [0]
+        acompte4: [0],
+        date1: [0],
+        date2: [0],
+        date3: [0],
+        date4: [0],
+        date5: [0]
       }),
 
       // ===== INFORMATION FISCALE =====
@@ -91,6 +96,12 @@ export class FormulaireService {
       // ===== TABLEAU D’AUTOFINANCEMENT =====
       AF: this.fb.group({
         enabled: [true]
+      }),
+
+      // ===== FISCALITE =====
+      T: this.fb.group({
+        enabled: [false],
+        emprunts: []
       }),
 
       // ===== ESTIMATION D’AUTOFINANCEMENT =====

@@ -3,6 +3,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } fr
 import { CommonModule } from '@angular/common';
 import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
+import { PdfService } from '../../../../services/pdf-service';
+import { FormatService } from '../../../../services/format-service';
 
 @Component({
   selector: 'section-charges-personnel-component',
@@ -24,7 +26,16 @@ export class ChargesPersonnelComponent implements OnInit {
   selectedFile: File | null = null;
   fileUrl: string | null = null;
 
-  indicateurs: any[] = [];
+  data: any[] = [];
+
+  tabComplet: any = {};
+  tabPartiel: any = {};
+  errorMessage: string = '';
+
+  constructor(
+    private pdf: PdfService,
+    private format: FormatService
+  ) {}
 
   ngOnInit() {
     this.group.get('heuresRemunN')?.valueChanges.subscribe(() => this.updateComputedValues());
@@ -69,6 +80,8 @@ export class ChargesPersonnelComponent implements OnInit {
   checked() { 
     if (this.isChecked) {
       this.isChecked = false;
+      this.errorMessage = '';
+      this.selectedFile = null;
     } else {
       this.isChecked = true;
     }
@@ -86,6 +99,24 @@ export class ChargesPersonnelComponent implements OnInit {
 
       this.selectedFile = file;
       this.fileUrl = URL.createObjectURL(file);
+
+      this.pdf.getEcheancier(file).subscribe({
+        next: (res) => {
+          if (!res.length) { 
+            this.errorMessage = 'Aucun contenu extrait';
+            return;
+          }
+          this.tabComplet = res[0];
+          this.tabPartiel = res[1];
+          
+          const annexe1TNS = this.format.formatCP(res[0]);
+          const annexe2TNS = this.format.formatCP(res[1]);
+          
+          this.group.get('annexe1TNS')?.setValue(annexe1TNS);
+          this.group.get('annexe2TNS')?.setValue(annexe2TNS);
+        },
+        error: (err) => console.error('Erreur :', err)
+      });
     }
   }
 

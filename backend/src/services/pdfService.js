@@ -2,6 +2,7 @@ import fs from "fs";
 import pdf from "pdf-parse-fork";
 import path from "path";
 import { exec } from "child_process";
+import { text } from "stream/consumers";
 
 export async function extractCumuls(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -17,14 +18,16 @@ export async function extractCumuls(filePath) {
 
   const match = text.match(regex);
 
-  if (!match) {
-    throw new Error("Impossible de trouver les cumuls dans le PDF");
+  let cumul2025;
+  let cumul2026;
+  let cumul2027;
+
+  if (match) {
+    cumul2025 = parseFloat(match[1].replace(/\s/g, "").replace(",", "."));
+    cumul2026 = parseFloat(match[2].replace(/\s/g, "").replace(",", "."));
+    cumul2027 = parseFloat(match[3].replace(/\s/g, "").replace(",", "."));
   }
-
-  const cumul2025 = parseFloat(match[1].replace(/\s/g, "").replace(",", "."));
-  const cumul2026 = parseFloat(match[2].replace(/\s/g, "").replace(",", "."));
-  const cumul2027 = parseFloat(match[3].replace(/\s/g, "").replace(",", "."));
-
+  
   return { cumul2025, cumul2026, cumul2027 };
 }
 
@@ -45,7 +48,7 @@ export async function extractComments(filePath, numComptes) {
   const comptes = matches.map(m => ({
     compte: m[1],
     libelle: m[2],
-    commentaire: m[3].trim()
+    commentaire: m[3].replace(/[★☆•]+/g, '').trim()
   }));
 
   const result = [];
@@ -67,6 +70,40 @@ export async function extractComments(filePath, numComptes) {
   return result;
 }
 
+export async function extractPointsImportants(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+
+  const data = await pdf(fs.readFileSync(filePath));
+  const text = data.text
+    .replace(/\r\n/g, '\n')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\uF06A/g, '')
+    .replace(/\uF0A6/g, '')
+    .replace(/\uF020|\uF021|\uF026|\uF02A/g, '');
+
+  // on découpe le texte par blocs CODE - Libellé
+  const regex = /([A-Z0-9]{2,15})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n[A-Z0-9]{2,15}\s*-|$)/g;
+  const result = [];
+
+  for (const m of text.matchAll(regex)) {
+    const bloc = m[3].trim().split('\n');
+    const ligneSymbole = bloc.find(l => (l.match(/[]/g) || []).length >= 2);
+    if (!ligneSymbole) continue;
+
+    // ligne suivante non vide = commentaire
+    const idx = bloc.indexOf(ligneSymbole);
+    let commentaire = bloc.slice(idx + 1).find(l => l.trim());
+    if (!commentaire) continue;
+
+    result.push({
+      commentaire: commentaire.trim()
+    });
+  }
+
+  return result;
+}
+
+
 export async function extractImmobEntree(filePath) {
   if (!fs.existsSync(filePath)) {
     console.warn(`Fichier introuvable : ${filePath}`);
@@ -78,7 +115,7 @@ export async function extractImmobEntree(filePath) {
 
   const regex = /(\d{8})([^\n]+)\n([\s\S]*?)(?:Cumul du compte\s*([\d\s,.]+))(?:\s|$)/g;
 
-  const comptes = [];
+  let comptes = [];
   let match;
 
   while ((match = regex.exec(text)) !== null) {
@@ -116,8 +153,8 @@ export async function extractImmobSortie(filePath) {
 
   const regex = /(\d{8})\s*([^\n]+)\n([\s\S]*?)(\d[\d\s,.]+)Cumul sorties du compte/g;
 
-  const comptes = [];
-  let totalGeneral = 0;
+  let comptes = [];
+  let totalGeneral;
   let match;
 
   while ((match = regex.exec(text)) !== null) {
@@ -140,7 +177,7 @@ export async function extractImmobSortie(filePath) {
     totalGeneral += cumulNum;
   }
 
-  totalGeneral = totalGeneral.toLocaleString('fr-FR');
+  totalGeneral = totalGeneral ? totalGeneral.toLocaleString('fr-FR') : null;
   return { comptes, totalGeneral };
 }
 
@@ -167,6 +204,61 @@ export function extractAnaSectorielle(pdfPath) {
   });
 }
 
+export async function extractEmprunts(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return { emprunts: [], remboursement_emprunt: null };
+  }
+
+  const buffer = fs.readFileSync(filePath);
+  const data = await pdf(buffer);
+  const text = data.text;
+
+  const regexEmprunt =
+    /\d{6,10}\s+(?<T_designation>.+?)Entreprise[\s\S]*?\n\d+\s*(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s+(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=\n\d{6,10}|\nCumul|$)/g;
+
+  const emprunts = [];
+  const regexNombre = /\d{1,3}(?: ?\d{3})*,\d{1,2}/g;
+  const regexRemboursN1 = /I[^\d]*(\d{1,3}(?: ?\d{3})*,\d{1,2})/;
+
+  for (const match of text.matchAll(regexEmprunt)) {
+    const { T_designation, T_date_debut, T_date_fin, bloc } = match.groups;
+
+    const blocAvantK = bloc.split("K")[0];
+    const blocApresK = bloc.split("K")[1];
+    
+    const nombres = [...blocAvantK.matchAll(regexNombre)].map((x) => x[0]);
+
+    let montant_emprunt = "0,00";
+    let montant_restant = "0,00";
+    let remboursN1 = "0,00";
+
+    if (nombres.length === 2) {
+      montant_emprunt = nombres[0];
+      montant_restant = "0,00";
+    } else if (nombres.length >= 3) {
+      montant_emprunt = nombres[0];
+      montant_restant = nombres[1];
+    }
+
+    const remboursMatch = blocApresK.match(regexRemboursN1);
+    if (remboursMatch) {
+      remboursN1 = remboursMatch[1];
+    }
+    
+    emprunts.push({
+      T_designation: T_designation.replace(/\s+/g, " ").trim(),
+      T_date_debut,
+      T_date_fin,
+      T_montant_emprunt : montant_emprunt.replace(/\s/g, "").replace(",", "."),
+      T_montant_restant : montant_restant.replace(/\s/g, "").replace(",", "."),
+      T_remboursN1: remboursN1.replace(/\s/g, "").replace(",", ".")
+    });
+  }
+
+  return { emprunts };
+}
+
 function mergeBrokenLabels(rows) {
   const fixed = [];
   
@@ -180,4 +272,63 @@ function mergeBrokenLabels(rows) {
   }
 
   return fixed;
+}
+
+export async function extractEcheancier(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return [];
+  }
+
+  const buffer = fs.readFileSync(filePath);
+  const data = await pdf(buffer);
+  const text = data.text.replace(/\r\n/g, '\n');
+  fs.unlinkSync(filePath);
+
+  const result = [];
+
+  const regexAnnee = /Année\s+(\d{4})([\s\S]*?)(?=Année\s+\d{4}|$)/g;
+
+  for (const match of text.matchAll(regexAnnee)) {
+    const annee = match[1];
+    const blocAnnee = match[2];
+    const echeanciers = [];
+
+    const regexCaisse =
+      /^([A-ZÉÈÎÏÂÔÛÙÀÇ][A-Za-zÉÈÊËÎÏÔÛÙÀÂÇ' ]+)\n([\s\S]*?Total[\d\s.,]+\n)/gm;
+
+    for (const c of blocAnnee.matchAll(regexCaisse)) {
+      const caisse = c[1].trim();
+      const contenu = c[2];
+
+      const regexLigne = /^([^\n]*?)\s*(\d{2}\/\d{2}\/\d{4})\s*([\d\s.,]+)$/gm;
+      const lignes = [];
+
+      for (const l of contenu.matchAll(regexLigne)) {
+        const periode = l[1].trim();
+        const date = l[2];
+        const montant = l[3].trim();
+        if (!periode || /total/i.test(periode)) continue;
+        lignes.push({ periode, date, montant });
+      }
+
+      const totalMatch = contenu.match(/Total\s*([\d\s.,]+)/);
+      const total = totalMatch ? totalMatch[1].trim() : null;
+
+      if (lignes.length > 0) {
+        echeanciers.push({ caisse, lignes, total });
+      }
+    }
+
+    const totalAnneeMatch = blocAnnee.match(
+      new RegExp(`([\\d\\s.,]+)\\s*Total\\s*année\\s*${annee}`, 'm')
+    );
+    const totalAnnee = totalAnneeMatch
+      ? totalAnneeMatch[1].trim().split('\n').pop().trim()
+      : null;
+
+    result.push({ annee, echeanciers, totalAnnee });
+  }
+  
+  return result;
 }

@@ -27,7 +27,8 @@ import { DataService } from '../../services/data-service';
 export class FormulaireComponent implements OnInit {
   form!: FormGroup;
   loading = true;
-  code_client = '';
+  code_client: string | null;
+  dateDebutEx: string | null;
   anneeN = 0;
   anneeN1Existe = true;
   I_classe2 = true;
@@ -65,6 +66,8 @@ export class FormulaireComponent implements OnInit {
   infoAutofinancement: any = {};
   infoEvolutionCharges: any = {};
   informations_fiscales!: string[];
+  infoFluxTresorerie: any = {};
+  infoSeuilRenta: any = {};
 
   dataCA = {};
   dataMarge = {};
@@ -72,7 +75,9 @@ export class FormulaireComponent implements OnInit {
   dotations = [];
   immobs: any;
   anaSectorielle: any;
-  
+  pointsImportants: any;
+  emprunts: any;
+
   constructor(
     private pdfService: PdfService,
     private formService: FormulaireService,
@@ -85,6 +90,7 @@ export class FormulaireComponent implements OnInit {
   ) {
     this.informations_fiscales = this.formService.informations_fiscales;
     this.code_client = this.dataService.getCodeClient();
+    this.dateDebutEx = this.dataService.getDateDebutEx();
   }
 
   
@@ -95,9 +101,12 @@ export class FormulaireComponent implements OnInit {
     forkJoin({
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations(),
-      immobs: this.pdfService.getImmob()
+      immobs: this.pdfService.getImmob(),
+      pointsImportants: this.pdfService.getPointsImportants(),
+      emprunts: this.pdfService.getEmprunts()
     }).subscribe({
-      next: ({ data, dotations, immobs }: any) => {
+      next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
+        console.log(data);
         if (dotations) {        
           this.dotations = Object.values(dotations);
         }
@@ -106,9 +115,17 @@ export class FormulaireComponent implements OnInit {
           this.immobs = immobs;
         }
 
+        if (pointsImportants) {
+          this.pointsImportants = this.formatService.formatPointsImportants(pointsImportants);
+        }
+
         if (data.anaSectorielle.valeurs.length) {
           this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
             data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
+        }
+
+        if (emprunts) {
+          this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
         }
         
         this.infoChargesPersonnel = data.chargesPersonnel;
@@ -116,6 +133,11 @@ export class FormulaireComponent implements OnInit {
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
+        this.infoFluxTresorerie = data.tresorerie;
+        this.infoSeuilRenta = {
+          seuilRenta: data.seuilRentaFinan,
+          rentaJours: data.seuilRentaFinan / data.chiffreCles.CC_caN * 360,
+        }
 
         this.anneeN = data.anneeN;
         this.anneeN1Existe = data.anneeN1Existe;
@@ -147,7 +169,7 @@ export class FormulaireComponent implements OnInit {
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
-
+        console.log(this.moisClotureArray[0]);
         const affectation = this.fiscaliteService.calculAffectation(
           data,
           data.capitalSocial ?? 0,
@@ -171,7 +193,7 @@ export class FormulaireComponent implements OnInit {
             this.loading = false;
           }
         });
-
+        
         this.form.patchValue({
           CC: {
             comPerspective
@@ -191,7 +213,12 @@ export class FormulaireComponent implements OnInit {
             acompte1: Math.round(data.acompte_total/4),
             acompte2: Math.round(data.acompte_total/4),
             acompte3: Math.round(data.acompte_total/4),
-            acompte4: Math.round(data.acompte_total/4)            
+            acompte4: Math.round(data.acompte_total/4),
+            date1: this.moisClotureArray[0],
+            date2: this.moisClotureArray[1],
+            date3: this.moisClotureArray[2],
+            date4: this.moisClotureArray[3], 
+            date5: this.moisClotureArray[4]           
           },
           PA: {
             resEx: Math.round(this.resEx),
@@ -204,12 +231,20 @@ export class FormulaireComponent implements OnInit {
           AF: {
             enabled: data.tabAutofinancement
           },
+          T: {
+            enabled: this.emprunts ? true : false,
+            emprunts: this.emprunts
+          },
           EA: {
             resEx: Math.round(this.resEx),
-            dot: Math.round(this.dotations[1])
+            dot: Math.round(this.dotations[1]),
+            rembours: emprunts.T_remboursement_emprunt ? Math.round(emprunts.T_remboursement_emprunt) : 0,
           },
           MD: {
             enabled: data.MD_salaries
+          },
+          PI: {
+            commentaire: this.pointsImportants
           },
           S: {
             nomExpert: `${data.signataire.nomExpert} ${data.signataire.prenomExpert}`,
@@ -248,7 +283,7 @@ export class FormulaireComponent implements OnInit {
       acc[key] = infoArray[idx];
       return acc;
     }, {} as Record<string, boolean>);
-    console.log(this.infoChargesPersonnel);
+    
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
@@ -260,7 +295,9 @@ export class FormulaireComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
+      FT: this.infoFluxTresorerie,
       AS: this.formatService.formatASData(this.anaSectorielle),
+      SR: this.infoSeuilRenta,
       EC_tab: this.infoEvolutionCharges
     };
 

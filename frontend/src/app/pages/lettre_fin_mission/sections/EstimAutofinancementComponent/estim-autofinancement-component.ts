@@ -15,15 +15,19 @@ import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 })
 export class EstimAutofinancementComponent {
   @Input({ required: true }) group!: FormGroup;
-  @Input() resEx = 0;
-  @Input() dotation = 0;
 
   get capaAutfinance(): number {
     return (
-      this.resEx +
-      (this.dotation || 0) -
+      (this.group.get('resEx')?.value || 0) +
+      (this.group.get('dot')?.value || 0) -
       (this.group.get('rembours')?.value || 0) -
       (this.group.get('divi')?.value || 0)
     );
+  }
+
+  getValue(val?: any): string {
+    if (val == null || val === '') return '0';
+
+    return Math.round(Number(val)).toLocaleString('fr-FR'); 
   }
 }

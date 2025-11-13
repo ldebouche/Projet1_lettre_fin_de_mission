@@ -15,15 +15,15 @@
         <tbody>
         <tr>
             <td class="first-row">Résultat de l’exercice</td>
-            <td>{{ resEx | number:'1.0-0':'fr-FR' }}</td>
+            <td>{{ getValue(group.get('resEx')?.value)}}</td>
         </tr>
         <tr>
             <td class="first-row">Dotations aux amortissements</td>
-            <td>{{ dotation | number:'1.0-0':'fr-FR' }}</td>
+            <td>{{ getValue(group.get('dot')?.value) }}</td>
         </tr>
         <tr>
             <td class="first-row">Remboursements emprunts</td>
-            <td><input type="number" class="inputNumber" formControlName="rembours" step="1" /></td>
+            <td>{{ getValue(group.get('rembours')?.value) }}</td>
         </tr>
         <tr>
             <td class="first-row">Dividendes</td>
@@ -31,7 +31,7 @@
         </tr>
         <tr class="row-capaAutof">
             <td class="first-row">= Capacité d’autofinancement net</td>
-            <td>{{ capaAutfinance | number:'1.0-0':'fr-FR' }}</td>
+            <td>{{ getValue(capaAutfinance) }}</td>
         </tr>
         </tbody>
     </table>
