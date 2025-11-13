@@ -1,9 +1,9 @@
-import { genererWord } from "../services/wordService.js";
+import { genererWord, genererPPT } from "../services/wordService.js";
 import { exec } from "child_process";
 import path from "path";
 import fs from "fs";
 
-export const generateWord = (req, res) => {
+export const generatedocuments = (req, res) => {
   try {
     const variables = req.body.variables;
     const folderPath = req.body.folderPath;
@@ -13,6 +13,7 @@ export const generateWord = (req, res) => {
     }
 
     const wordBuffer = genererWord(variables);
+    const pptmBuffer = genererPPT(variables);
 
     const resolvedFolder = path.resolve(folderPath);
     if (!fs.existsSync(resolvedFolder)) {

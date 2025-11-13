@@ -2,6 +2,7 @@ import fs from "fs";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import path from "path";
+import { exec } from "child_process";
 
 function flattenObject(obj, parentKey = "", result = {}) {
   let hasInfoFiscale = false;
@@ -30,18 +31,6 @@ function flattenObject(obj, parentKey = "", result = {}) {
 }
 
 export function genererWord(variables) {
-  const folderPath = "C:\\temp";
-  const filePath = path.join(folderPath, "data.json");
-
-   //crée le dossier s’il n’existe pas
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath, { recursive: true });
-  }
-
-  // écrit ton JSON
-  fs.writeFileSync(filePath, JSON.stringify(variables), "utf8");
-  console.log("✅ JSON créé :", filePath);
-
   const templateName = variables.anneeN1Existe
     ? "modele_complet1.docm"
     : "modele_simple1.docm";
@@ -101,4 +90,27 @@ export function genererWord(variables) {
   });
 
   return finalBuf;
+}
+
+export function genererPPT(variables) {
+  const folderPath = "C:\\Users\\DEBOUCHELucas\\Projets_stage\\Projet1_lettre_fin_de_mission\\backend\\src\\templates";
+  const filePath = path.join(folderPath, "data.json");
+  const vbsPath = path.join(folderPath, "launchPPT.vbs");
+
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath, { recursive: true });
+  }
+
+  fs.writeFileSync(filePath, JSON.stringify(variables), "utf8");
+
+  exec(`cscript //nologo "${vbsPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error("Erreur lors du lancement du script VBS :", error);
+      return;
+    }
+    if (stderr) {
+      console.error("Erreur VBS :", stderr);
+    }
+    console.log("Script VBS exécuté avec succès :", stdout);
+  });
 }
