@@ -7,7 +7,6 @@ const router = express.Router();
 
 router.post('/verifDossier', login);
 
-
 router.get('/getDossierInfos', authMiddleware, GetDossierInfos);
 
 router.get('/getInfoFiscale', authMiddleware, GetInfoFiscale);

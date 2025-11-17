@@ -126,40 +126,9 @@ export async function generateAIComment(type, contexte) {
     template = prompts.generateComment.reformuler;
     prompt = fillTemplate(template, { texte });
   }
-
-  if (type === "emprunts") {
-    const { emprunts } = contexte;
-    template = prompts.generateComment.emprunts;
-    prompt = fillTemplate(template, { emprunts });
-    console.log(prompt);
-  }
+  
   const raw = await callMistral(prompt);
   return raw;
-}
-
-
-export async function callOllama(message) {
-  const resp = await axios.post(
-    `${process.env.OLLAMA_BASE_URL}/api/chat`,
-    {
-      model: process.env.OLLAMA_MODEL,
-      messages: [
-        { role: 'system', content: 'Tu rédiges des commentaires cohérents et professionnels sous la forme d\'un texte (jamais de liste) pour un client. Ecris avec un ton simple et humaine. Tu n’effectues aucun calcul et n\'ajoute aucune autres données supplémentaires. Ne mélange pas l’intensité de la variation et la comparaison sectorielle. Réponds uniquement en JSON strict et valide, sans texte autour.' },
-        { role: 'user', content: JSON.stringify(message) }
-      ],
-      stream: false,
-      options: { temperature: 0.2 }
-    }
-  );
-
-  if (resp.data?.message?.content) return resp.data.message.content;
-  if (Array.isArray(resp.data?.messages)) {
-    return resp.data.messages.map(m => m.content).join("\n");
-  }
-  if (resp.data?.error) {
-    return `Erreur Ollama: ${resp.data.error}`;
-  }
-  return JSON.stringify(resp.data);
 }
 
 export async function callMistral(message) {

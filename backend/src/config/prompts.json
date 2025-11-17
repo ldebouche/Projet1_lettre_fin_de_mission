@@ -8,9 +8,6 @@
 
     "investissement": "Analyse les investissements de l’exercice :\n\n- Immobilisations entrées (total) : {{total_entrees}} EUR\n- Détails entrées : {{entrees}}\n\n- Immobilisations sorties (total) : {{total_sorties}} EUR\n- Détails sorties : {{sorties}}\n\nConsignes :\n- Rédige un seul paragraphe.",
 
-    "reformuler": "Reformule le texte suivant sans l'analyser ou en faire des commentaires:\n\n{{texte}}\n\nConsignes :\n- Ne fais pas plus long que le texte donné.",
-    
-    "emprunts": "Rédige un commentaire sur les emprunts de l’exercice.\n\n- Emprunts : {{emprunts}}\n\nConsignes :\n- Rédige un seul paragraphe."
-  
+    "reformuler": "Reformule le texte suivant sans l'analyser ou en faire des commentaires:\n\n{{texte}}\n\nConsignes :\n- Ne fais pas plus long que le texte donné."
   }
 }
