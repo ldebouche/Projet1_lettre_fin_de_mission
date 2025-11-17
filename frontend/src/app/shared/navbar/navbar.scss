@@ -6,8 +6,10 @@ $color-sand: #786e54;
 $color-light: #ebe3d5;
 
 .navbar {
-  color: $color-light;
-  font-family: 'Pluto', sans-serif;
+  font-family: 'Neou', sans-serif;
+  font-size: 1.3rem;
+  color: $color-blue;
+  font-weight: 700;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   position: relative;
   top: 0;
@@ -20,35 +22,29 @@ $color-light: #ebe3d5;
     align-items: center;
   }
 
-  .brand {
+  .title,
+  .brand,
+  .links {
+    flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
+  }
+
+  .brand {
     .logo {
       height: 40px;
       margin-right: 10px;
     }
   }
 
-  .title {
-      font-family: 'Neou', sans-serif;
-      font-size: 1.3rem;
-      color: $color-blue;
-      font-weight: 700;
-    }
-
   .links {
-    display: flex;
-    gap: 1.5rem;
-
     a {
-      color: $color-light;
-      text-decoration: none;
-      font-weight: 500;
       transition: color 0.2s;
 
-      &:hover,
-      &.active {
-        color: $color-blue;
+      &:hover {
+        color: $color-petrol;
+        cursor: pointer;
       }
     }
 
