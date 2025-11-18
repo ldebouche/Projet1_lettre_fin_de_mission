@@ -4,11 +4,10 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class WordService {
-  private apiUrl = 'http://localhost:4000/api/word';
 
   constructor(private http: HttpClient) {}
 
   generateWord(variables: any, folderPath: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/generateWord`, { variables, folderPath });
+    return this.http.post(`/api/word/generateWord`, { variables, folderPath });
   }
 }

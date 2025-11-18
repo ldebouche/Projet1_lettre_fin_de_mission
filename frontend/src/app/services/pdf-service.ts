@@ -8,35 +8,34 @@ import { Observable } from 'rxjs';
 })
 export class PdfService {
   private http = inject(HttpClient);
-  baseUrl = 'http://localhost:4000/api/pdf';
 
 
   getDotations() {
-    return this.http.get(`${this.baseUrl}/cumuls`);
+    return this.http.get(`/api/pdf/cumuls`);
   }
 
   getComments(compte: string): Observable<any> {
-    return this.http.get<string>(`${this.baseUrl}/comments`, {
+    return this.http.get<string>(`/api/pdf/comments`, {
       params: { compte }
     });
   }
 
   getPointsImportants() {
-    return this.http.get(`${this.baseUrl}/points-importants`);
+    return this.http.get(`/api/pdf/points-importants`);
   }
 
   getImmob() {
-    return this.http.get(`${this.baseUrl}/immob`);
+    return this.http.get(`/api/pdf/immob`);
   }
 
   getEmprunts() {
-    return this.http.get(`${this.baseUrl}/emprunts`);
+    return this.http.get(`/api/pdf/emprunts`);
   }
 
   getEcheancier(file: any): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.http.post(this.baseUrl + '/echeancier', formData);
+    return this.http.post(`/api/pdf/echeancier`, formData);
   }
 }
