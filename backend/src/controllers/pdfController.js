@@ -38,7 +38,7 @@ export async function getComments(req, res) {
             const aiText = await generateAIComment("reformuler", { texte: c.commentaire });
             return { ...c, commentaireReformule: aiText?.trim() || c.commentaire };
           } catch (err) {
-            console.warn("Erreur IA sur", c.commentaire);
+            console.warn(err);
             return { ...c, commentaireReformule: c.commentaire };
           }
         })

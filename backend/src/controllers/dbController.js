@@ -44,6 +44,7 @@ export const GetDossierInfos = async (req, res) => {
       client: {
         code_client,
         anneeN: String(anneeN).replace(/\D/g, ''),
+        anneeN1: String(anneeN - 1).replace(/\D/g, ''),
         nomEntreprise: infoClients.nomEntreprise,
         adrEntreprise1: infoClients.adresseEntreprise1,
         adrEntreprise2: infoClients.adresseEntreprise2,
@@ -225,6 +226,15 @@ export const GetDossierInfos = async (req, res) => {
         tresoN1: aggN1.treso || 0,
         frng: aggN.RF_apport + aggN.RF_emprunts + aggN.RF_invest + aggN.RF_autre - aggN.EF_invest - aggN.EF_emprunts - aggN.EF_retraits - aggN.EF_divi || 0,
         bfr: - aggN.V_stock - aggN.V_creances + aggN.V_dettes - aggN.V_autresCreances + aggN.V_autresDettes || 0
+      },
+
+      ratiosExploitation: {
+        credClientN: aggN.creanceClient / (aggN.ca * 1.2) * 365 || 0,
+        credClientN1: aggN1.creanceClient / (aggN1.ca * 1.2) * 365 || 0,
+        credFournN: aggN.detteFourn / ((aggN.achatConsoMarchand + aggN.achatConsoMatiere + aggN.autreAchatsCharges) * 1.2) * 365 || 0,
+        credFournN1: aggN1.detteFourn / ((aggN1.achatConsoMarchand + aggN1.achatConsoMatiere + aggN1.autreAchatsCharges) * 1.2) * 365 || 0,
+        "%credClient": (aggN.creanceClient / (aggN.ca * 1.2) * 365) / (aggN1.creanceClient / (aggN1.ca * 1.2) * 365) * 100 - 100 || 0,
+        "%credFourn": (aggN.detteFourn / ((aggN.achatConsoMarchand + aggN.achatConsoMatiere + aggN.autreAchatsCharges) * 1.2) * 365) / (aggN1.detteFourn / ((aggN1.achatConsoMarchand + aggN1.achatConsoMatiere + aggN1.autreAchatsCharges) * 1.2) * 365) * 100 - 100 || 0,
       },
 
       // === Commentaires ===

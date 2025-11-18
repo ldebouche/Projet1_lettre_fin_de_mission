@@ -68,6 +68,7 @@ export class FormulaireComponent implements OnInit {
   informations_fiscales!: string[];
   infoFluxTresorerie: any = {};
   infoSeuilRenta: any = {};
+  infoRatioExploitation: any = {};
 
   dataCA = {};
   dataMarge = {};
@@ -136,8 +137,9 @@ export class FormulaireComponent implements OnInit {
         this.infoFluxTresorerie = data.tresorerie;
         this.infoSeuilRenta = {
           seuilRenta: data.seuilRentaFinan,
-          rentaJours: data.seuilRentaFinan / data.chiffreCles.CC_caN * 360,
-        }
+          rentaJours: data.seuilRentaFinan / data.chiffreCles.CC_caN * 360
+        };
+        this.infoRatioExploitation = data.ratiosExploitation;
 
         this.anneeN = data.anneeN;
         this.anneeN1Existe = data.anneeN1Existe;
@@ -169,7 +171,6 @@ export class FormulaireComponent implements OnInit {
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
-        console.log(this.moisClotureArray[0]);
         const affectation = this.fiscaliteService.calculAffectation(
           data,
           data.capitalSocial ?? 0,
@@ -298,7 +299,8 @@ export class FormulaireComponent implements OnInit {
       FT: this.infoFluxTresorerie,
       AS: this.formatService.formatASData(this.anaSectorielle),
       SR: this.infoSeuilRenta,
-      EC_tab: this.infoEvolutionCharges
+      EC_tab: this.infoEvolutionCharges,
+      RE: this.infoRatioExploitation,
     };
 
     const formattedPayload = this.formatService.formatPayload(payload);
