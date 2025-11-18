@@ -1,3 +1,42 @@
-<div class="cartes-container">
-    <app-cartes-principales [name]="section" *ngFor="let section of sections"></app-cartes-principales>
+<div class="accueil-wrapper">
+
+  <section class="intro">
+    <h1>Portail Intranet</h1>
+    <p>Bienvenue sur votre espace de travail</p>
+  </section>
+
+  <section class="cards-row">
+
+    <article
+      class="card"
+      [class]="'card ' + getAccentColorClass(carte.accentColor)"
+      *ngFor="let carte of cartes; index as i"
+      (mouseenter)="onEnter(i)"
+      (mouseleave)="onLeave()"
+      [class.open]="hoverIndex === i">
+
+      <!-- Barre d'accent colorée -->
+      <div class="card-accent"></div>
+
+      <header class="card-header">
+        <h2 class="card-title">{{ carte.title }}</h2>
+        <p class="card-desc">{{ carte.description }}</p>
+      </header>
+
+      <div class="card-actions" [class.visible]="hoverIndex === i">
+        <ul>
+          <li
+            *ngFor="let action of carte.actions; index as j"
+            [style.transition-delay]="hoverIndex === i ? (j * 50) + 'ms' : '0ms'"
+            (click)="onAction(action, $event)"
+          >
+            {{ action.label }}
+          </li>
+        </ul>
+      </div>
+
+    </article>
+
+  </section>
+
 </div>

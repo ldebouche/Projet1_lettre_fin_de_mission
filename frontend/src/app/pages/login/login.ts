@@ -51,7 +51,7 @@ export class LoginComponent {
         this.dataService.setCodeClient(this.form.value.code_client);
         this.dataService.setDateDebutEx(this.form.value.dateDebutEx);
         this.errorMessage = '';
-        this.router.navigate(['/formulaire']);
+        this.router.navigate(['/accueil']);
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
