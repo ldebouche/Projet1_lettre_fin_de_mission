@@ -13,25 +13,25 @@ export class DbService {
   };
 
   getCAData() {
-    const token = localStorage.getItem('token');
+    const token = JSON.parse(localStorage.getItem('token') || '""');
 
     return this.http.get(`/api/db/caData`, { headers: { Authorization: `Bearer ${token}` } });
   }
 
   GetDossierInfos() {
-    const token = localStorage.getItem('token');
+    const token = JSON.parse(localStorage.getItem('token') || '""');
 
     return this.http.get(`/api/db/getDossierInfos`, { headers: { Authorization: `Bearer ${token}` } })
   };
 
   GetInfoFiscale() {
-    const token = localStorage.getItem('token');
+    const token = JSON.parse(localStorage.getItem('token') || '""');
 
     return this.http.get(`/api/db/getInfoFiscale`, { headers: { Authorization: `Bearer ${token}` } })
   };
 
   GetMontantCharges(comptes: any) {
-    const token = localStorage.getItem('token');
+    const token = JSON.parse(localStorage.getItem('token') || '""');
     
     return this.http.get(`/api/db/getMontantCharges`, { headers: { Authorization: `Bearer ${token}` }, params: { comptes: comptes.join(',') } })
   };

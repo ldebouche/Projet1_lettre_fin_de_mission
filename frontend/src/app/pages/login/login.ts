@@ -47,7 +47,7 @@ export class LoginComponent {
     this.db.VerifDossier(this.form.value.code_client, this.form.value.dateFinEx, this.form.value.dateDebutEx)
     .subscribe({
       next: (res) => {
-        localStorage.setItem('token', res.token);
+        localStorage.setItem('token', JSON.stringify(res.token));
         this.dataService.setCodeClient(this.form.value.code_client);
         this.dataService.setDateDebutEx(this.form.value.dateDebutEx);
         this.errorMessage = '';
