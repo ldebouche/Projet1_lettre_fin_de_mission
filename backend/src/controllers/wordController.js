@@ -12,8 +12,8 @@ export const generatedocuments = (req, res) => {
       return res.status(400).json({ message: "Le dossier de destination est requis." });
     }
 
-    const wordBuffer = genererWord(variables);
-    const pptmBuffer = genererPPT(variables);
+    const wordBuffer = genererWord(variables, folderPath);
+    genererPPT(variables, folderPath);
 
     const resolvedFolder = path.resolve(folderPath);
     if (!fs.existsSync(resolvedFolder)) {

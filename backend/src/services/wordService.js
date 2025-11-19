@@ -30,7 +30,7 @@ function flattenObject(obj, parentKey = "", result = {}) {
   return result;
 }
 
-export function genererWord(variables) {
+export function genererWord(variables, folderPath) {
   const templateName = variables.anneeN1Existe
     ? "modele_complet1.docm"
     : "modele_simple1.docm";
@@ -92,18 +92,24 @@ export function genererWord(variables) {
   return finalBuf;
 }
 
-export function genererPPT(variables) {
-  const folderPath = "C:\\Users\\DEBOUCHELucas\\Projets_stage\\Projet1_lettre_fin_de_mission\\backend\\src\\templates";
-  const filePath = path.join(folderPath, "data.json");
-  const vbsPath = path.join(folderPath, "launchPPT.vbs");
+export function genererPPT(variables, folderPath) {
+  const BackendPath = "C:\\Users\\DEBOUCHELucas\\Projets_stage\\Projet1_lettre_fin_de_mission\\backend\\src\\templates";
+  const dataPath = path.join(BackendPath, "data.json");
+  const vbsPath = path.join(BackendPath, "launchPPT.vbs");
 
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath, { recursive: true });
+  folderPath = path.join(folderPath, "ppt");
+  const resolvedFolder = path.resolve(folderPath);
+
+  if (!fs.existsSync(resolvedFolder)) {
+    fs.mkdirSync(resolvedFolder, { recursive: true });
   }
 
-  fs.writeFileSync(filePath, JSON.stringify(variables), "utf8");
+  const fileName = `lfm_${variables.code_client}_${variables.anneeN}.pptm`;
+  const filePath = path.join(resolvedFolder, fileName);
 
-  exec(`cscript //nologo "${vbsPath}"`, (error, stdout, stderr) => {
+  fs.writeFileSync(dataPath, JSON.stringify(variables), "utf8");
+
+  exec(`cscript //nologo "${vbsPath}" "${filePath}"`, (error, stdout, stderr) => {
     if (error) {
       console.error("Erreur lors du lancement du script VBS :", error);
       return;

@@ -315,7 +315,7 @@ export class FormulaireComponent implements OnInit {
       return;
     }
 
-    const folderPath = 'C:\\Users\\DEBOUCHELucas\\lfm\\word';
+    const folderPath = 'C:\\Users\\DEBOUCHELucas\\lfm';
     this.wordService.generateWord(formattedPayload, folderPath).subscribe();
   }
 }
