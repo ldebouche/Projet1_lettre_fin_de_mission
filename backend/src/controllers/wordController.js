@@ -13,7 +13,9 @@ export const generatedocuments = (req, res) => {
     }
 
     const wordBuffer = genererWord(variables, folderPath);
-    genererPPT(variables, folderPath);
+    if (variables.anneeN1Existe) {
+      genererPPT(variables, folderPath);
+    }
 
     const resolvedFolder = path.resolve(folderPath);
     if (!fs.existsSync(resolvedFolder)) {

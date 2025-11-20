@@ -92,7 +92,8 @@ export async function generateAIComment(type, contexte) {
     if (CA.variationPrcCA > 15) {
       payload.FDC = CA.FDC;
     }
-
+    console.log("Payload CA_marge :", payload);
+    console.log("==============");
     prompt = fillTemplate(template, payload);
   }
 
@@ -126,7 +127,6 @@ export async function generateAIComment(type, contexte) {
     template = prompts.generateComment.reformuler;
     prompt = fillTemplate(template, { texte });
   }
-  
   const raw = await callMistral(prompt);
   return raw;
 }

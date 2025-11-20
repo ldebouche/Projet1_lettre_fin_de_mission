@@ -223,9 +223,7 @@ export const GetDossierInfos = async (req, res) => {
         V_dettes: aggN.V_dettes || 0,
         V_autresCreances: aggN.V_autresCreances || 0,
         V_autresDettes: aggN.V_autresDettes || 0,
-        tresoN1: aggN1.treso || 0,
-        frng: aggN.RF_apport + aggN.RF_emprunts + aggN.RF_invest + aggN.RF_autre - aggN.EF_invest - aggN.EF_emprunts - aggN.EF_retraits - aggN.EF_divi || 0,
-        bfr: - aggN.V_stock - aggN.V_creances + aggN.V_dettes - aggN.V_autresCreances + aggN.V_autresDettes || 0
+        tresoN1: aggN1.treso || 0
       },
 
       ratiosExploitation: {

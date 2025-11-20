@@ -101,6 +101,24 @@ export class FormulaireService {
       // ===== FISCALITE =====
       T: this.fb.group({
         enabled: [false],
+        tresoN1: [0],
+        CAF: [0],
+        RF_apport: [0],
+        RF_emprunts: [0],
+        RF_invest: [0],
+        RF_autre: [0],
+        EF_invest: [0],
+        EF_emprunts: [0],
+        EF_retraits: [0],
+        EF_divi: [0],
+        V_stock: [0],
+        V_creances: [0],
+        V_dettes: [0],
+        V_autresCreances: [0],
+        V_autresDettes: [0],
+        tresoN: [0],
+        frng: [0],
+        bfr: [0],
         emprunts: []
       }),
 

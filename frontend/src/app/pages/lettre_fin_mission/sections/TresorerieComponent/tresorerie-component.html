@@ -3,6 +3,101 @@
   <table class="table">
     <thead>
       <tr>
+        <th>Flux de trésorerie</th>
+        <th>Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="indent">+ Solde trésorerie N-1</td>
+        <td>{{ group.get('tresoN')?.value | number:'1.0-0':'fr-FR' }}</td>
+      </tr>
+      <tr>
+        <td class="indent">+ CAF</td>
+        <td>{{ group.get('CAF')?.value | number:'1.0-0':'fr-FR' }}</td>
+      </tr>
+      <tr class="row-affectations">
+        <td colspan="2">Ressources de financement</td>
+      </tr>
+      <tr>
+        <td class="indent">+ Apports en capital ou en comptes courants</td>
+        <td><input type="number" class="inputNumber" formControlName="RF_apport" /></td>
+      </tr>
+      <tr>
+        <td class="indent">+ Souscription d'emprunts</td>
+        <td><input type="number" class="inputNumber" formControlName="RF_emprunts" /></td>
+      </tr>
+      <tr>
+        <td class="indent">+ Subventions d'investissement</td>
+        <td><input type="number" class="inputNumber" formControlName="RF_invest" /></td>
+      </tr>
+      <tr>
+        <td class="indent">+ Autres financements</td>
+        <td><input type="number" class="inputNumber" formControlName="RF_autre" /></td>
+      </tr>
+
+      <tr class="row-affectations">
+        <td colspan="2">Emplois de financement</td>
+      </tr>
+      <tr>
+        <td class="indent">- Investissements</td>
+        <td><input type="number" class="inputNumber" formControlName="EF_invest" /></td>
+      </tr>
+      <tr>
+        <td class="indent">- Remboursement d'emprunts</td>
+        <td><input type="number" class="inputNumber" formControlName="EF_emprunts" /></td>
+      </tr>
+      <tr>
+        <td class="indent">- Retrait sur comptes courants</td>
+        <td><input type="number" class="inputNumber" formControlName="EF_retraits" /></td>
+      </tr>
+      <tr>
+        <td class="indent">- Dividendes versés</td>
+        <td><input type="number" class="inputNumber" formControlName="EF_divi" /></td>
+      </tr>
+
+      <tr class="row-affectations">
+        <td colspan="2">Variations</td>
+      </tr>
+      <tr>
+        <td class="indent">- Variation des Stock</td>
+        <td><input type="number" class="inputNumber" formControlName="V_stock" /></td>
+      </tr>
+      <tr>
+        <td class="indent">- Variation des créances clients</td>
+        <td><input type="number" class="inputNumber" formControlName="V_creances" /></td>
+      </tr>
+      <tr>
+        <td class="indent">+ Variation des dettes fournisseurs</td>
+        <td><input type="number" class="inputNumber" formControlName="V_dettes" /></td>
+      </tr>
+      <tr>
+        <td class="indent">- Variation des autres créances</td>
+        <td><input type="number" class="inputNumber" formControlName="V_autresCreances" /></td>
+      </tr>
+      <tr>
+        <td class="indent">+ Variation des autres dettes</td>
+        <td><input type="number" class="inputNumber" formControlName="V_autresDettes" /></td>
+      </tr>
+
+      <tr class="row-capaAutof">
+        <td class="first-row">Solde trésorerie N caculé</td>
+        <td>{{ getValue(tresorerieNCalculee) }} €</td>
+      </tr>
+      <tr class="row-capaAutof">
+        <td class="first-row">Solde trésorerie N théorique</td>
+        <td>{{ group.get('tresoN')?.value }} €</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="messageErreur" class="error-formulaire">
+        {{ messageErreur }}
+    </div>
+    
+  <table class="table">
+    <thead>
+      <tr>
         <th rowspan="2">Libellé</th>
         <th>Date début</th>
         <th>Date fin</th>

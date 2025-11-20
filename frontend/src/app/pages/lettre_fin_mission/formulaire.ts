@@ -66,7 +66,6 @@ export class FormulaireComponent implements OnInit {
   infoAutofinancement: any = {};
   infoEvolutionCharges: any = {};
   informations_fiscales!: string[];
-  infoFluxTresorerie: any = {};
   infoSeuilRenta: any = {};
   infoRatioExploitation: any = {};
 
@@ -134,7 +133,6 @@ export class FormulaireComponent implements OnInit {
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
-        this.infoFluxTresorerie = data.tresorerie;
         this.infoSeuilRenta = {
           seuilRenta: data.seuilRentaFinan,
           rentaJours: data.seuilRentaFinan / data.chiffreCles.CC_caN * 360
@@ -234,6 +232,24 @@ export class FormulaireComponent implements OnInit {
           },
           T: {
             enabled: this.emprunts ? true : false,
+            tresoN1: Math.round(data.tresorerie.tresoN1),
+            CAF: Math.round(data.autofinancement.AF_capa),
+            RF_apport: Math.round(data.tresorerie.RF_apport),
+            RF_emprunts: Math.round(data.tresorerie.RF_emprunts),
+            RF_invest: Math.round(data.tresorerie.RF_invest),
+            RF_autre: Math.round(data.tresorerie.RF_autre),
+            EF_invest: Math.round(data.tresorerie.EF_invest),
+            EF_emprunts: Math.round(data.tresorerie.EF_emprunts),
+            EF_retraits: Math.round(data.tresorerie.EF_retraits),
+            EF_divi: Math.round(data.tresorerie.EF_divi),
+            V_stock: Math.round(data.tresorerie.V_stock),
+            V_creances: Math.round(data.tresorerie.V_creances),
+            V_dettes: Math.round(data.tresorerie.V_dettes),
+            V_autresCreances: Math.round(data.tresorerie.V_autresCreances),
+            V_autresDettes: Math.round(data.tresorerie.V_autresDettes),
+            tresoN: Math.round(data.tresorerie.tresoN),
+            frng: Math.round(data.tresorerie.frng),
+            bfr: Math.round(data.tresorerie.bfr),
             emprunts: this.emprunts
           },
           EA: {
@@ -296,7 +312,6 @@ export class FormulaireComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
-      FT: this.infoFluxTresorerie,
       AS: this.formatService.formatASData(this.anaSectorielle),
       SR: this.infoSeuilRenta,
       EC_tab: this.infoEvolutionCharges,
@@ -306,12 +321,9 @@ export class FormulaireComponent implements OnInit {
     const formattedPayload = this.formatService.formatPayload(payload);
     console.log(formattedPayload);
 
-    const paGroup = this.form.get('PA') as FormGroup;
-    const values = paGroup.value;
-    const total = (values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0);
-    
-    if (total > values.resEx) {
-      alert("La somme des affectations dépasse le résultat de l'exercice !");
+    const condition = this.wordService.checkConditions(this.form);
+    if (condition) {
+      alert(condition);
       return;
     }
 
