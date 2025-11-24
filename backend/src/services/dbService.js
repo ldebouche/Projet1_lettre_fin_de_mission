@@ -5,16 +5,56 @@ class dbService {
   async executeQuery(query, params = {}, single = true) {
     const pool = await poolPromise;
     const request = pool.request();
+
     for (const [key, value] of Object.entries(params)) {
-      if (value instanceof Date) {
-        request.input(key, sql.Date, value);
-      } else {
-        request.input(key, sql.NVarChar, value);
-      }
+      request.input(key, value instanceof Date ? sql.Date : sql.NVarChar, value);
     }
 
     const result = await request.query(query);
-    return single ? result.recordset[0] || null : result.recordset;
+
+    const trimObj = (row) => Object.fromEntries(
+      Object.entries(row).map(([k, v]) => [
+        k,
+        typeof v === "string" ? v.trim() : v
+      ])
+    );
+
+    if (single) {
+      return result.recordset[0] ? trimObj(result.recordset[0]) : null;
+    }
+
+    return result.recordset.map(trimObj);
+  }
+
+
+  async GetListeCollaborateurs(code) {
+    return this.executeQuery(
+      `SELECT *
+      FROM Collaborateurs
+      WHERE code LIKE CONCAT(@code, '%')
+      ORDER BY code ASC;`,
+      { code },
+      false
+    );
+  }
+
+  async GetCollaborateur(code) {
+    return this.executeQuery(
+      `SELECT *
+      FROM Collaborateurs
+      WHERE code = @code;`,
+      { code },
+    );
+  }
+
+  async GetListeDossiers(id_sellsy) {
+    return this.executeQuery(
+      `SELECT *
+      FROM clients
+      WHERE assistant_comptable_revision LIKE CONCAT(@id_sellsy, '%');`,
+      { id_sellsy },
+      false
+    );
   }
 
   async GetAggregats(code_client, dateFinEx) {

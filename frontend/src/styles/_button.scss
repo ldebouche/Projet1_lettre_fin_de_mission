@@ -16,6 +16,19 @@
 
 }
 
+.logout-button {
+  background: none;
+  border: none;
+  color: var(--color-blue-petrol);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+
+  &:hover {
+      text-decoration: underline;
+  }
+}
+
 .login-page{
   .btn {
     padding: 0.8rem;

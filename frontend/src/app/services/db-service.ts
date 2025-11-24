@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -8,31 +8,35 @@ import { map } from 'rxjs';
 export class DbService {
   private http = inject(HttpClient);
   
+  GetListeCollaborateurs(code : any): Observable<any[]> {
+    return this.http.get<any[]>(`/api/db/getListeCollaborateurs`, { params : { code: code.toUpperCase()  }});
+  }
+
+  VerifCollaborateur(code: string) {
+    return this.http.post<{ token: string, collaborateur: any }>(`/api/db/verifCollaborateur`, { code });
+  }
+
+  GetListeDossiers(id_sellsy: any): Observable<any[]> {
+    return this.http.get<any[]>(`/api/db/getListeDossiers`, { params: { id_sellsy } });
+  }
+
   VerifDossier(code_client: any, dateFinEx: Date, dateDebutEx: Date) {
     return this.http.post<{ token: string }>(`/api/db/verifDossier`, { code_client, dateFinEx, dateDebutEx });
   };
 
   getCAData() {
-    const token = JSON.parse(localStorage.getItem('token') || '""');
-
-    return this.http.get(`/api/db/caData`, { headers: { Authorization: `Bearer ${token}` } });
+    return this.http.get(`/api/db/caData`);
   }
 
   GetDossierInfos() {
-    const token = JSON.parse(localStorage.getItem('token') || '""');
-
-    return this.http.get(`/api/db/getDossierInfos`, { headers: { Authorization: `Bearer ${token}` } })
+    return this.http.get(`/api/db/getDossierInfos`)
   };
 
   GetInfoFiscale() {
-    const token = JSON.parse(localStorage.getItem('token') || '""');
-
-    return this.http.get(`/api/db/getInfoFiscale`, { headers: { Authorization: `Bearer ${token}` } })
+    return this.http.get(`/api/db/getInfoFiscale`)
   };
 
   GetMontantCharges(comptes: any) {
-    const token = JSON.parse(localStorage.getItem('token') || '""');
-    
-    return this.http.get(`/api/db/getMontantCharges`, { headers: { Authorization: `Bearer ${token}` }, params: { comptes: comptes.join(',') } })
+    return this.http.get(`/api/db/getMontantCharges`, { params: { comptes: comptes.join(',') } })
   };
 }

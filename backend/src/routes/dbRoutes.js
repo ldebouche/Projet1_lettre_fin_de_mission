@@ -1,9 +1,15 @@
 import express from 'express';
-import { login } from '../controllers/authController.js';
-import { GetDossierInfos, GetInfoFiscale, GetMontantCharges } from '../controllers/dbController.js';
+import { portal_login, login } from '../controllers/authController.js';
+import { GetListeCollaborateurs, GetListeDossiers, GetDossierInfos, GetInfoFiscale, GetMontantCharges } from '../controllers/dbController.js';
 import { authMiddleware } from '../middlewares/auth.js';
 
 const router = express.Router();
+
+router.get('/getListeCollaborateurs', GetListeCollaborateurs);
+
+router.post('/verifCollaborateur', portal_login);
+
+router.get('/getListeDossiers', authMiddleware, GetListeDossiers);
 
 router.post('/verifDossier', login);
 

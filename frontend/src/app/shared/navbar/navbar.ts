@@ -3,42 +3,45 @@ import { RouterModule } from '@angular/router';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterModule],
+  imports: [
+    RouterModule,
+    CommonModule
+  ],
   templateUrl: './navbar.html',
   styleUrls: ['./navbar.scss']
 })
 export class NavbarComponent implements OnInit {
-  pageTitle = '';
-
-  titles: any = {
-    '/accueil': 'Accueil',
-    '/formulaire': 'Lettre fin de mission'
-  };
+  currentUrl: string = '';
 
   constructor(private router: Router) {
-    this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe((event: any) => {
-        this.pageTitle = this.titles[event.url] || 'Mon application';
-      });
+    this.router.events.subscribe(() => {
+      this.currentUrl = this.router.url;
+    });
   }
 
   ngOnInit() {
-    const currentUrl = this.router.url;
-    this.pageTitle = this.titles[currentUrl] || 'Mon application';
+    this.currentUrl = this.router.url;
   }
 
   handleReturn() {
-    const currentUrl = this.router.url;
-
-    if (currentUrl === '/accueil') {
-      this.router.navigate(['/login']);
-    } else {
+    if (this.currentUrl === '/formulaire') {
       this.router.navigate(['/accueil']);
+    } else if (this.currentUrl === '/accueil') {
+      this.router.navigate(['/login']);
+    } else if (this.currentUrl === '/login') {
+      this.router.navigate(['/dashboard']);
     }
+  }
+
+  logout() {
+    // Plus tard, ajouter ici la logique de suppression du token
+    console.log("Déconnexion du portail");
+    localStorage.clear();
+    this.router.navigate(['/']);
   }
 }

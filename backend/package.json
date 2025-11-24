@@ -17,6 +17,7 @@
     "@xmldom/xmldom": "^0.9.8",
     "axios": "^1.11.0",
     "axios-retry": "^4.5.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "docxtemplater": "^3.66.2",
     "dotenv": "^17.2.2",

@@ -3,6 +3,8 @@ import { RouterOutlet, Router } from '@angular/router';
 import { NavbarComponent } from './shared/navbar/navbar';
 import { CommonModule } from '@angular/common';
 
+import { IdleService } from './services/idle-service';
+
 
 @Component({
   selector: 'app-root',
@@ -20,10 +22,12 @@ import { CommonModule } from '@angular/common';
   `
 })
 export class AppComponent {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private idleService: IdleService
+  ) {}
 
   get showNavbar() {
-    // cache la navbar uniquement si on est sur /login
-    return !(this.router.url == '/login');
+    return !(this.router.url == '/');
   }
 }

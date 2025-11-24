@@ -1,0 +1,153 @@
+@use '../../../styles/variables' as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--color-light);
+}
+
+.dashboard-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 2rem auto; // Centré
+    padding: 0 2rem;
+    font-family: var(--font-body);
+
+    h1 {
+        font-family: var(--font-title);
+        color: var(--color-dark);
+        font-size: 2.2rem;
+        margin: 0;
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+        color: var(--color-sand);
+        margin-top: 0.5rem;
+        margin-bottom: 2rem;
+    }
+}
+
+/* --- Navigation par onglets --- */
+.tab-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+
+    button {
+        padding: 0.8rem 1.5rem;
+        font-family: var(--font-title);
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        background: transparent;
+        color: var(--color-sand);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+
+        &.active {
+            color: var(--color-blue-petrol);
+            border-bottom-color: var(--color-blue-petrol);
+        }
+
+        &:hover:not(.active) {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+    }
+}
+
+/* --- Contenu des onglets (tableaux) --- */
+.table-container {
+    background-color: #ffffff;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+
+    thead {
+        background-color: #f9f9f9;
+
+        th {
+            font-family: var(--font-title);
+            font-weight: 600;
+            color: var(--color-sand);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    }
+
+    tbody {
+        tr:last-child {
+            td {
+                border-bottom: none;
+            }
+        }
+
+        tr:hover {
+            background-color: #fcfcfc;
+        }
+    }
+}
+
+.action-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-blue-petrol);
+    color: white;
+    font-family: var(--font-title);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: var(--color-blue-light);
+    }
+}
+
+/* Badges de statut (exemple) */
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    &.status-terminé {
+        background-color: #e0f2e9;
+        color: #34a853;
+    }
+
+    &.status-en_cours {
+        background-color: #fff4e0;
+        color: #f9ab00;
+    }
+
+    &.status-en_attente {
+        background-color: #fde2e2;
+        color: #ea4335;
+    }
+}
+
+/* États vides et chargement */
+.loader,
+.empty-state {
+    text-align: center;
+    padding: 4rem;
+    font-family: var(--font-body);
+    color: var(--color-sand);
+    font-size: 1.1rem;
+}

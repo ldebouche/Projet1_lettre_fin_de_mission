@@ -1,6 +1,7 @@
 <div class="login-page">
   <div class="login-card">
     <h2>Lettre de fin de mission</h2>
+    <h3>{{ nomEntreprise }}</h3>
     <form (ngSubmit)="onSubmit()" [formGroup]="form">
       <div *ngIf="errorMessage" class="error-formulaire">
         {{ errorMessage }}

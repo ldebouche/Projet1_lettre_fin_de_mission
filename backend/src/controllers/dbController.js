@@ -1,6 +1,29 @@
 import dbService, { selectSite } from '../services/dbService.js';
 import { comptesMapping } from '../utils/comptesMapping.js';
 
+export const GetListeCollaborateurs = async (req, res) => {
+  try {
+    const { code } = req.query;
+    const collaborateurs = await dbService.GetListeCollaborateurs(code);
+    res.json(collaborateurs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur SQL' });
+  }
+};
+
+export const GetListeDossiers = async (req, res) => {
+  try {
+    const { id_sellsy } = req.query;
+    const dossiers = await dbService.GetListeDossiers(id_sellsy);
+    console.log(dossiers);
+    res.json(dossiers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur SQL' });
+  }
+};
+
 export const GetDossierInfos = async (req, res) => {
   try {
     const { code_client, dateFinEx } = req.user;

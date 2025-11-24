@@ -1,14 +1,18 @@
 import { verifyToken } from '../utils/jwt.js';
 
 export function authMiddleware(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'Token manquant' });
+  const token = req.cookies.jwt;
 
-  const token = authHeader.split(' ')[1]; 
-  const decoded = verifyToken(token);
+  if (!token) {
+    return res.status(401).json({ error: "Non authentifié" });
+  }
 
-  if (!decoded) return res.status(401).json({ error: 'Token invalide ou expiré' });
+  const payload = verifyToken(token);
 
-  req.user = decoded;
+  if (!payload) {
+    return res.status(401).json({ error: "Token invalide" });
+  }
+
+  req.user = payload;
   next();
 }

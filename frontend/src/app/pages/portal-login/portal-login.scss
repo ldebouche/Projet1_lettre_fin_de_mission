@@ -1,0 +1,179 @@
+@use '../../../styles/variables' as *;
+
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: var(--color-light); // Votre couleur de fond
+    font-family: var(--font-body);
+}
+
+.login-container {
+    background: #ffffff;
+    padding: 2.5rem 3rem;
+    border-radius: var(--radius-lg); // Votre bordure large
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e0e0;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.logo {
+    max-width: 250px;
+    margin-bottom: 1.5rem;
+}
+
+h2 {
+    font-family: var(--font-title);
+    color: var(--color-dark);
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: var(--color-sand); // Votre couleur sable
+    margin-bottom: 2rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--color-dark);
+        font-weight: 600;
+    }
+
+    input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 2px solid #ccc;
+        border-radius: var(--radius-sm);
+        font-size: 1.2rem;
+        font-family: var(--font-title);
+        font-weight: 600;
+        text-align: center;
+        text-transform: uppercase; // Met le texte en majuscules
+        box-sizing: border-box; // Pour que le padding ne casse pas la largeur
+        transition: border-color 0.2s ease;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-blue-petrol); // Focus bleu
+        }
+    }
+}
+
+.code-autocomplete-container {
+    /* Positionnement relatif pour que la liste déroulante soit absolue par rapport à son parent */
+    position: relative;
+    z-index: 10;
+    /* Assure que la liste est au-dessus des autres éléments */
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    /* Juste sous le champ input */
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.suggestion-item,
+.loading-item {
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    font-size: 1rem;
+    border-bottom: 1px solid #eee;
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.suggestion-item {
+    transition: background-color 0.15s ease;
+
+    &:hover {
+        background-color: var(--color-light);
+        /* Votre couleur claire pour le survol */
+    }
+
+    .code {
+        font-weight: 700;
+        color: var(--color-blue-petrol);
+    }
+
+    .name {
+        color: var(--color-dark);
+        font-weight: 400;
+    }
+}
+
+.loading-item {
+    color: var(--color-sand);
+    text-align: center;
+    font-style: italic;
+}
+
+.login-button {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-blue-petrol); // Bleu pétrole
+    color: white;
+    font-family: var(--font-title);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 1rem;
+
+    &:hover {
+        background-color: var(--color-blue-light); // Bleu clair au survol
+    }
+
+    &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+}
+
+// Styles pour les messages d'erreur
+.error-validation {
+    color: #d9534f;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+}
+
+.error-message {
+    color: #d9534f;
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    padding: 0.8rem;
+    border-radius: var(--radius-sm);
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
