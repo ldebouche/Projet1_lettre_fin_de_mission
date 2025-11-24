@@ -1,3 +1,4 @@
+import { stat } from 'fs';
 import dbService, { selectSite } from '../services/dbService.js';
 import { comptesMapping } from '../utils/comptesMapping.js';
 
@@ -14,10 +15,9 @@ export const GetListeCollaborateurs = async (req, res) => {
 
 export const GetListeDossiers = async (req, res) => {
   try {
-    const { id_sellsy } = req.query;
-    const dossiers = await dbService.GetListeDossiers(id_sellsy);
-    console.log(dossiers);
-    res.json(dossiers);
+    const { id_sellsy, statut } = req.query;
+    const { dossiers, dossiersEquipe } = await dbService.GetListeDossiers(id_sellsy, statut);
+    res.json({ dossiers, dossiersEquipe });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur SQL' });

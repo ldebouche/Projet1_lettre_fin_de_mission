@@ -2,7 +2,6 @@ import { Component , Input, OnInit} from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
-import { BtnToTextareaComponent } from '../../../../shared/bouton-textarea/bouton-textarea';
 import { PdfService } from '../../../../services/pdf-service';
 import { FormatService } from '../../../../services/format-service';
 
@@ -11,8 +10,7 @@ import { FormatService } from '../../../../services/format-service';
   imports: [
     CommonModule, 
     ReactiveFormsModule,
-    ZeroIfEmpty,
-    BtnToTextareaComponent
+    ZeroIfEmpty
   ],
   templateUrl: './charges-personnel-component.html',
   styleUrl: './charges-personnel-component.scss'

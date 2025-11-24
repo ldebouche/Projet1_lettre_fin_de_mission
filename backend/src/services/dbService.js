@@ -12,12 +12,10 @@ class dbService {
 
     const result = await request.query(query);
 
-    const trimObj = (row) => Object.fromEntries(
-      Object.entries(row).map(([k, v]) => [
-        k,
-        typeof v === "string" ? v.trim() : v
-      ])
-    );
+    const trimObj = (row) =>
+      Object.fromEntries(
+        Object.entries(row).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v]),
+      );
 
     if (single) {
       return result.recordset[0] ? trimObj(result.recordset[0]) : null;
@@ -26,15 +24,14 @@ class dbService {
     return result.recordset.map(trimObj);
   }
 
-
   async GetListeCollaborateurs(code) {
     return this.executeQuery(
       `SELECT *
       FROM Collaborateurs
-      WHERE code LIKE CONCAT(@code, '%')
-      ORDER BY code ASC;`,
+      WHERE LOWER(CONCAT(nom, ' ', prenom)) LIKE CONCAT('%', LOWER(@code), '%')
+      ORDER BY nom ASC, prenom ASC;`,
       { code },
-      false
+      false,
     );
   }
 
@@ -47,14 +44,40 @@ class dbService {
     );
   }
 
-  async GetListeDossiers(id_sellsy) {
-    return this.executeQuery(
-      `SELECT *
-      FROM clients
-      WHERE assistant_comptable_revision LIKE CONCAT(@id_sellsy, '%');`,
-      { id_sellsy },
-      false
-    );
+  async GetListeDossiers(id_sellsy, statut) {
+    if (statut === 'N1') {
+      const dossiers = await this.executeQuery(
+        `SELECT *
+          FROM clients
+          WHERE chef_de_mission LIKE CONCAT(@id_sellsy, '%')
+            AND assistant_comptable_revision LIKE CONCAT(@id_sellsy, '%');`,
+        { id_sellsy },
+        false,
+      );
+
+      const dossiersEquipe = await this.executeQuery(
+        `SELECT 
+          c.*,
+          CONCAT(co.nom, ' ', co.prenom) AS collaborateur
+          FROM clients c
+          JOIN Collaborateurs co ON c.assistant_comptable_revision = co.id_sellsy
+          WHERE chef_de_mission LIKE CONCAT(@id_sellsy, '%')
+            AND assistant_comptable_revision NOT LIKE CONCAT(@id_sellsy, '%');`,
+        { id_sellsy },
+        false,
+      );
+
+      return { dossiers, dossiersEquipe };
+    } else {
+      const dossiers = await this.executeQuery(
+        `SELECT *
+        FROM clients
+        WHERE assistant_comptable_revision LIKE CONCAT(@id_sellsy, '%');`,
+        { id_sellsy },
+        false,
+      );
+      return { dossiers, dossiersEquipe: [] };
+    }
   }
 
   async GetAggregats(code_client, dateFinEx) {
@@ -313,21 +336,21 @@ export default new dbService();
 
 export function selectSite(ville) {
   const site = {
-    'Baume les Dames' : {
+    'Baume les Dames': {
       adresse: '6 RUE ERNEST NICOLAS',
       cp: '25110',
-      ville: 'BAUME LES DAMES'
+      ville: 'BAUME LES DAMES',
     },
-    'Besançon' : {
+    Besançon: {
       adresse: '9 RUE JACQUARD',
       cp: '25000',
-      ville: 'BESANCON'
+      ville: 'BESANCON',
     },
-    'Morteau' : {
+    Morteau: {
       adresse: '13 RUE RENE PAYOT',
       cp: '25500',
-      ville: 'MORTEAU'
-    }
+      ville: 'MORTEAU',
+    },
   };
   return site[ville];
 }

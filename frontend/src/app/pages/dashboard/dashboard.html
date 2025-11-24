@@ -2,6 +2,32 @@
     <h1>Tableau de bord - {{ getCollabNom() }}</h1>
     <p class="subtitle">Consultez vos dossiers en cours et ceux de votre équipe.</p>
 
+    <div class="actions-bar">
+        <div class="controls-group"> 
+            
+            <div class="filter-group">
+                <label for="clientFilter">Filtrer par Client :</label>
+                <input 
+                    id="clientFilter" 
+                    type="text" 
+                    placeholder="Nom du dossier..."
+                    [(ngModel)]="filterClient"
+                    (input)="applyFilterAndSort()">
+            </div>
+            
+            <div class="sort-group">
+                <button class="sort-indicator-button" (click)="setSort(sortField)">
+                    Tri actuel : {{ getSortLabel() }} 
+                    <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                </button>
+            </div>
+        </div>
+        
+        <button class="primary-action-button" (click)="addProspect()">
+            + Ajouter un prospect
+        </button>
+    </div>
+    
     <nav class="tab-nav">
         <button [class.active]="activeTab === 'mesDossiers'" (click)="selectTab('mesDossiers')">
             Mes Dossiers
@@ -13,68 +39,90 @@
     </nav>
 
     <div class="tab-content">
-
-        <div *ngIf="isLoading" class="loader">
-            Chargement des dossiers...
-        </div>
-
         <div *ngIf="activeTab === 'mesDossiers' && !isLoading" class="table-container">
 
-            <div *ngIf="mesDossiers.length === 0" class="empty-state">
+            <div *ngIf="mesDossiers.length === 0 && filterClient" class="empty-state">
+                Aucun dossier ne correspond à votre filtre.
+            </div>
+            
+            <div *ngIf="mesDossiers.length === 0 && !filterClient" class="empty-state">
                 Vous n'avez aucun dossier assigné pour le moment.
             </div>
 
-            <table *ngIf="mesDossiers">
+            <table *ngIf="mesDossiers.length > 0">
                 <thead>
                     <tr>
-                        <th>Code client</th>
-                        <th>Nom du Dossier</th>
-                        <th>Dernière modification</th>
+                        <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
+                            Code Client <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
+                            Nom du Dossier <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let dossier of mesDossiers">
                         <td>{{ dossier.code_client }}</td>
-                        <td><strong>{{ formatNomEntreprise(dossier) }}</strong></td>
-                        <td>{{ dossier.date_maj | date: 'dd/MM/yyyy' }}</td>
+                        <td>{{ formatNomEntreprise(dossier) }}</td>
                         <td>
                             <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)" class="action-button">Ouvrir</button>
                         </td>
                     </tr>
                 </tbody>
             </table>
+
+            <nav class="pagination">
+                <button (click)="prevPage()" [disabled]="currentPage === 1">Précédent</button>
+                Page {{ currentPage }} sur {{ getTotalPages() }}
+                <button (click)="nextPage()" [disabled]="currentPage === getTotalPages()">Suivant</button>
+            </nav>
         </div>
 
         <div *ngIf="activeTab === 'equipe' && !isLoading" class="table-container">
 
-            <div *ngIf="dossiersEquipe.length === 0" class="empty-state">
+            <div *ngIf="dossiersEquipe.length === 0 && filterClient" class="empty-state">
+                Aucun dossier d'équipe ne correspond à votre filtre.
+            </div>
+            
+             <div *ngIf="dossiersEquipe.length === 0 && !filterClient" class="empty-state">
                 Aucun dossier n'est assigné aux membres de votre équipe.
             </div>
 
             <table *ngIf="dossiersEquipe.length > 0">
-                <thead>
-                    <tr>
-                        <th>Nom du Dossier</th>
-                        <th>Client</th>
-                        <th>Collaborateur</th>
-                        <th>Statut</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
+            <thead>
+                <tr>
+                    <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
+                        Code Client
+                        <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                    </th>
+                    <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
+                        Nom du Dossier
+                        <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                    </th>
+                    <th (click)="setSort('collaborateur')" [class.active-sort]="sortField === 'collaborateur'">
+                        Collaborateur
+                        <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                    </th>
+                    <th>Action</th>
+                </tr>
+            </thead>
                 <tbody>
                     <tr *ngFor="let dossier of dossiersEquipe">
-                        <td><strong>{{ dossier.nom }}</strong></td>
-                        <td>{{ dossier.client }}</td>
+                        <td>{{ dossier.code_client }}</td>
+                        <td>{{ formatNomEntreprise(dossier) }}</td>
                         <td>{{ dossier.collaborateur }}</td>
-                        <td><span class="status-badge status-{{ dossier.statut | lowercase }}">{{ dossier.statut
-                                }}</span></td>
                         <td>
-                            <button (click)="openDossier(nomEntreprise, dossier.id)" class="action-button">Ouvrir</button>
+                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)" class="action-button">Ouvrir</button>
                         </td>
                     </tr>
                 </tbody>
             </table>
+            <nav class="pagination">
+                <button (click)="prevPage()" [disabled]="currentPage === 1">Précédent</button>
+                Page {{ currentPage }} sur {{ getTotalPages() }}
+                <button (click)="nextPage()" [disabled]="currentPage === getTotalPages()">Suivant</button>
+            </nav>
         </div>
     </div>
 </main>

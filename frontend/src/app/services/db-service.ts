@@ -16,8 +16,8 @@ export class DbService {
     return this.http.post<{ token: string, collaborateur: any }>(`/api/db/verifCollaborateur`, { code });
   }
 
-  GetListeDossiers(id_sellsy: any): Observable<any[]> {
-    return this.http.get<any[]>(`/api/db/getListeDossiers`, { params: { id_sellsy } });
+  GetListeDossiers(id_sellsy: any, statut: any) {
+    return this.http.get(`/api/db/getListeDossiers`, { params: { id_sellsy, statut } })
   }
 
   VerifDossier(code_client: any, dateFinEx: Date, dateDebutEx: Date) {
