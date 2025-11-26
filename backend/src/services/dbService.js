@@ -1,4 +1,3 @@
-import { type } from 'os';
 import { poolPromise, sql } from '../config/db.js';
 
 class dbService {
@@ -24,23 +23,12 @@ class dbService {
     return result.recordset.map(trimObj);
   }
 
-  async GetListeCollaborateurs(code) {
+  async GetCollaborateur(email) {
     return this.executeQuery(
       `SELECT *
       FROM Collaborateurs
-      WHERE LOWER(CONCAT(nom, ' ', prenom)) LIKE CONCAT('%', LOWER(@code), '%')
-      ORDER BY nom ASC, prenom ASC;`,
-      { code },
-      false,
-    );
-  }
-
-  async GetCollaborateur(code) {
-    return this.executeQuery(
-      `SELECT *
-      FROM Collaborateurs
-      WHERE code = @code;`,
-      { code },
+      WHERE email = @email;`,
+      { email },
     );
   }
 

@@ -14,20 +14,20 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
 
-    // 🟩 IMPORT MSAL POUR STANDALONE
     importProvidersFrom(
       MsalModule.forRoot(
         new PublicClientApplication({
           auth: {
             clientId: "171de78f-bfbe-435a-9356-d78a744722f4",
             authority: "https://login.microsoftonline.com/f7f506f7-c551-4a8a-8c5a-b7d339828e4b",
-            redirectUri: "http://localhost:4200"
+            redirectUri: "http://localhost:4200/"
           }
         }),
         {
           interactionType: InteractionType.Redirect,
           authRequest: {
-            scopes: ['user.read']
+            scopes: ['user.read'],
+            prompt: 'select_account'
           }
         },
         {

@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './shared/navbar/navbar';
 import { CommonModule } from '@angular/common';
-
-import { IdleService } from './services/idle-service';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
+import { EventMessage, EventType } from '@azure/msal-browser';
 
 
 @Component({
@@ -15,19 +15,29 @@ import { IdleService } from './services/idle-service';
     CommonModule
   ],
   template: `
-    <app-navbar *ngIf="showNavbar"></app-navbar>
+    <app-navbar></app-navbar>
     <main class="p-6">
       <router-outlet></router-outlet>
     </main>
   `
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(
-    private router: Router,
-    private idleService: IdleService
+    private msalService: MsalService,
+    private msalBroadcast: MsalBroadcastService
   ) {}
 
-  get showNavbar() {
-    return !(this.router.url == '/');
+  ngOnInit() {
+    this.msalBroadcast.msalSubject$
+      .subscribe((message: EventMessage) => {
+        if (message.eventType === EventType.LOGOUT_SUCCESS) {
+          this.msalService.instance.setActiveAccount(null);
+        } else if (message.eventType === EventType.LOGIN_SUCCESS) {
+          const accounts = this.msalService.instance.getAllAccounts();
+          if (accounts.length > 0) {
+            this.msalService.instance.setActiveAccount(accounts[0]);
+          }
+        }
+      });
   }
 }

@@ -33,7 +33,7 @@ export class LoginComponent {
     return this.fb.group({
       
       // ===== NUMERO DE DOSSIER =====
-      code_client: [localStorage.getItem('codeClient'), Validators.required],
+      code_client: [this.dataService.getCodeClient() || '', Validators.required],
 
       // ===== DATE DE DEBUT DE MISSION =====
       dateDebutEx: ['', Validators.required],
@@ -48,7 +48,7 @@ export class LoginComponent {
     this.db.VerifDossier(this.form.value.code_client, this.form.value.dateFinEx, this.form.value.dateDebutEx)
     .subscribe({
       next: (res) => {
-        localStorage.setItem('token', res.token);
+        this.dataService.setCodeClient(this.form.value.code_client);
         this.dataService.setDateDebutEx(this.form.value.dateDebutEx);
         this.errorMessage = '';
         this.router.navigate(['/accueil']);

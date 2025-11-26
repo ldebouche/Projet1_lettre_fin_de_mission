@@ -17,7 +17,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
         return from(
             this.msal.acquireTokenSilent({
-                scopes: ["user.read"],
+                scopes: ["api://67336009-376f-424b-882b-8662f86e5eed/access_as_user"],
                 account: activeAccount
             })
         ).pipe(

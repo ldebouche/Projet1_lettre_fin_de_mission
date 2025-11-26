@@ -1,7 +1,23 @@
 import dbService from '../services/dbService.js';
 import { generateToken } from '../utils/jwt.js';
 
-export const login = async (req, res) => {
+export const VerifCollaborateur = async (req, res) => {
+  try {
+    const email = "prondot@lacomptabilite.fr" /*req.user.unique_name;*/
+
+    const collaborateur = await dbService.GetCollaborateur(email);
+    if (!collaborateur) {
+      return res.status(404).json({ error: 'Collaborateur introuvable' });
+    }
+
+    res.json({ collaborateur });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+export const VerifDossier = async (req, res) => {
   try {
     const { code_client, dateFinEx, dateDebutEx } = req.body;
 
@@ -12,39 +28,16 @@ export const login = async (req, res) => {
 
     const token = generateToken({ code_client, dateFinEx, dateDebutEx });
 
-    res.json({ token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-};
-
-export const portal_login = async (req, res) => {
-  try {
-    const { code } = req.body;
-
-    const collaborateur = await dbService.GetCollaborateur(code);
-    if (!collaborateur) {
-      return res.status(404).json({ error: 'Collaborateur introuvable' });
-    }
-
-    const token = generateToken({ code });
-
-    res.cookie("jwt", token, {
+    res.cookie("jwt_dossier", token, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
       maxAge: 60 * 60 * 1000 * 4
     });
 
-    res.json({ collaborateur });
+    res.json({ token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
-
-export function logout(req, res) {
-  res.clearCookie("jwt");
-  res.json({ message: "Déconnecté" });
-}

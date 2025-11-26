@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
+import { verifyToken } from '../utils/jwt.js';
 
 const client = jwksClient({
-  jwksUri: `https://login.microsoftonline.com/f481119e-e5a6-4e55-ae7e-8f5c878acd8d/discovery/v2.0/keys`
+  jwksUri: "https://login.microsoftonline.com/f7f506f7-c551-4a8a-8c5a-b7d339828e4b/discovery/v2.0/keys"
 });
 
 function getKey(header, callback) {
@@ -11,7 +12,7 @@ function getKey(header, callback) {
   });
 }
 
-export function authMiddleware(req, res, next) {
+export function authMiddlewareCollaborateur(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth) return res.status(401).json({ error: "Missing Authorization header" });
 
@@ -21,8 +22,8 @@ export function authMiddleware(req, res, next) {
     token,
     getKey,
     {
-      audience: "171de78f-bfbe-435a-9356-d78a744722f4",
-      issuer: `https://login.microsoftonline.com/f481119e-e5a6-4e55-ae7e-8f5c878acd8d/v2.0`,
+      audience: "api://67336009-376f-424b-882b-8662f86e5eed",
+      issuer: `https://sts.windows.net/f7f506f7-c551-4a8a-8c5a-b7d339828e4b/`,
     },
     (err, decoded) => {
       if (err) return res.status(401).json({ error: "Invalid token" });
@@ -31,4 +32,22 @@ export function authMiddleware(req, res, next) {
       next();
     }
   );
+}
+
+
+export function authMiddlewareDossier(req, res, next) {
+  const token = req.cookies.jwt_dossier;
+
+  if (!token) {
+    return res.status(401).json({ error: "Non authentifié" });
+  }
+
+  const payload = verifyToken(token);
+
+  if (!payload) {
+    return res.status(401).json({ error: "Token invalide" });
+  }
+  
+  req.user = payload;
+  next();
 }

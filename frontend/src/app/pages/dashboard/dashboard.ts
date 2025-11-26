@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
+import { AuthService } from '../../services/auth-service';
 
 type SortableField = 'code_client' | '_sortableName' | 'collaborateur';
 
@@ -26,7 +27,7 @@ interface Dossier {
   styleUrls: ['./dashboard.scss']
 })
 export class DashboardComponent implements OnInit {
-  collaborateur: any | null = JSON.parse(localStorage.getItem('collaborateur') || '');
+  collaborateur: any | null = null;
 
   activeTab: 'mesDossiers' | 'equipe' = 'mesDossiers';
   
@@ -58,11 +59,22 @@ export class DashboardComponent implements OnInit {
   constructor(
     private router: Router,
     private db: DbService,
-    private dataService: DataService
+    private dataService: DataService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.loadData();
+    this.db.VerifCollaborateur().subscribe({
+      next: (res) => {
+        localStorage.setItem('collaborateur', JSON.stringify(res.collaborateur));
+        this.collaborateur = res.collaborateur;
+        this.loadData();
+      },
+      error: (err) => {
+        this.errorMessage = "Le code collaborateur est invalide.";
+        console.error(err);
+      }
+    });
   }
 
   private prepareData(data: any[]): Dossier[] {
@@ -77,6 +89,7 @@ export class DashboardComponent implements OnInit {
 
   loadData() {
     this.isLoading = true;
+
     if (!this.collaborateur) {
       console.error("Aucun collaborateur trouvé en localStorage.");
       this.isLoading = false;
@@ -212,7 +225,7 @@ export class DashboardComponent implements OnInit {
   }
 
   openDossier(nomEntreprise: string, code_client: string) {
-    localStorage.setItem('nomEntreprise', nomEntreprise);
+    this.dataService.setNomEntreprise(nomEntreprise);
     this.dataService.setCodeClient(code_client);
     this.router.navigate(['/login']);
   }

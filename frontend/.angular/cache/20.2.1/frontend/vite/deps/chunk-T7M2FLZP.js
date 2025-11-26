@@ -80,6 +80,6 @@ export {
 /*! Bundled license information:
 
 @azure/msal-browser/dist/telemetry/BrowserPerformanceMeasurement.mjs:
-  (*! @azure/msal-browser v4.26.2 2025-11-19 *)
+  (*! @azure/msal-browser v3.30.0 2025-08-05 *)
 */
-//# sourceMappingURL=chunk-EYZKKVA2.js.map
+//# sourceMappingURL=chunk-T7M2FLZP.js.map

@@ -8,8 +8,8 @@ import {
   StringUtils,
   UrlString,
   WrapperSKU
-} from "./chunk-G2LTXOVG.js";
-import "./chunk-EYZKKVA2.js";
+} from "./chunk-XJHYTQQ3.js";
+import "./chunk-T7M2FLZP.js";
 import {
   Router
 } from "./chunk-5ERU5MZU.js";
@@ -26,7 +26,6 @@ import {
   Inject,
   Injectable,
   InjectionToken,
-  Injector,
   NgModule,
   Optional,
   setClassMetadata,
@@ -37,8 +36,8 @@ import {
   ɵɵdirectiveInject,
   ɵɵinject
 } from "./chunk-TSP5WI7Z.js";
-import "./chunk-JRFR6BLO.js";
 import "./chunk-HWYXSU2G.js";
+import "./chunk-JRFR6BLO.js";
 import {
   BehaviorSubject,
   EMPTY,
@@ -62,75 +61,15 @@ import {
 
 // node_modules/@azure/msal-angular/fesm2020/azure-msal-angular.mjs
 var name = "@azure/msal-angular";
-var version = "4.0.22";
+var version = "3.1.0";
 var MSAL_INSTANCE = new InjectionToken("MSAL_INSTANCE");
 var MSAL_GUARD_CONFIG = new InjectionToken("MSAL_GUARD_CONFIG");
 var MSAL_INTERCEPTOR_CONFIG = new InjectionToken("MSAL_INTERCEPTOR_CONFIG");
 var MSAL_BROADCAST_CONFIG = new InjectionToken("MSAL_BROADCAST_CONFIG");
-var MsalBroadcastService = class {
-  constructor(msalInstance, msalBroadcastConfig) {
-    this.msalInstance = msalInstance;
-    this.msalBroadcastConfig = msalBroadcastConfig;
-    if (this.msalBroadcastConfig && this.msalBroadcastConfig.eventsToReplay > 0) {
-      this.msalInstance.getLogger().clone(name, version).verbose(`BroadcastService - eventsToReplay set on BroadcastConfig, replaying the last ${this.msalBroadcastConfig.eventsToReplay} events`);
-      this._msalSubject = new ReplaySubject(this.msalBroadcastConfig.eventsToReplay);
-    } else {
-      this._msalSubject = new Subject();
-    }
-    this.msalSubject$ = this._msalSubject.asObservable();
-    this._inProgress = new BehaviorSubject(InteractionStatus.Startup);
-    this.inProgress$ = this._inProgress.asObservable();
-    this.msalInstance.addEventCallback((message) => {
-      this._msalSubject.next(message);
-      const status = EventMessageUtils.getInteractionStatusFromEvent(message, this._inProgress.value);
-      if (status !== null) {
-        this.msalInstance.getLogger().clone(name, version).verbose(`BroadcastService - ${message.eventType} results in setting inProgress from ${this._inProgress.value} to ${status}`);
-        this._inProgress.next(status);
-      }
-    });
-  }
-  /**
-   * Resets inProgress state to None
-   */
-  resetInProgressEvent() {
-    if (this._inProgress.value === InteractionStatus.Startup) {
-      this._inProgress.next(InteractionStatus.None);
-    }
-  }
-};
-MsalBroadcastService.ɵfac = function MsalBroadcastService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || MsalBroadcastService)(ɵɵinject(MSAL_INSTANCE), ɵɵinject(MSAL_BROADCAST_CONFIG, 8));
-};
-MsalBroadcastService.ɵprov = ɵɵdefineInjectable({
-  token: MsalBroadcastService,
-  factory: MsalBroadcastService.ɵfac
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MsalBroadcastService, [{
-    type: Injectable
-  }], function() {
-    return [{
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [MSAL_INSTANCE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Optional
-      }, {
-        type: Inject,
-        args: [MSAL_BROADCAST_CONFIG]
-      }]
-    }];
-  }, null);
-})();
 var MsalService = class {
-  constructor(instance, location, injector) {
+  constructor(instance, location) {
     this.instance = instance;
     this.location = location;
-    this.injector = injector;
     const hash = this.location.path(true).split("#").pop();
     if (hash) {
       this.redirectHash = `#${hash}`;
@@ -150,9 +89,7 @@ var MsalService = class {
     return from(this.instance.acquireTokenSilent(silentRequest));
   }
   handleRedirectObservable(hash) {
-    return from(this.instance.initialize().then(() => this.instance.handleRedirectPromise(hash || this.redirectHash)).finally(() => {
-      this.injector.get(MsalBroadcastService).resetInProgressEvent();
-    }));
+    return from(this.instance.initialize().then(() => this.instance.handleRedirectPromise(hash || this.redirectHash)));
   }
   loginPopup(request) {
     return from(this.instance.loginPopup(request));
@@ -160,7 +97,6 @@ var MsalService = class {
   loginRedirect(request) {
     return from(this.instance.loginRedirect(request));
   }
-  // @deprecated: Use logoutRedirect or logoutPopup
   logout(logoutRequest) {
     return from(this.instance.logout(logoutRequest));
   }
@@ -190,7 +126,7 @@ var MsalService = class {
   }
 };
 MsalService.ɵfac = function MsalService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || MsalService)(ɵɵinject(MSAL_INSTANCE), ɵɵinject(Location), ɵɵinject(Injector));
+  return new (__ngFactoryType__ || MsalService)(ɵɵinject(MSAL_INSTANCE), ɵɵinject(Location));
 };
 MsalService.ɵprov = ɵɵdefineInjectable({
   token: MsalService,
@@ -208,8 +144,60 @@ MsalService.ɵprov = ɵɵdefineInjectable({
       }]
     }, {
       type: Location
+    }];
+  }, null);
+})();
+var MsalBroadcastService = class {
+  constructor(msalInstance, authService, msalBroadcastConfig) {
+    this.msalInstance = msalInstance;
+    this.authService = authService;
+    this.msalBroadcastConfig = msalBroadcastConfig;
+    if (this.msalBroadcastConfig && this.msalBroadcastConfig.eventsToReplay > 0) {
+      this.authService.getLogger().verbose(`BroadcastService - eventsToReplay set on BroadcastConfig, replaying the last ${this.msalBroadcastConfig.eventsToReplay} events`);
+      this._msalSubject = new ReplaySubject(this.msalBroadcastConfig.eventsToReplay);
+    } else {
+      this._msalSubject = new Subject();
+    }
+    this.msalSubject$ = this._msalSubject.asObservable();
+    this._inProgress = new BehaviorSubject(InteractionStatus.Startup);
+    this.inProgress$ = this._inProgress.asObservable();
+    this.msalInstance.addEventCallback((message) => {
+      this._msalSubject.next(message);
+      const status = EventMessageUtils.getInteractionStatusFromEvent(message, this._inProgress.value);
+      if (status !== null) {
+        this.authService.getLogger().verbose(`BroadcastService - ${message.eventType} results in setting inProgress from ${this._inProgress.value} to ${status}`);
+        this._inProgress.next(status);
+      }
+    });
+  }
+};
+MsalBroadcastService.ɵfac = function MsalBroadcastService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || MsalBroadcastService)(ɵɵinject(MSAL_INSTANCE), ɵɵinject(MsalService), ɵɵinject(MSAL_BROADCAST_CONFIG, 8));
+};
+MsalBroadcastService.ɵprov = ɵɵdefineInjectable({
+  token: MsalBroadcastService,
+  factory: MsalBroadcastService.ɵfac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(MsalBroadcastService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [MSAL_INSTANCE]
+      }]
     }, {
-      type: Injector
+      type: MsalService
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Optional
+      }, {
+        type: Inject,
+        args: [MSAL_BROADCAST_CONFIG]
+      }]
     }];
   }, null);
 })();

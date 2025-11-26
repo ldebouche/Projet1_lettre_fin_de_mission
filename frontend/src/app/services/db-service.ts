@@ -8,12 +8,8 @@ import { Observable } from 'rxjs';
 export class DbService {
   private http = inject(HttpClient);
   
-  GetListeCollaborateurs(code : any): Observable<any[]> {
-    return this.http.get<any[]>(`/api/db/getListeCollaborateurs`, { params : { code: code.toUpperCase()  }});
-  }
-
-  VerifCollaborateur(code: string) {
-    return this.http.post<{ token: string, collaborateur: any }>(`/api/db/verifCollaborateur`, { code });
+  VerifCollaborateur() {
+    return this.http.post<{ collaborateur: any }>(`/api/db/verifCollaborateur`, {});
   }
 
   GetListeDossiers(id_sellsy: any, statut: any) {
@@ -21,7 +17,7 @@ export class DbService {
   }
 
   VerifDossier(code_client: any, dateFinEx: Date, dateDebutEx: Date) {
-    return this.http.post<{ token: string }>(`/api/db/verifDossier`, { code_client, dateFinEx, dateDebutEx });
+    return this.http.post(`/api/db/verifDossier`, { code_client, dateFinEx, dateDebutEx });
   };
 
   getCAData() {

@@ -4,6 +4,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MsalService } from '@azure/msal-angular';
 
 @Component({
   selector: 'app-navbar',
@@ -18,7 +19,10 @@ import { CommonModule } from '@angular/common';
 export class NavbarComponent implements OnInit {
   currentUrl: string = '';
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private msalService: MsalService
+  ) {
     this.router.events.subscribe(() => {
       this.currentUrl = this.router.url;
     });
@@ -39,9 +43,18 @@ export class NavbarComponent implements OnInit {
   }
 
   logout() {
-    // Plus tard, ajouter ici la logique de suppression du token
-    console.log("Déconnexion du portail");
-    localStorage.clear();
-    this.router.navigate(['/']);
+    this.msalService.instance.logoutRedirect({
+      account: this.msalService.instance.getActiveAccount(),
+      onRedirectNavigate: (url) => {
+        this.msalService.instance.setActiveAccount(null);
+        setTimeout(() => {
+          this.router.navigateByUrl('/refresh', { skipLocationChange: true }).then(() => {
+            this.router.navigateByUrl('/');
+          });
+        }, 0);
+
+        return false;
+      }
+    });
   }
 }

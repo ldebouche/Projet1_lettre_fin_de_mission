@@ -15,6 +15,7 @@ import {
   BrowserConfigurationAuthErrorCodes_exports,
   BrowserConfigurationAuthErrorMessage,
   BrowserPerformanceClient,
+  BrowserStorage,
   BrowserUtils_exports,
   CacheLookupPolicy,
   ClientAuthError,
@@ -54,13 +55,12 @@ import {
   WrapperSKU,
   createNestablePublicClientApplication,
   createStandardPublicClientApplication,
-  isPlatformBrokerAvailable,
   stubbedPublicClientApplication,
   version
-} from "./chunk-G2LTXOVG.js";
+} from "./chunk-XJHYTQQ3.js";
 import {
   BrowserPerformanceMeasurement
-} from "./chunk-EYZKKVA2.js";
+} from "./chunk-T7M2FLZP.js";
 import "./chunk-35ENWJA4.js";
 export {
   AccountEntity,
@@ -80,6 +80,7 @@ export {
   BrowserConfigurationAuthErrorMessage,
   BrowserPerformanceClient,
   BrowserPerformanceMeasurement,
+  BrowserStorage,
   BrowserUtils_exports as BrowserUtils,
   CacheLookupPolicy,
   ClientAuthError,
@@ -119,7 +120,6 @@ export {
   WrapperSKU,
   createNestablePublicClientApplication,
   createStandardPublicClientApplication,
-  isPlatformBrokerAvailable,
   stubbedPublicClientApplication,
   version
 };

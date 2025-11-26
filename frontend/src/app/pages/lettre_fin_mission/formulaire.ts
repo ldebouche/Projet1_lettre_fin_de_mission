@@ -27,7 +27,6 @@ import { DataService } from '../../services/data-service';
 export class FormulaireComponent implements OnInit {
   form!: FormGroup;
   loading = true;
-  code_client: string | null;
   dateDebutEx: string | null;
   anneeN = 0;
   anneeN1Existe = true;
@@ -89,7 +88,6 @@ export class FormulaireComponent implements OnInit {
     private dataService: DataService
   ) {
     this.informations_fiscales = this.formService.informations_fiscales;
-    this.code_client = this.dataService.getCodeClient();
     this.dateDebutEx = this.dataService.getDateDebutEx();
   }
 

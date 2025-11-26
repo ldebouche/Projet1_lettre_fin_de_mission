@@ -1,22 +1,20 @@
 import express from 'express';
-import { portal_login, login } from '../controllers/authController.js';
-import { GetListeCollaborateurs, GetListeDossiers, GetDossierInfos, GetInfoFiscale, GetMontantCharges } from '../controllers/dbController.js';
-import { authMiddleware } from '../middlewares/auth.js';
+import { VerifCollaborateur, VerifDossier } from '../controllers/authController.js';
+import { GetListeDossiers, GetDossierInfos, GetInfoFiscale, GetMontantCharges } from '../controllers/dbController.js';
+import { authMiddlewareCollaborateur, authMiddlewareDossier } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-router.get('/getListeCollaborateurs', GetListeCollaborateurs);
+router.post('/verifCollaborateur', authMiddlewareCollaborateur, VerifCollaborateur);
 
-router.post('/verifCollaborateur', portal_login);
+router.get('/getListeDossiers', /*authMiddlewareCollaborateur,*/ GetListeDossiers);
 
-router.get('/getListeDossiers', authMiddleware, GetListeDossiers);
+router.post('/verifDossier', /*authMiddlewareCollaborateur,*/ VerifDossier);
 
-router.post('/verifDossier', login);
+router.get('/getDossierInfos', authMiddlewareDossier, GetDossierInfos);
 
-router.get('/getDossierInfos', authMiddleware, GetDossierInfos);
+router.get('/getInfoFiscale', authMiddlewareDossier, GetInfoFiscale);
 
-router.get('/getInfoFiscale', authMiddleware, GetInfoFiscale);
-
-router.get('/getMontantCharges', authMiddleware, GetMontantCharges);
+router.get('/getMontantCharges', authMiddlewareDossier, GetMontantCharges);
 
 export default router;
