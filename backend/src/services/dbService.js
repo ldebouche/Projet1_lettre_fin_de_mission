@@ -89,13 +89,22 @@ class dbService {
   }
 
   async GetDossier(code_client, dateFinEx) {
-    return this.executeQuery(
+    const dossier = await this.executeQuery(
       `SELECT code_client 
       FROM FEC 
       WHERE code_client = @code_client 
         AND datefinex = @dateFinEx;`,
       { code_client, dateFinEx },
     );
+
+    const client = await this.executeQuery(
+      `SELECT *
+      FROM clients
+      WHERE code_client = @code_client;`,
+      { code_client },
+    );
+
+    return { dossier, client };
   }
 
   async GetInfoClients(code_client) {

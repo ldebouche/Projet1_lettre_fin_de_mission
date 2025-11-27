@@ -50,6 +50,8 @@ export class LoginComponent {
       next: (res) => {
         this.dataService.setCodeClient(this.form.value.code_client);
         this.dataService.setDateDebutEx(this.form.value.dateDebutEx);
+        
+        this.dataService.setNomEntreprise(this.formatNomEntreprise(res.client));
         this.errorMessage = '';
         this.router.navigate(['/accueil']);
       },
@@ -58,6 +60,21 @@ export class LoginComponent {
         this.errorMessage = 'Dossier non trouvé. Veuillez vérifier les informations.';
       }
     });
+  }
+
+  formatNomEntreprise(client: any): string {
+    const rs = (client.raison_sociale || '').trim();
+    const forme = (client.forme_societe || '').trim();
+
+    if (!rs) {
+      return `${(client.civilite || '').trim()} ${(client.nom || '').trim()} ${(client.prenom || '').trim()}`.trim();
+    }
+
+    if (forme && rs.toUpperCase().startsWith(forme.toUpperCase())) {
+      return rs;
+    }
+
+    return `${forme} ${rs}`.trim();
   }
 
   onSubmit() {

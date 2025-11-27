@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { DataService } from '../../services/data-service';
 
 interface CarteAction {
   label: string;
@@ -22,6 +23,8 @@ interface CartePrincipale {
   styleUrls: ['./accueil.scss']
 })
 export class AccueilComponent {
+  collaborateur: any | null = localStorage.getItem('collaborateur') ? JSON.parse(localStorage.getItem('collaborateur')!) : null;
+  nomEntreprise: string = '';
 
   hoverIndex: number | null = null;
 
@@ -58,7 +61,12 @@ export class AccueilComponent {
     }
   ];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private dataService: DataService
+  ) {
+    this.nomEntreprise = this.dataService.getNomEntreprise() || '';
+  }
 
   onEnter(i: number) {
     this.hoverIndex = i;
@@ -77,5 +85,9 @@ export class AccueilComponent {
 
   getAccentColorClass(color: string): string {
     return `accent-${color}`;
+  }
+
+  getCollabNom(): string {
+    return this.collaborateur ? `${this.collaborateur.prenom} ${this.collaborateur.nom}` : '';
   }
 }

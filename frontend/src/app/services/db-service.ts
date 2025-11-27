@@ -17,7 +17,7 @@ export class DbService {
   }
 
   VerifDossier(code_client: any, dateFinEx: Date, dateDebutEx: Date) {
-    return this.http.post(`/api/db/verifDossier`, { code_client, dateFinEx, dateDebutEx });
+    return this.http.post<{ client: any }>(`/api/db/verifDossier`, { code_client, dateFinEx, dateDebutEx });
   };
 
   getCAData() {
