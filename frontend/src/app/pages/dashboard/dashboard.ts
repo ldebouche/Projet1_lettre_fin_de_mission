@@ -7,12 +7,13 @@ import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
 import { AuthService } from '../../services/auth-service';
 
-type SortableField = 'code_client' | '_sortableName' | 'collaborateur';
+type SortableField = 'code_client' | '_sortableName' | 'collaborateur' | 'date_sortie';
 
 interface Dossier {
   code_client: string;
   collaborateur?: string;
   _sortableName: string;
+  date_sortie?: string | Date | null;
   [key: string]: any; 
 }
 
@@ -40,6 +41,7 @@ export class DashboardComponent implements OnInit {
   userRole: string = "";
 
   filterClient: string = '';
+  showExitedClients: boolean = false;
   sortField: SortableField = 'code_client';
   sortDirection: 'asc' | 'desc' = 'desc';
   currentPage = 1;
@@ -54,6 +56,7 @@ export class DashboardComponent implements OnInit {
     'code_client': 'Code Client',
     '_sortableName': 'Nom du Dossier',
     'collaborateur': 'Collaborateur',
+    'date_sortie': 'Date de sortie'
   };
 
   constructor(
@@ -80,8 +83,10 @@ export class DashboardComponent implements OnInit {
   private prepareData(data: any[]): Dossier[] {
     return data.map(d => {
       const formattedName = this.formatNomEntreprise(d);
+      const dateSortie = d.date_sortie_cabinet !== "1900-01-01T00:00:00.000Z" ? new Date(d.date_sortie_cabinet) : null;
       return {
         ...d,
+        date_sortie: dateSortie,
         _sortableName: formattedName
       } as Dossier;
     });
@@ -105,6 +110,7 @@ export class DashboardComponent implements OnInit {
     this.db.GetListeDossiers(this.collaborateur.id_sellsy, this.collaborateur.statut).subscribe({
       next: (data: any) => {
         this._allMesDossiers = this.prepareData(data.dossiers);
+        console.log("Dossiers chargés pour l'utilisateur :", this._allMesDossiers);
         this._allDossiersEquipe = this.prepareData(data.dossiersEquipe);
         this.applyFilterAndSort()
         this.isLoading = false;
@@ -121,6 +127,7 @@ export class DashboardComponent implements OnInit {
     this.activeTab = tab;
     this.currentPage = 1;
     this.filterClient = '';
+    this.showExitedClients = false;
     this.applyFilterAndSort();
   }
 
@@ -167,6 +174,10 @@ export class DashboardComponent implements OnInit {
             (this.activeTab === 'equipe' && d.collaborateur && d.collaborateur.toLowerCase().includes(filterTerm))
         );
     }
+
+    if (!this.showExitedClients) {
+        sourceData = sourceData.filter(d => !d.date_sortie);
+    }
 
     sourceData.sort((a, b) => {
         const isAsc = this.sortDirection === 'asc';

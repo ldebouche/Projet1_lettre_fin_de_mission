@@ -3,31 +3,31 @@
     <p class="subtitle">Consultez vos dossiers en cours et ceux de votre équipe.</p>
 
     <div class="actions-bar">
-        <div class="controls-group"> 
-            
+        <div class="controls-group">
             <div class="filter-group">
                 <label for="clientFilter">Filtrer par Client :</label>
-                <input 
-                    id="clientFilter" 
-                    type="text" 
-                    placeholder="Nom du dossier..."
-                    [(ngModel)]="filterClient"
-                    (input)="applyFilterAndSort()">
+                <input id="clientFilter" type="text" placeholder="Nom du dossier..." [(ngModel)]="filterClient"
+                    (input)="applyFilterAndSort()" />
             </div>
-            
+
+            <div class="filter-group checkbox-group">
+                <input id="exitedFilter" type="checkbox" [(ngModel)]="showExitedClients"
+                    (change)="applyFilterAndSort()" />
+                <label for="exitedFilter">Afficher les clients sortis</label>
+            </div>
+
             <div class="sort-group">
                 <button class="sort-indicator-button" (click)="setSort(sortField)">
-                    Tri actuel : {{ getSortLabel() }} 
-                    <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                    Tri actuel : {{ getSortLabel() }}
+                    <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                        [class.desc]="sortDirection === 'desc'"></i>
                 </button>
             </div>
         </div>
-        
-        <button class="primary-action-button" (click)="addProspect()">
-            + Ajouter un prospect
-        </button>
+
+        <button class="primary-action-button" (click)="addProspect()">+ Ajouter un prospect</button>
     </div>
-    
+
     <nav class="tab-nav">
         <button [class.active]="activeTab === 'mesDossiers'" (click)="selectTab('mesDossiers')">
             Mes Dossiers
@@ -38,35 +38,49 @@
         </button>
     </nav>
 
-    <div class="tab-content">
-        <div *ngIf="activeTab === 'mesDossiers' && !isLoading" class="table-container">
+    <div *ngIf="isLoading" class="loader">
+        Chargement des dossiers...
+    </div>
 
+    <div class="tab-content" *ngIf="!isLoading">
+        <div *ngIf="activeTab === 'mesDossiers' && !isLoading" class="table-container">
             <div *ngIf="mesDossiers.length === 0 && filterClient" class="empty-state">
                 Aucun dossier ne correspond à votre filtre.
             </div>
-            
+
             <div *ngIf="mesDossiers.length === 0 && !filterClient" class="empty-state">
                 Vous n'avez aucun dossier assigné pour le moment.
             </div>
 
-            <table *ngIf="mesDossiers.length > 0">
+            <table *ngIf="mesDossiers.length > 0" class="mes-dossiers-table">
                 <thead>
                     <tr>
                         <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
-                            Code Client <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                            Code Client
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
-                            Nom du Dossier <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                            Nom du Dossier
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
+                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let dossier of mesDossiers">
-                        <td>{{ dossier.code_client }}</td>
-                        <td>{{ formatNomEntreprise(dossier) }}</td>
-                        <td>
-                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)" class="action-button">Ouvrir</button>
+                    <tr *ngFor="let dossier of mesDossiers" class="equipe-table">
+                        <td><div class="cell-content">{{ dossier.code_client }}</div></td>
+                        <td><div class="cell-content">{{ formatNomEntreprise(dossier) }}</div></td>
+                        <td><div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div></td>
+                        <td><div class="cell-content">
+                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
+                                class="action-button">
+                                Ouvrir
+                            </button></div>
                         </td>
                     </tr>
                 </tbody>
@@ -80,40 +94,49 @@
         </div>
 
         <div *ngIf="activeTab === 'equipe' && !isLoading" class="table-container">
-
             <div *ngIf="dossiersEquipe.length === 0 && filterClient" class="empty-state">
                 Aucun dossier d'équipe ne correspond à votre filtre.
             </div>
-            
-             <div *ngIf="dossiersEquipe.length === 0 && !filterClient" class="empty-state">
+
+            <div *ngIf="dossiersEquipe.length === 0 && !filterClient" class="empty-state">
                 Aucun dossier n'est assigné aux membres de votre équipe.
             </div>
 
-            <table *ngIf="dossiersEquipe.length > 0">
-            <thead>
-                <tr>
-                    <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
-                        Code Client
-                        <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
-                    </th>
-                    <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
-                        Nom du Dossier
-                        <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
-                    </th>
-                    <th (click)="setSort('collaborateur')" [class.active-sort]="sortField === 'collaborateur'">
-                        Collaborateur
-                        <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
-                    </th>
-                    <th>Action</th>
-                </tr>
-            </thead>
+            <table *ngIf="dossiersEquipe.length > 0" class="equipe-table">
+                <thead>
+                    <tr>
+                        <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
+                            Code Client
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
+                            Nom du Dossier
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('collaborateur')" [class.active-sort]="sortField === 'collaborateur'">
+                            Collaborateur
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
+                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
                 <tbody>
                     <tr *ngFor="let dossier of dossiersEquipe">
-                        <td>{{ dossier.code_client }}</td>
-                        <td>{{ formatNomEntreprise(dossier) }}</td>
-                        <td>{{ dossier.collaborateur }}</td>
-                        <td>
-                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)" class="action-button">Ouvrir</button>
+                        <td><div class="cell-content">{{ dossier.code_client }}</div></td>
+                        <td><div class="cell-content">{{ formatNomEntreprise(dossier) }}</div></td>
+                        <td><div class="cell-content">{{ dossier.collaborateur }}</div></td>
+                        <td><div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div></td>
+                        <td><div class="cell-content">
+                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
+                                class="action-button">
+                                Ouvrir
+                            </button></div>
                         </td>
                     </tr>
                 </tbody>
