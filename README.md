@@ -1,179 +1,674 @@
-# Projet 1 : Lettre de fin de mission
 
-## Description
+# Projet 1 : Lettre de Fin de Mission
 
-**Qu'est-ce que c'est ?**
+## 1.1 Principe général
 
-C'est une **application web** qui génère presque automatiquement des lettres de fin de mission personnalisées. Au lieu de remplir manuellement chaque lettre, cette application :
-- Récupère les informations du client depuis la base de données
-- Les organise automatiquement
-- Génère un fichier Word prêt à être exporté en PDF et une présentation PowerPoint personnalisés
+```
+[Collaborateur]
+     ↓
+[Frontend Angular]
+     ↓  (MSAL – Authentification Microsoft)
+     ↓
+[Backend Node.js (Express)]
+     ↓  (Validation token Microsoft + JWT interne dossier)
+     ↓
+[Base SQL Server] ←→ [IA Mistral] ←→ [Génération Word/PPTX]
+```
 
-**Comment ça fonctionne ?**
+Chaque requête envoyée par Angular peut contenir :
 
-L'application se divise en 3 parties principales :
-1. **Interface de saisie** (site web) - où vous remplissez les informations
-2. **Moteur de traitement** (serveur) - qui organise les données
-3. **Base de données** - qui stocke les dossiers clients
+- un **token Microsoft** (obligatoire pour les endpoints protégés),
+- un **cookie interne jwt_dossier** (si un dossier a été validé).
+
+Ces informations permettent au backend :
+
+- d'identifier le collaborateur,
+- de valider les droits,
+- de charger les informations du dossier sélectionné.
+
+-------------------------------------------------------------------------------
+
+# 2. Structure du frontend Angular
+
+```
+frontend/src/app/
+├── pages/              # Pages principales
+│   ├── accueil/
+│   ├── login/
+│   ├── dashboard/
+│   └── lettre_fin_mission/
+│       ├── sections/    ← Sections du formulaire  
+│       └── formulaire.ts    ← Formulaire principal
+├── services/           # Services d'appels API
+│   ├── ai-service.ts
+│   ├── auth-service.ts
+│   ├── db-service.ts
+│   ├── word-service.ts
+│   ├── pdf-service.ts
+│   └── ...
+├── interceptor/
+│   └── auth.interceptor.ts  ← Ajoute le token microsoft à chaque requête
+├── directives/
+│   └── zero-if-empty.ts
+└── shared/             # Composants réutilisables
+    ├── bouton-textarea/
+    └── navbar/
+```
+
+## 2.1 Rôle des dossiers
+
+- **pages/**  
+  Contient les pages principales.  
+  Exemple : dashboard, sélection dossier, formulaire complet.
+
+- **services/**  
+  Encapsule toute la logique métier du frontend :
+  - appel API,
+  - stockages centralisés,
+  - formatages de données,
+  - interactions avec l’IA.
+
+- **interceptor/**  
+  Injection automatique du token Microsoft dans chaque requête HTTP.
+
+- **directives/**  
+  Petits comportements réutilisables, comme l’affichage de zéro si aucune donnée.
+
+- **shared/**  
+  Composants génériques : navbar, boutons IA.
+
+-------------------------------------------------------------------------------
+
+# 3. Angular
+
+## 3.1 Composants Angular – Fondements théoriques
+
+Un composant Angular est constitué de :
+
+1. un template HTML (vue),
+2. un fichier SCSS (style isolé),
+3. un fichier TypeScript (logique)
+
+```ts
+@Component({
+  selector: 'app-exemple',
+  templateUrl: './exemple.component.html',
+  styleUrls: ['./exemple.component.scss']
+})
+export class ExempleComponent implements OnInit {
+  @Input() titre: string = '';
+  @Output() onChange = new EventEmitter<string>();
+
+  value = '';
+
+  ngOnInit() {
+    console.log("Composant initialisé");
+  }
+
+  notifier() {
+    this.onChange.emit(this.value);
+  }
+}
+```
+
+### Points importants
+
+- `@Input()` permet au parent de passer des données.
+- `@Output()` renvoie des événements au parent.
+- `ngOnInit()` est le point d’entrée logique du composant.
+
+-------------------------------------------------------------------------------
+
+## 3.2 Data Binding – Explications approfondies
+
+### 3.2.1 Interpolation
+Permet d'afficher des valeurs :
+
+```html
+<p>{{ client.nom }}</p>
+```
+
+### 3.2.2 Property Binding
+Permet de lier des propriétés HTML à des variables TypeScript :
+
+```html
+<input [disabled]="loading">
+```
+
+### 3.2.3 Event Binding
+Permet de lier des événements HTML à des méthodes TypeScript :
+
+```html
+<button (click)="valider()">Envoyer</button>
+```
+
+### 3.2.4 Two-Way Binding
+Permet de synchroniser une variable TypeScript avec un champ HTML :
+
+```html
+<input [(ngModel)]="texte">
+```
+
+-------------------------------------------------------------------------------
+
+## 3.3 Directives
+
+### 3.3.1 *ngIf
+
+```html
+<div *ngIf="dossierCharge; else enAttente">
+  Le dossier est prêt.
+</div>
+<ng-template #enAttente>
+  Chargement...
+</ng-template>
+```
+
+### 3.3.2 *ngFor
+
+```html
+<li *ngFor="let element of liste">{{ element }}</li>
+```
+
+-------------------------------------------------------------------------------
+
+## 3.4 Services Angular
+
+Un service Angular est une classe instanciée via le système d’injection de dépendances.
+
+Rôle :
+
+- appel API (HttpClient),
+- stockage local (mais pas persistant),
+- communication entre composants.
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class AiService {
+  private http = inject(HttpClient);
+
+  generateComment(type: string, contexte: any) {
+    return this.http.post('/api/ai/generate-comment', { type, contexte });
+  }
+}
+```
+
+-------------------------------------------------------------------------------
+
+## 3.5 Observables et RxJS
+
+RxJS est une librairie réactive utilisée partout dans Angular.  
+Un Observable représente un flux de données :
+
+```ts
+this.db.getDossierInfos().subscribe({
+  next: data => console.log(data),
+  error: err => console.error(err),
+  complete: () => console.log("Terminé")
+});
+```
+
+Principaux opérateurs utiles dans ce projet :
+
+- `map()` : transformation,
+- `catchError()` : gestion d’erreurs,
+- `switchMap()` : enchaînement d'appels API,
+- `tap()` : exécuter une action intermédiaire.
+
+-------------------------------------------------------------------------------
+
+## 3.6 Routing Angular
+
+Angular utilise un système de routes déclaratives.
+
+```ts
+export const routes: Routes = [
+  { path: '', component: AccueilComponent },
+  { path: 'dashboard', component: DashboardComponent },
+  { path: 'formulaire', component: FormulaireComponent }
+];
+```
+
+Une route est associée à un composant (une page).
+
+-------------------------------------------------------------------------------
+
+## 3.7 Formulaires (Reactive Forms)
+
+Le projet utilise principalement les Reactive Forms pour :
+
+- la validation stricte,
+- la réactivité avancée,
+- le patch automatique des données SQL.
+
+```ts
+this.form = this.fb.group({
+  titre: ['', Validators.required],
+  commentaire: ['']
+});
+```
+
+-------------------------------------------------------------------------------
+
+## 3.8 Interceptor HTTP – Injection du Token Microsoft
+
+Tous les appels API du frontend passent par l’interceptor :
+
+```ts
+const cloned = req.clone({
+  setHeaders: {
+    Authorization: `Bearer ${token}`
+  }
+});
+```
+
+Cela garantit que toutes les requêtes privées sont authentifiées.
+
+-------------------------------------------------------------------------------
+
+# 4. Authentification Microsoft via MSAL
+
+
+## 4.1 Fonctionnement détaillé de MSAL
+
+### Étape 1 – Vérification initiale
+
+Lorsqu’un utilisateur arrive sur l’application, Angular interroge MSAL :
+
+- MSAL vérifie si un compte est déjà chargé,
+- sinon MSAL tente une connexion silencieuse (SSO),
+- si non possible → ouverture popup.
+
+### Étape 2 – Popup Microsoft
+
+L’utilisateur sélectionne son compte professionnel.  
+Azure AD génère ensuite :
+
+- un **ID Token** (identité),
+- un **Access Token** pour appeler les APIs autorisées.
+
+### Étape 3 – Stockage MSAL
+
+Les tokens ne sont jamais stockés dans localStorage.  
+MSAL utilise une mémoire interne et chiffrée.
+
+### Étape 4 – Interceptor Angular
+
+Avant chaque requête :
+
+- récupération du compte actif,
+- appel `acquireTokenSilent()`,
+- ajout du header Authorization.
+
+### Étape 5 – Validation backend
+
+Node.js valide :
+
+- signature cryptographique,
+- issuer Azure AD,
+- audiences autorisées.
+
+-------------------------------------------------------------------------------
+
+## 4.2 Configuration MSAL
+
+```ts
+export const msalConfig: MsalConfiguration = {
+  auth: {
+    clientId: "67336009-376f-424b-882b-8662f86e5eed",
+    authority: "https://login.microsoftonline.com/f7f506f7-c551-4a8a-8c5a-b7d339828e4b",
+    redirectUri: "http://localhost:4200"
+  },
+  cache: { cacheLocation: "sessionStorage" }
+};
+```
+
+-------------------------------------------------------------------------------
+
+# 5. Backend Node.js
+
+## 5.1 Structure du projet
+
+```
+backend/src/
+├── server.js              # Point d'entrée
+├── routes/                # Endpoints API
+│   ├── dbRoutes.js
+│   ├── aiRoutes.js
+│   ├── wordRoute.js
+│   ├── pdfRoutes.js
+│   └── dashboardRoute.js
+├── controllers/           # Logique métier
+│   ├── dbController.js
+│   ├── commentController.js
+│   ├── wordController.js
+│   ├── pdfController.js
+│   └── ...
+├── services/             # Fonctions réutilisables
+│   ├── dbService.js
+│   ├── aiService.js
+│   ├── wordService.js
+│   ├── pdfService.js
+│   └── ...
+├── config/               # Configuration
+│   ├── db.js
+│   └── prompts.json
+├── templates/            # Templates Word/PowerPoint
+├── utils/                # Scripts Python, helpers
+└── uploads/              # Fichiers générés
+```
+
+## 5.2 server.js
+
+```js
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+
+import dbRoutes from './routes/dbRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
+import wordRoutes from './routes/wordRoute.js';
+import pdfRoutes from './routes/pdfRoutes.js';
+
+dotenv.config();
+const app = express();
+
+app.use(cors({ origin: "http://10.25.10.143:4200", credentials: true }));
+app.use(express.json());
+
+app.use('/api/db', dbRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/word', wordRoutes);
+app.use('/api/pdf', pdfRoutes);
+
+app.listen(process.env.PORT || 4000, "0.0.0.0", () => {
+  console.log("API disponible sur toutes les interfaces");
+});
+```
+
+## 5.3 Routes - Endpoints API
+
+**Exemple : `routes/dbRoutes.js`**
+
+```js
+import express from 'express';
+import dbController from '../controllers/dbController.js';
+
+const router = express.Router();
+
+router.get('/getDossierInfos', dbController.getDossierInfos);
+router.post('/verifDossier', dbController.verifDossier);
+
+export default router;
+```
+
+## 5.4 Controllers - Traiter les requêtes
+
+**Exemple : `controllers/commentController.js`**
+
+```js
+export const generateComment = async (req, res) => {
+  try {
+    const { type, contexte } = req.body;
+    const result = await aiService.generateComment(type, contexte);
+    res.json({ success: true, comment: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+```
+
+## 5.5 Services - Logique réutilisable
+
+**Exemple : `services/aiService.js`**
+
+```js
+import { Mistral } from '@mistralai/mistralai';
+
+const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
+
+export const generateComment = async (type, contexte) => {
+  const prompt = type === 'reformuler' 
+    ? `Reformulez ce texte:\n${contexte}`
+    : `Analysez ce texte:\n${contexte}`;
+
+  const response = await client.chat.complete({
+    model: process.env.MISTRAL_MODEL || 'mistral-large-latest',
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  return response.choices[0].message.content;
+};
+```
+
+-------------------------------------------------------------------------------
+
+# 6. Cycles techniques complets
+
+-------------------------------------------------------------------------------
+
+### Cycle 1 : **Génération d'un commentaire IA (Reformuler)**
+
+```
+1. Frontend (Angular) - src/app/services/ai-service.ts
+   ↓ Utilisateur clique "Reformuler" dans le formulaire
+   ↓ Le composant appelle aiService.generateComment('reformuler', { texte: '...' })
+   ↓ ai-service.ts fait POST /api/ai/generate-comment
+   ↓ Header: Authorization: Bearer <token_microsoft> (ajouté par auth.interceptor.ts)
+
+2. Backend (Node.js) - Express Server (server.js)
+   ↓ Requête reçue sur /api/ai/generate-comment
+   ↓ Express route /api/ai → routes/aiRoutes.js
+   ↓ aiRoutes.js appelle generateComment (controllers/commentController.js)
+
+3. Controller & Service (Node.js) - commentController.js → aiService.js
+   ↓ commentController.generateComment() reçoit { type: 'reformuler', contexte: { texte: '...' } }
+   ↓ Appelle aiService.generateAIComment('reformuler', contexte)
+   ↓ aiService.generateAIComment() :
+     • Charge les prompts depuis config/prompts.json
+     • Sélectionne template.generateComment.reformuler
+     • Appelle fillTemplate() pour remplacer les variables
+     • Appelle callMistral(prompt) via axios
+
+4. Appel API Mistral
+   ↓ callMistral() POST ${MISTRAL_BASE_URL}/chat/completions
+   ↓ Body: { model: MISTRAL_MODEL, messages: [...], temperature: 0.5 }
+   ↓ Header: Authorization: Bearer ${MISTRAL_API_KEY}
+   ↓ axios-retry active : 3 tentatives, retry-after 429, délai 2s
+   ↓ Mistral retourne le texte reformulé
+
+5. Traitement Réponse - aiService.js
+   ↓ callMistral() retourne { comment: '...', json: null }
+   ↓ Si la réponse contient "<<<JSON>>>" → parse et sépare commentaire + JSON
+   ↓ Retour à commentController
+
+6. Backend → Frontend
+   ↓ commentController retourne res.json({ comment: '...', json: null })
+   ↓ HTTP 200 + Contenu-Type: application/json
+
+7. Frontend (Angular) - Composant
+   ↓ ai-service.ts subscribe() reçoit { comment: '...', json: null }
+   ↓ Affiche le résultat dans le formulaire
+   ↓ Utilisateur peut copier/modifier le texte
+```
 
 ---
 
-## Technologies utilisées
+### Cycle 2 : **Authentification Microsoft (Collaborateur) et Vérification**
 
-### Frontend (Ce qui est affiché à l'écran)
-- **Angular** — Framework qui gère l'interface web
-- **TypeScript** — Langage de programmation utilisé pour Angular
-- **HTML** — Structure de la page
-- **SCSS** — Mise en forme et styles
+```
+1. Frontend (Angular) - MSAL Authentication
+   ↓ Utilisateur arrive sur la page
+   ↓ MSAL (@azure/msal-angular) vérifie s'il est connecté
+   ↓ Si non : affiche popup login Microsoft
+   ↓ L'utilisateur s'authentifie (ou SSO automatique)
+   ↓ MSAL récupère access token pour scope: "api://67336009-376f-424b-882b-8662f86e5eed/access_as_user"
+   ↓ Token stocké en mémoire MSAL (pas localStorage direct)
 
-### Backend (Ce qui fonctionne en arrière-plan)
-- **Node.js avec Express** — Serveur qui reçoit les demandes et envoie les réponses
-- **SQL Server** — Base de données où sont stockées les infos
-- **JWT** — Système de sécurité
-- **PDF-Parse + Python** — Outil pour extraire les informations des fichiers PDF
+2. Interceptor HTTP - auth.interceptor.ts
+   ↓ À chaque requête POST/GET du composant
+   ↓ auth.interceptor.ts intercept() :
+     • Récupère activeAccount via msal.instance.getActiveAccount()
+     • Appelle msal.acquireTokenSilent({ scopes: [...], account: activeAccount })
+     • Token acquis ou refresh automatiquement
+     • Clône la requête avec Header Authorization: Bearer ${token}
+   ↓ Requête envoyée avec token au backend
+
+3. Vérification Collaborateur - Backend
+   ↓ POST /api/db/verifCollaborateur
+   ↓ Header: Authorization: Bearer ${token_microsoft}
+   ↓ server.js → dbRoutes.js → VerifCollaborateur (controllers/authController.js)
+   ↓ authMiddlewareCollaborateur (middlewares/auth.js) valide AVANT le controller
+
+4. Middleware de Validation - authMiddlewareCollaborateur
+   ↓ Lit header Authorization et extrait le token
+   ↓ jwksClient.getSigningKey() → vérifie la signature
+   ↓ jwt.verify() avec :
+     • JWKS URI: https://login.microsoftonline.com/f7f506f7-c551-4a8a-8c5a-b7d339828e4b/discovery/v2.0/keys
+     • audience: "api://67336009-376f-424b-882b-8662f86e5eed"
+     • issuer: "https://sts.windows.net/f7f506f7-c551-4a8a-8c5a-b7d339828e4b/"
+   ↓ Si erreur → HTTP 401 "Invalid token"
+   ↓ Si OK → req.user = decoded_jwt_payload, next()
+
+5. Controller Vérification - authController.js
+   ↓ VerifCollaborateur() :
+     • Email (hardcodé temporairement: "prondot@lacomptabilite.fr")
+     • Appelle dbService.GetCollaborateur(email)
+     • Requête SQL table Collaborateurs WHERE email = @email
+   ↓ Si collaborateur existe : res.json({ collaborateur: {...} })
+   ↓ Sinon : HTTP 404 "Collaborateur introuvable"
+
+6. Frontend Réaction
+   ↓ db-service.ts VerifCollaborateur() reçoit la réponse
+   ↓ Composant sait que le collaborateur est vérifié
+   ↓ Peut procéder aux étapes suivantes (accès au dashboard, etc.)
+```
 
 ---
 
-## Comprendre Angular et Node.js
-
-### Qu'est-ce qu'Angular ?
-
-**Angular** est un **framework web** (un ensemble d'outils) qui crée des applications web interactives.
-
-**Concrètement ici :**
-- Angular crée l'**interface web** que les utilisateurs voient sur leur écran
-- Quand vous cliquez sur un bouton, Angular gère :
-  - L'affichage/masquage d'éléments
-  - L'envoi des données au serveur
-  - La réception des réponses
-  - L'affichage des résultats
-
-### Qu'est-ce que Node.js ?
-
-**Node.js** est un **serveur web** qui exécute du code JavaScript côté serveur.
-
-**Concrètement ici :**
-- Node.js crée le **serveur** qui reçoit les demandes d'Angular
-- Le serveur :
-  - Reçoit les données/demandes du frontend
-  - Les vérifie
-  - Va les chercher en base de données (optionnel)
-  - Traite les données (ex : appels IA, extraction de PDF, génération de documents)
-  - Renvoie la réponse à Angular
-
-### Comment Angular et Node.js travaillent ensemble ?
-
-**Exemple : L'utilisateur clique sur le bouton "Reformuler" dans le formulaire**
+### Cycle 3 : **Extraction des données d'un dossier (getDossierInfos)**
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ FRONTEND (Angular) - Ce que vous voyez à l'écran                            │
-│                                                                             │
-│  1. L'utilisateur tape du texte dans une zone de texte (textarea)           │
-│  2. L'utilisateur clique sur le bouton "Reformuler"                         │
-│                                                                             │
-│  3. Angular (composant bouton-textarea.ts) :                                │
-│     - Détecte le clic sur le bouton                                         │
-│     - Récupère le texte du textarea                                         │
-│     - Appelle le service "aiService" avec le texte                          │
-│     - Affiche un "Reformulation en cours..." pour indiquer à l'utilisateur  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    ↓
-                    REQUÊTE HTTP (Angular → Node.js)
-                    POST /api/ai/generate-comment
-                    {
-                      "type": "reformuler",
-                      "contexte": texte à reformuler
-                    }
-                                    ↓
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ BACKEND (Node.js) - Ce qui se passe en arrière-plan                         │
-│                                                                             │
-│  4. Node.js reçoit la requête sur la route /generate-comment                │
-│                                                                             │
-│  5. Express (serveur) envoie la requête au "commentController"              │
-│                                                                             │
-│  6. Le controller fait appel à "aiService" (service backend) qui :          │
-│     - Récupère le type de requète et texte à reformuler                     │
-│     - Appelle l'API Mistral (service d'IA)                                  │
-│     - Reçoit le texte reformulé de Mistral                                  │
-│     - Retourne le texte reformulé                                           │
-│                                                                             │
-│  7. Le controller prépare la réponse :                                      │
-│     {                                                                       │
-│       "comment": texte reformulé,                                           │
-│       "json": utile uniquement lors du commentaire sur les investissements  │
-│     }                                                                       │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    ↓
-                     RÉPONSE HTTP (Node.js → Angular)
-                    {
-                      "comment": texte reformulé,
-                      "json": null
-                    }
-                                    ↓
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ FRONTEND (Angular) - Affichage du résultat                                  │
-│                                                                             │
-│  8. Angular reçoit la réponse du serveur                                    │
-│                                                                             │
-│  9. Angular (aiService) retourne le texte au composant                      │
-│                                                                             │
-│  10. Le composant bouton-textarea.ts :                                      │
-│      - Arrête l'affichage "Reformulation en cours..."                       │
-│      - Met à jour le textarea avec le texte reformulé                       │
-│      - Affiche le nouveau texte à l'écran                                   │
-│                                                                             │
-│  11. L'utilisateur voit : texte reformulé                                   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+1. Frontend (Angular) - Sélection Dossier
+   ↓ Utilisateur saisit :
+     • code_client (ex: "12345")
+     • dateFinEx (ex: "2023-12-31")
+     • dateDebutEx (ex: "2023-01-01")
+   ↓ Clique "Ouvrir dossier"
+
+2. Vérification Dossier - POST /api/db/verifDossier
+   ↓ db-service.ts appelle VerifDossier(code_client, dateFinEx, dateDebutEx)
+   ↓ POST /api/db/verifDossier
+   ↓ Body: { code_client, dateFinEx, dateDebutEx }
+   ↓ Header: Authorization: Bearer ${token_microsoft}
+
+3. Backend Vérification - authController.js
+   ↓ POST /api/db/verifDossier → VerifDossier()
+   ↓ Pas de middleware spécial (verifDossier est public)
+   ↓ VerifDossier() :
+     • Extrait { code_client, dateFinEx, dateDebutEx } de req.body
+     • Appelle dbService.GetDossier(code_client, dateFinEx)
+     • Requête SQL :
+       - SELECT code_client FROM FEC WHERE code_client = @code_client AND datefinex = @dateFinEx
+       - SELECT * FROM clients WHERE code_client = @code_client
+   ↓ Si dossier EXISTE :
+     • Crée JWT local : generateToken({ code_client, dateFinEx, dateDebutEx })
+     • Cookie httpOnly jwt_dossier (durée: 4 heures)
+     • res.cookie("jwt_dossier", token, { httpOnly: true, sameSite: "lax", maxAge: 14400000 })
+     • Retourne res.json({ client: {...} })
+   ↓ Sinon HTTP 404
+
+4. Frontend Stockage Cookie
+   ↓ Browser reçoit Set-Cookie: jwt_dossier = ...
+   ↓ Cookie stocké automatiquement (httpOnly = inaccessible depuis JS)
+   ↓ Sera envoyé automatiquement dans les prochaines requêtes
+
+5. Extraction Données - GET /api/db/getDossierInfos
+   ↓ Composant appelle db-service.ts GetDossierInfos()
+   ↓ GET /api/db/getDossierInfos
+   ↓ Cookie jwt_dossier envoyé automatiquement avec la requête
+   ↓ Header: Authorization: Bearer ${token_microsoft}
+
+6. Middleware Protection - authMiddlewareDossier
+   ↓ Route enregistrée : router.get('/getDossierInfos', authMiddlewareDossier, GetDossierInfos)
+   ↓ authMiddlewareDossier (middlewares/auth.js) :
+     • Lit req.cookies.jwt_dossier
+     • Appelle verifyToken(token) (utils/jwt.js)
+     • jwt.verify(token, process.env.JWT_SECRET) avec la clé locale
+     • Si valide → req.user = { code_client, dateFinEx, dateDebutEx }
+     • Si invalide → HTTP 401 "Token invalide"
+
+7. Controller Principal - dbController.js GetDossierInfos()
+   ↓ Requête arrivée sécurisée : req.user = { code_client, dateFinEx, dateDebutEx }
+   ↓ Calcule anneeN = new Date(dateFinEx).getFullYear()
+   ↓ Parallélise 4 appels SQL (Promise.all) :
+
+   A) dbService.GetInfoClients(code_client)
+      ↓ SELECT c.ape, c.soumis_is, c.mois_cloture, c.raison_sociale, ...
+        FROM clients c JOIN collaborateurs ON chef_de_mission
+      ↓ Retourne infos générales client
+
+   B) dbService.GetSignataire(code_client)
+      ↓ SELECT collabExp.nom, collabExp.prenom, collabRev.nom, collabRev.prenom
+        FROM clients JOIN collaborateurs (expert + réviseur)
+      ↓ Retourne noms du cabinet
+
+   C) dbService.GetAggregats(code_client, dateFinEx)
+      ↓ SELECT * FROM Aggregats_FEC
+        WHERE code_client = @code_client
+        AND datefinex IN (@dateFinEx, MAX(previous_year))
+        ORDER BY datefinex DESC
+      ↓ Retourne aggN (année N) et aggN1 (année N-1)
+
+   D) dbService.GetAnaSectorielle("9602A")
+      ↓ SELECT * FROM analyse_sectorielle
+        WHERE code_ape = "9602A"
+        AND millesime = MAX(millesime)
+      ↓ Retourne benchmarks sectoriels
+
+8. Traitement & Composition Réponse
+   ↓ dbController assemble un JSON massif :
+     • Infos générales : anneeN, anneeN1, I_classe2, MD_salaries, forme_societe, ...
+     • Client : code_client, nomEntreprise, adresses, signataire, ...
+     • Chiffres clés : CA, marge, EBE, résultats, variations %
+     • Evolution charges : regroupé par compte (606%, 611%, 622%, 623%, etc.)
+       + Calcul poids (% du total) et variation (%)
+       + Flag EC_comment = true si poids > 30% OU (variation > 10% ET impact > 6%)
+     • Charges personnel : CP_N, CP_N1, ratio CA, ratio marge, VA/MS
+     • Impôt société : IS_tot, crédits, acomptes
+     • Autofinancement : Capacité, dotations, cessions, remboursements, dividendes
+     • Trésorerie : treso, flux de trésorerie, variations BFR
+     • Ratios exploitation : jours crédit client, jours crédit fournisseur
+     • Analyse sectorielle : tranches 1-5 par indicateur (CA, marge, etc.)
+
+9. Backend → Frontend
+   ↓ HTTP 200 avec res.json({
+       anneeN1Existe: boolean,
+       I_classe2: number,
+       client: { code_client, nomEntreprise, ... },
+       chiffreCles: { CC_caN, CC_caN1, CC_margeN, ... },
+       evolutionCharges: [ { EC_lib, EC_valN, EC_valN1, EC_comment, ... }, ... ],
+       chargesPersonnel: { CP_N, CP_N1, ... },
+       impotSociete: { IS_tot, IS_credit, ... },
+       autofinancement: { AF_resEx, AF_dota, ... },
+       anaSectorielle: { valeurs: [...], commentaire: [...] },
+       tresorerie: { tresoN, RF_apport, ... },
+       ratiosExploitation: { credClientN, credFournN, ... }
+     })
+
+10. Frontend Réception & Affichage
+    ↓ db-service.ts subscribe() reçoit le JSON massif
+    ↓ Composant formulaire pré-remplit les champs :
+      • Titre, adresses du client
+      • Chiffres clés (CA, marge, EBE, résultat)
+      • Charges mentionnées (via EC_comment = true)
+      • Info signataires
+    ↓ Utilisateur peut parcourir, modifier, générer commentaires supplémentaires
+    ↓ Génère les documents Word via POST /api/word/generateWord
 ```
+-------------------------------------------------------------------------------
 
-**Résumé du cycle complet :**
-1. Utilisateur clique → Angular détecte
-2. Angular envoie les données → Node.js traite
-3. Node.js appelle l'IA → Mistral répond
-4. Node.js renvoie le résultat → Angular affiche
-
-
-### Où se trouve le code d'Angular et Node.js ?
-
-**Angular** (Frontend) :
-- Dossier : `/frontend/src/app/`
-- Fichiers `.ts` (TypeScript) et `.html`
-- C'est le code visible à l'écran
-
-**Node.js** (Backend) :
-- Dossier : `/backend/src/`
-- Fichiers `.js` (JavaScript)
-- C'est le code qui traite les demandes
-
-### Comment les développeurs les utilisent ?
-
-**Pour Angular :**
-- Modifier l'interface = modifier les fichiers `.html` et `.scss`
-- Ajouter une fonctionnalité = modifier les fichiers `.ts` (TypeScript)
-- Appeler le serveur = utiliser les `services.ts`
-
-**Pour Node.js :**
-- Créer une nouvelle API = ajouter une route dans `/routes/`
-- Traiter les données = ajouter un controller dans `/controllers/`
-- Réutiliser du code = créer une fonction dans `/services/`
-
-**Exemple : "Je veux ajouter un bouton pour télécharger la lettre en PDF"**
-
-1. **Frontend (Angular)** :
-   - Ajouter un bouton dans le `.html`
-   - Ajouter une fonction dans le `.ts` qui appelle l'API
-
-2. **Backend (Node.js)** :
-   - Créer une route `/api/download-pdf`
-   - Créer un controller qui convertit le Word en PDF
-   - Renvoyer le fichier
-
-### Base de données
+# 7. Base SQL Server 
 - Table `Aggregats_FEC`:
    - C'est un résumé de la table FEC pour chaque couple **code_client/datefinex**.
    - Elle contient la majorité des informations nécessaires pour remplir la lettre de fin de mission.
@@ -184,249 +679,13 @@ L'application se divise en 3 parties principales :
 - Table `analyse_sectorielle`:
    - Contient les informations des analyses sectorielles pour chaque code NAF.
 
----
+-------------------------------------------------------------------------------
 
-## Architecture du projet
+# 8. Problèmes connus
 
-```
-.
-├── frontend/                 # Application Angular
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── pages/       # Pages principales
-│   │   │   ├── services/    # Services (API, authentification)
-│   │   │   ├── interceptor/ # Intercepteurs (authentification)
-│   │   │   ├── directives/  # Directives personnalisées
-│   │   │   ├── shared/      # Composants partagés
-│   │   │   └── config/      # Configuration
-│   │   └── styles/          # Styles globaux
-│   └── angular.json
-│
-├── backend/                  # API Node.js / Express
-│   ├── src/
-│   │   ├── server.js        # Point d'entrée
-│   │   ├── controllers/     # Logique métier
-│   │   ├── services/        # Services (extraction, traitement)
-│   │   ├── routes/          # Définition des routes API
-│   │   ├── middlewares/     # Middlewares (authentification, etc.)
-│   │   ├── config/          # Configuration (DB, prompts)
-│   │   ├── templates/       # Templates (DOCM, PPTM)
-│   │   ├── utils/           # Scripts Python et utilitaires
-│   │   └── uploads/         # Fichiers uploadés temporaires
-│   └── package.json
-└── README.md                # Documentation du projet
-```
-
----
-
-## Installation et démarrage
-
-### Prérequis (Avant de commencer)
-
-Avant de lancer l'application, vous devez avoir installé :
-- **Node.js** — [Télécharger ici](https://nodejs.org/)
-- **SQL Server** — [Télécharger ici](https://www.microsoft.com/sql-server/)
-- **Python** — [Télécharger ici](https://www.python.org/downloads/release/python-3137/)
-
-### Vérifier l'installation
-
-Ouvrez l'**invite de commande** (cmd ou PowerShell) et tapez :
-```bash
-node --version
-npm --version
-python --version
-```
-
-Vous devriez voir les numéros de version.
-
----
-
-### Étape 1 : Télécharger le projet
-
-```bash
-git clone https://github.com/ldebouche/Projet1_lettre_fin_de_mission.git
-cd Projet1_lettre_fin_de_mission
-```
-
-Cela télécharge tous les fichiers du projet sur votre ordinateur.
-
----
-
-### Étape 2 : Configurer et démarrer le BACKEND
-
-Le backend, c'est le serveur qui fait tourner l'application.
-
-```bash
-cd backend
-npm install
-```
-
-Cela télécharge tous les outils nécessaires pour faire fonctionner le serveur.
-
-**Ensuite, demandez moi le fichier `.env`** (fichier de configuration) :
-- Copiez-le dans le dossier `backend/src`
-
-**Puis démarrez le serveur :**
-```bash
-cd src
-node server.js
-```
-
-Si vous voyez 
-```bash
-[dotenv@17.2.2] injecting env (17) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-[dotenv@17.2.2] injecting env (0) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
-API disponible sur toutes les interfaces
-Connexion SQL OK
-```
-C'est bon !
-
----
-
-### Étape 3 : Configurer et démarrer le FRONTEND
-
-Le frontend, c'est ce que vous voyez dans le navigateur.
-
-**Ouvrez une NOUVELLE fenêtre d'invite de commande** et tapez :
-
-```bash
-cd frontend
-npm install
-```
-
-Cela télécharge tous les outils pour l'interface.
-
-**Puis démarrez l'interface :**
-```bash
-ng serve --host=0.0.0.0 --port=4200 --proxy-config proxy.conf.json
-```
-
-ça ouvre deux sessions :
-- **intranet** : http://mon_ip:4200
-- **localhost** : http://localhost:4200
-
-Pour le moment il faut allez sur **http://localhost:4200** dans votre navigateur car il n'y a pas encore de serveur.
-
----
-
-## Comment utiliser l'application (pour un utilisateur)
-
-1. **Ouvrir l'application**
-   - Aller sur : `http://localhost:4200` (ou l’URL intranet quand le serveur sera en place).
-
-2. **Se connecter**
-   - Utilisation de la connexion via **Microsoft** donc normalement il n'y a pas besoin de rentrer des identifiants.
-
-3. **Sélectionner un dossier client**
-   - Saisir le **code client**, la **date de début de mission** et la **date de fin de mission**.
-   - L’application vérifie que le dossier existe dans la base SQL.
-   - Si le dossier est trouvé -> redirection vers la gestion du dossier (début, milieu et fin de mission).
-
-4. **Paramétrer la lettre de fin de mission**
-   - Remplir le formulaire avec les informations demandées.
-   - Les champs obligatoires sont indiqués.
-   - Certains champs sont pré-remplis avec les données extraites de la base SQL.
-   - Des commentaires et reformulations sont proposés grâce à l'ia pour aider à la rédaction.
-   - Toujours vérifier les informations extraites et générées.
-
-5. **Générer les documents**
-   - Cliquer sur **“Enregistrer”** en bas à droite.
-   - L’application :
-     - Récupère les données du formulaire,
-     - Remplit le modèle Word,
-     - Remplit le modèle PowerPoint.
-   - Les résultat sont disponibles à ce chemin d'accès : (rien pour le moment car pas de serveur).
-
-6. **Exporter en PDF (optionnel)**
-   - Ouvrir le `.docm`,
-   - Un bouton est disponible pour exporter au format PDF. Il se trouve dans la barre d'outils accès rapide (à gauche du nom du fichier).
-   
-   ![alt text](/frontend/src/assets/image.png)
-
-
----
-
-# Organisation du code (pour les développeurs)
-
-## 1. Structure du frontend (Angular)
-
-### `/frontend/src/`
-Contient toute la logique de l'application Angular.
-
-| Dossier | Rôle |
-|--------|------|
-| `app/pages/` | Contient les pages principales (accueil, sélection dossier, formulaire, récapitulatif). |
-| `app/services/` | Contient les appels API et la logique métier côté client. |
-| `app/interceptor/` | Intercepte les requêtes HTTP (authentification Microsoft + gestion des erreurs API). |
-| `app/directives/` | Directives Angular personnalisées. |
-| `app/shared/` | Composants réutilisables (boutons, barre de navigation). |
-| `assets/` | Contient les images et logo. |
-| `styles/` | Style global du projet (SCSS). |
-
-### Comment les fichiers Angular s’articulent ?
-- Une **page** utilise un ou plusieurs **services** pour appeler le backend.  
-- Les services envoient des requêtes HTTP définies dans `proxy.conf.json`.  
-- L’interceptor ajoute automatiquement :
-  - le token Microsoft,
-  - la gestion des erreurs API.
-
-
----
-
-## 2. Structure du backend (Node.js / Express)
-
-### `/backend/src/`
-
-| Dossier / fichier | Rôle |
-|------------------|------|
-| `server.js` | Point d’entrée : création du serveur Express, configuration globale. |
-| `routes/` | Définit les endpoints API (ex : `/api/dossier`, `/api/lettre`). |
-| `controllers/` | Contient la logique métier déclenchée lors d’un appel API. |
-| `services/` | Regroupe les fonctions réutilisables : extraction SQL, génération document, IA, etc. |
-| `middlewares/` | Authentification JWT, vérification des droits, validation des données. |
-| `config/` | Configuration générale : connexion SQL, prompts ia. |
-| `templates/` | Modèles Word/PPT utilisés pour générer les documents finaux. |
-| `utils/` | Scripts Python et helpers Node.js. |
-| `uploads/` | Fichiers uploadés temporairement par l’utilisateur. |
-| `.env` | Fichier de configuration avec les variables d’environnement (non versionné). |
-
-**Exemple (l'utilisateur veut générer un commentaire via ia):**
-1. L’utilisateur clique sur "générer un commentaire".
-2. Angular envoie les données via `/api/generate-comment`.
-3. La route appelle `CommentController.js`.
-4. Le controller appelle :
-   - `aiService.js` pour géré l'appel à l'ia via `callMistral` qui va générer le commentaire.
-5. Les données générées sont renvoyés et affichées à l'écran.
-
-### Principales routes API backend
-
-| Route | Méthode | Description |
-|------|---------|-------------|
-| `/api/db/verifDossier` | POST | Vérifie qu’un dossier existe en base |
-| `/api/db/getDossierInfos` | GET | Récupère une majorité des infos du dossier |
-| `/api/ai/generate-comment` | POST | Appelle l’IA (Mistral) |
-| `/api/word/generateWord` | POST | Génère les documents Word & PowerPoint |
-
-
-### Rôle des services backend
-
-- **dbService.js**  
-  Gère toutes les requêtes SQL (Aggregats_FEC, analyse sectorielle, dossiers).
-
-- **aiService.js**  
-  Centralise les appels IA (Mistral), formats des prompts et réponses.
-
-- **wordService.js**  
-  Gère la création des fichiers Word/PPT à partir des données du formulaire.
-
-- **pdfService.js**  
-  Gère l'extraction des données des PDF.
-
----
-
-## Problèmes connus et contournements
-
-Voici les problèmes qui m'arrivent souvent lors du développement/déploiement, et comment les contourner rapidement.
+- **Token Microsoft expiré**
+   - Symptômes : HTTP 401 "Invalid token" depuis le backend.
+   - Contournement : se reconnecter via MSAL (Angular gère automatiquement).
 
 - **Fichier `.env` manquant ou mal configuré**
    - Symptômes : erreurs au démarrage, connexion SQL KO, clés API manquantes.
@@ -444,3 +703,36 @@ Voici les problèmes qui m'arrivent souvent lors du développement/déploiement,
    - Symptômes : erreurs lors de la génération des documents
    - Contournement : vérifier que le fichier n'est pas déjà ouvert.
 
+-------------------------------------------------------------------------------
+
+# 9. Guide utilisateur
+
+1. Ouvrir l’application.  
+2. Se connecter via Microsoft.  
+3. Vérifier qu’un collaborateur existe.  
+4. Séectionner un dossier.
+5. Saisir un code client + dates.  
+6. Charger le dossier.  
+7. Préremplir le formulaire.  
+8. Demander des reformulations IA.  
+9. Générer les fichiers Word/PPTX.  
+10. Exporter en PDF via Word.
+
+-------------------------------------------------------------------------------
+
+# 10. Notes techniques importantes
+
+- **Tokens & Cookies** :
+  - Token Microsoft (Bearer) : stocké en mémoire MSAL, dure ~1h, réutilisable pour n'importe quelle requête
+  - Cookie JWT local (jwt_dossier) : httpOnly, durée 4h, session dossier spécifique
+
+- **Parallélisation** :
+  - GetDossierInfos utilise `Promise.all()` pour lancer 4 requêtes SQL en parallèle (plus rapide)
+
+- **Retry Logic** :
+  - aiService utilise `axios-retry` : si Mistral retourne 429 (rate limit), réessaie 3x avec délai exponentiel
+
+- **Sécurité** :
+  - Collaborateur routes : protection Microsoft JWT via JWKS
+  - Dossier routes : protection cookie JWT local + vérification table SQL
+  - Les deux tokens sont indépendants
