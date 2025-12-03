@@ -18,5 +18,5 @@
       </tr>
     </tbody>
   </table>
-  <bouton-textarea formControlName="commentaire" categorie="investissement" [data]="immobs" *ngIf="immobs"></bouton-textarea>
+  <bouton-textarea formControlName="commentaire" categorie="investissement" [data]="immobs" (tableauInvestissement)="group.get('tableau')?.setValue($event)" *ngIf="immobs"></bouton-textarea>
 </fieldset>

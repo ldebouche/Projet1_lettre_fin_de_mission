@@ -22,6 +22,7 @@ def clean_table(table):
 result = None
 code_ape = None
 millesime = None
+output_tranches = []
 perspectives = []
 
 with pdfplumber.open(pdf_path) as pdf:
@@ -49,6 +50,47 @@ with pdfplumber.open(pdf_path) as pdf:
                 cleaned_line = line.replace("➜", "-").replace("", "-").strip()
                 perspectives.append(cleaned_line)
 
+        if "Tranche 1" in text and "Tranche 5" in text and not output_tranches:
+            words = page.extract_words()
+
+            # Regroupement des mots par lignes selon la coordonnée Y
+            lines_by_y = {}
+            for w in words:
+                y = round(w["top"], 1)
+                lines_by_y.setdefault(y, []).append(w["text"])
+
+            for y, words_in_line in lines_by_y.items():
+                line = " ".join(words_in_line)
+
+                # On cherche la ligne qui contient les "≤"
+                if "≤" not in line:
+                    continue
+
+                # On reconstruit les tranches :
+                # ex: ["≤","41","582","≤","61","835", ...]
+                groups = []
+                current = []
+
+                for token in words_in_line:
+                    if "≤" in token:  # début d’une nouvelle tranche
+                        if current:
+                            groups.append(" ".join(current))
+                        current = [token]
+                    else:
+                        if current:      # on est dans une tranche en cours
+                            current.append(token)
+
+                if current:
+                    groups.append(" ".join(current))
+
+                # Ne garder que les groupes qui contiennent des chiffres
+                groups = [g.strip() for g in groups if re.search(r"\d", g)]
+
+                if len(groups) >= 5:
+                    groups = groups[:5]
+                    output_tranches = ["", groups[0], groups[1], groups[2], groups[3], groups[4]]
+                    break
+
         tables = page.extract_tables()
         for table in tables:
             if not table:
@@ -67,6 +109,8 @@ output = {
     "headers": ["Libellé", "Global", "Tranche 1", "Tranche 2", "Tranche 3", "Tranche 4", "Tranche 5"],
     "rows": []
 }
+
+output["rows"].append(['Tranches', output_tranches[0], output_tranches[1], output_tranches[2], output_tranches[3], output_tranches[4], output_tranches[5], None])
 
 if result:
     for r in result:

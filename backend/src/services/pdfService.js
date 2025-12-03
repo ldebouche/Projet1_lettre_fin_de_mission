@@ -81,7 +81,6 @@ export async function extractPointsImportants(filePath) {
     .replace(/\uF0A6/g, '')
     .replace(/\uF020|\uF021|\uF026|\uF02A/g, '');
 
-  // on découpe le texte par blocs CODE - Libellé
   const regex = /([A-Z0-9]{2,15})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n[A-Z0-9]{2,15}\s*-|$)/g;
   const result = [];
 
@@ -90,7 +89,6 @@ export async function extractPointsImportants(filePath) {
     const ligneSymbole = bloc.find(l => (l.match(/[]/g) || []).length >= 2);
     if (!ligneSymbole) continue;
 
-    // ligne suivante non vide = commentaire
     const idx = bloc.indexOf(ligneSymbole);
     let commentaire = bloc.slice(idx + 1).find(l => l.trim());
     if (!commentaire) continue;
@@ -107,79 +105,50 @@ export async function extractPointsImportants(filePath) {
 export async function extractImmobEntree(filePath) {
   if (!fs.existsSync(filePath)) {
     console.warn(`Fichier introuvable : ${filePath}`);
-    return { comptes: "aucunes informations", totalGeneral: "aucunes informations" };
+    return { lignes: [], totalGeneral: "aucunes informations" };
   }
+
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
   const text = data.text;
 
-  const regex = /(\d{8})([^\n]+)\n([\s\S]*?)(?:Cumul du compte\s*([\d\s,.]+))(?:\s|$)/g;
+  const lignes = [];
 
-  let comptes = [];
+  const regexLigne = /^\s*\d+\s+([A-Za-z0-9éèêàâçëïôùû'’\- ]+?)(\d{2}\/\d{2}\/\d{2}).*?([\d\s]+,\d{2})/gm;
+
   let match;
+  while ((match = regexLigne.exec(text)) !== null) {
+    const libelle = match[1].trim();
+    const date = match[2].trim();
+    const montant = match[3].trim();
 
-  while ((match = regex.exec(text)) !== null) {
-    const numero = match[1].trim();
-    const libelle = match[2].trim();
-    const bloc = match[3];
-    const cumul = match[4].trim().replace(/(\d+,\d{2})\d*,\d*/g, "$1");
-
-    const designations = [...bloc.matchAll(
-      /^\d+\s*([A-Za-z0-9éèêàâçëïôùû\- ]+?)(?=\d{2}\/\d{2}\/\d{2})/gm
-    )].map(d => d[1].trim());
-
-    comptes.push({
-      compte: numero,
-      libelle,
-      designations,
-      cumul
-    });
+    lignes.push({ libelle, date, montant });
   }
 
   const totalGeneralMatch = text.match(/Total des entrées\s*([\d\s]+,\d{2})/);
   const totalGeneral = totalGeneralMatch ? totalGeneralMatch[1].trim() : null;
 
-  return { comptes, totalGeneral };
+  return { lignes, totalGeneral };
 }
+
 
 export async function extractImmobSortie(filePath) {
-  if (!fs.existsSync(filePath)) {
-    console.warn(`Fichier introuvable : ${filePath}`);
-    return { comptes: "aucunes informations", totalGeneral: "aucunes informations" };
-  }
-  const buffer = fs.readFileSync(filePath);
-  const data = await pdf(buffer);
-  const text = data.text;
+  return new Promise((resolve, reject) => {
+    const cmd = `python ./utils/extract_immobSortie.py "${filePath}"`;
 
-  const regex = /(\d{8})\s*([^\n]+)\n([\s\S]*?)(\d[\d\s,.]+)Cumul sorties du compte/g;
+    exec(cmd, { maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
+      if (err) return reject("Erreur Python : " + stderr);
 
-  let comptes = [];
-  let totalGeneral;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    const numero = match[1].trim();
-    const libelle = match[2].trim();
-    const bloc = match[3];
-    const cumul = match[4].trim().replace(/(\d+,\d{2})[\d\s,]*/g, "$1");
-    let cumulNum = parseFloat(cumul.replace(/\s/g, "").replace(",", "."));
-
-    const designations = [...bloc.matchAll(
-      /^\d+\s*([A-Za-z0-9éèêàâçëïôùû\- ]+?)(?=\d{2}\/\d{2}\/\d{2})/gm
-    )].map(d => d[1].trim());
-
-    comptes.push({
-      compte: numero,
-      libelle,
-      designations,
-      cumul
+      try {
+        const parsed = JSON.parse(stdout);
+        resolve(parsed);
+      } catch (e) {
+        reject("Erreur parsing JSON : " + e.message);
+      }
     });
-    totalGeneral += cumulNum;
-  }
-
-  totalGeneral = totalGeneral ? totalGeneral.toLocaleString('fr-FR') : null;
-  return { comptes, totalGeneral };
+  });
 }
+
 
 export function extractAnaSectorielle(pdfPath) {
   return new Promise((resolve, reject) => {
@@ -215,7 +184,8 @@ export async function extractEmprunts(filePath) {
   const text = data.text;
 
   const regexEmprunt =
-    /\d{6,10}\s+(?<T_designation>.+?)Entreprise[\s\S]*?\n\d+\s*(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s+(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=\n\d{6,10}|\nCumul|$)/g;
+    /(?<numero>\d{6,10})\s+(?<T_designation>.+?)Entreprise[\s\S]*?(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s+(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=\n\d{6,10}\s|Cumul|$)/g;
+
 
   const emprunts = [];
   const regexNombre = /\d{1,3}(?: ?\d{3})*,\d{1,2}/g;

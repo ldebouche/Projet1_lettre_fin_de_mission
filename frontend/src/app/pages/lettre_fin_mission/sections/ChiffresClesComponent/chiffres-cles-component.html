@@ -55,13 +55,23 @@
         <th>Tranche 4</th>
         <th>Tranche 5</th>
       </tr>
+      <tr>
+        <th>{{ anaSectorielle[0].tranches.global }}</th>
+        <th>{{ anaSectorielle[0].tranches.tranche_1 }}</th>
+        <th>{{ anaSectorielle[0].tranches.tranche_2 }}</th>
+        <th>{{ anaSectorielle[0].tranches.tranche_3 }}</th>
+        <th>{{ anaSectorielle[0].tranches.tranche_4 }}</th>
+        <th>{{ anaSectorielle[0].tranches.tranche_5 }}</th>
+      </tr>
     </thead>
     <tbody>
       <tr *ngFor="let ana of anaSectorielle">
-        <td class="first-row">{{ ana.libelle }}</td>
-        <td *ngFor="let key of getTrancheKeys(ana.tranches)">
-          {{ ana.tranches[key] }}
-        </td>
+        <ng-container *ngIf="ana.libelle !== 'Tranches'">
+          <td class="first-row">{{ ana.libelle }}</td>
+          <td *ngFor="let key of getTrancheKeys(ana.tranches)">
+            {{ ana.tranches[key] }}
+          </td>
+        </ng-container>
       </tr>
     </tbody>
   </table>

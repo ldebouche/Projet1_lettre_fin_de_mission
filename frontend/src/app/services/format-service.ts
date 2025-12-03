@@ -47,7 +47,11 @@ export class FormatService {
     AS.forEach((item) => {
       const prefix =
         item.libelle.includes("Marge") ? "marge" :
-        item.libelle.includes("Chiffre") ? "ca" : null;
+        item.libelle.includes("Tranches") ? "t" :
+        item.libelle.includes("entreprises") ? "nbrEnt" :
+        item.libelle.includes("Effectif") ? "efMoy" :
+        item.libelle.includes("personne") ? "caP" :
+        item.libelle.includes("HT") ? "ca" : null;
 
       if (!prefix) return;
 
@@ -127,10 +131,8 @@ export class FormatService {
     for (const e of data.emprunts) {
       const debut = parseDate(e.T_date_debut);
       const fin = parseDate(e.T_date_fin);
-      const montant = parseInt(e.T_montant_emprunt);
-      const rembN1 = parseInt(e.T_remboursN1);
-
-      
+      const montant = parseFloat(e.T_montant_emprunt);
+      const rembN1 = parseFloat(e.T_remboursN1);
       let cible;
       if (inRange(debut)) cible = commences;
       else if (inRange(fin)) cible = termines;
@@ -141,8 +143,8 @@ export class FormatService {
       cible.nbEmprunts++;
     }
 
-    data.totalMontantEmprunt = commences.totalMontantEmprunt + termines.totalMontantEmprunt + autres.totalMontantEmprunt;
-    data.totalRemboursN1 = commences.totalRemboursN1 + termines.totalRemboursN1 + autres.totalRemboursN1;
+    data.totalMontantEmprunt = Math.round(commences.totalMontantEmprunt + termines.totalMontantEmprunt + autres.totalMontantEmprunt);
+    data.totalRemboursN1 = Math.round(commences.totalRemboursN1 + termines.totalRemboursN1 + autres.totalRemboursN1);
     data.nbEmprunts = commences.nbEmprunts + termines.nbEmprunts + autres.nbEmprunts;
 
     return {

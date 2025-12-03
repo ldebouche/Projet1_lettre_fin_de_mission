@@ -27,7 +27,7 @@ export const VerifDossier = async (req, res) => {
     }
 
     const token = generateToken({ code_client, dateFinEx, dateDebutEx });
-    console.log('Dossier trouvé :', client);
+    
     res.cookie("jwt_dossier", token, {
       httpOnly: true,
       secure: false,

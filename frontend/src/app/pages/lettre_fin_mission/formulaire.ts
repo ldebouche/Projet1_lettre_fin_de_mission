@@ -118,8 +118,14 @@ export class FormulaireComponent implements OnInit {
         }
 
         if (data.anaSectorielle.valeurs.length) {
-          this.anaSectorielle = [data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')];
+          this.anaSectorielle = [
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Tranches'),
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Nombre d’entreprises'),
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Effectif moyen (exploitant inclus)'),
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires par personne en €'),
+            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')
+          ];
         }
 
         if (emprunts) {

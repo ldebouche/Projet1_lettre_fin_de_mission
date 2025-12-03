@@ -92,8 +92,6 @@ export async function generateAIComment(type, contexte) {
     if (CA.variationPrcCA > 15) {
       payload.FDC = CA.FDC;
     }
-    console.log("Payload CA_marge :", payload);
-    console.log("==============");
     prompt = fillTemplate(template, payload);
   }
 
@@ -101,7 +99,6 @@ export async function generateAIComment(type, contexte) {
     let { total_entrees, entrees, total_sorties, sorties } = contexte;
     
     if (!total_entrees && !entrees && !total_sorties && !sorties) {
-      console.log("aucunes informations");
       return "L’absence d'immobilisations d'entrées et de sorties ne permet pas de générer de commentaire.";
     }
 
@@ -109,13 +106,13 @@ export async function generateAIComment(type, contexte) {
     
     if (typeof entrees !== "string") {
       entrees = (entrees || [])
-        .map(e => `${e.libelle} [${(e.designations || []).join(", ")}] (${e.cumul} EUR)`)
+        .map(e => `${e.libelle} - ${(e.date)} - ${e.montant} EUR`)
         .join("; ");
     }
 
     if (typeof sorties !== "string") {
       sorties = (sorties || [])
-        .map(s => `${s.libelle} [${(s.designations || []).join(", ")}] (${s.cumul} EUR)`)
+        .map(s => `${s.libelle} - ${(s.date)} - ${s.motif} - ${s.montant} EUR`)
         .join("; ");
     }
 
@@ -127,8 +124,8 @@ export async function generateAIComment(type, contexte) {
     template = prompts.generateComment.reformuler;
     prompt = fillTemplate(template, { texte });
   }
-  const raw = await callMistral(prompt);
-  return raw;
+  const { comment, json } = await callMistral(prompt);
+  return { comment, json };
 }
 
 export async function callMistral(message) {
@@ -156,7 +153,24 @@ Contraintes strictes :
   );
 
   let raw = resp.data?.choices?.[0]?.message?.content ?? '';
-  return raw;
+
+  if (raw.includes("<<<JSON>>>")) {
+    const [commentaire, jsonStr] = raw.split("<<<JSON>>>");
+
+    let parsedJson = null;
+    try {
+      parsedJson = JSON.parse(jsonStr.trim());
+    } catch (err) {
+      console.error("Erreur JSON Mistral :", err);
+    }
+
+    return {
+      comment: commentaire.trim(),
+      json: parsedJson
+    };
+  }
+  
+  return { comment: raw, json: null };
 }
 
 

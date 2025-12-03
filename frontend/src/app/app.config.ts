@@ -4,7 +4,6 @@ import { routes } from './app.routes';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { AuthInterceptor } from './interceptor/auth.interceptor';
-import { HttpLogInterceptor } from './interceptor/http-log.interceptor';
 
 import { MsalModule, MsalRedirectComponent, MsalGuard } from '@azure/msal-angular';
 import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
@@ -26,8 +25,7 @@ export const appConfig: ApplicationConfig = {
         {
           interactionType: InteractionType.Redirect,
           authRequest: {
-            scopes: ['user.read'],
-            prompt: 'select_account'
+            scopes: ['user.read']
           }
         },
         {
@@ -41,7 +39,6 @@ export const appConfig: ApplicationConfig = {
 
     MsalGuard,
 
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-    { provide: HTTP_INTERCEPTORS, useClass: HttpLogInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
   ],
 };

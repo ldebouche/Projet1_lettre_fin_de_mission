@@ -1,4 +1,4 @@
-import { Component, Input, forwardRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, forwardRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor, FormControl } from '@angular/forms';
 
@@ -23,6 +23,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   @Input() categorie ='';
   @Input() data: any;
   @Input() anaSectorielle: any;
+
+  @Output() tableauInvestissement = new EventEmitter<string>();
 
   value = '';
   disabled = false;
@@ -93,10 +95,10 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
         let millesimeSecteur = ""; 
         let maTranche = "";
         if (this.anaSectorielle) {
-          caSecteur = this.anaSectorielle[0].tranches;
-          margeSecteur = this.anaSectorielle[1].tranches;
+          caSecteur = this.anaSectorielle[3].tranches;
+          margeSecteur = this.anaSectorielle[5].tranches;
           millesimeSecteur = this.anaSectorielle[0]?.millesime ?? null;
-          maTranche = this.getTrancheCA(this.data.caN, caSecteur);
+          maTranche = this.getTrancheCA(this.data.caN, this.anaSectorielle[0].tranches);
         }
 
         let caN1 = "";
@@ -117,7 +119,6 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
           variationMarge = Math.round(this.data.margeVar).toLocaleString('fr-FR');
           variationPrcMarge = this.data["%margeVar"].toFixed(2);
         }
-        console.log(this.data);
         this.callAI(
           'CA_marge',
           {
@@ -152,37 +153,18 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
           'investissement',
           {
             total_entrees: this.data.immobEntree.totalGeneral,
-            entrees: this.data.immobEntree.comptes,
+            entrees: this.data.immobEntree.lignes,
             total_sorties: this.data.immobSortie.totalGeneral,
-            sorties: this.data.immobSortie.comptes,
+            sorties: this.data.immobSortie.lignes,
           }
         );
         break;
 
       case 'reformuler':
-        console.log(this.data);
-        
         if (this.data instanceof FormControl) {
           this.value = this.data.value;
         }
         this.callAI('reformuler', { texte: this.value });
-        break;
-
-      case 'emprunts':
-        const json = JSON.stringify(
-          this.data.map((e: any) => ({
-            ...e,
-            date_debut: `20${e.T_date_debut.split('/').reverse().join('-')}`,
-            date_fin: `20${e.T_date_fin.split('/').reverse().join('-')}`,
-            montant_emprunt: Math.round(Number(e.T_montant_emprunt)),
-            montant_restant: Math.round(Number(e.T_montant_restant))
-          })),
-          null,
-          2
-        );
-
-        console.log(json);
-        this.callAI('emprunts', { emprunts: json });
         break;
 
       default:
@@ -192,14 +174,15 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   }
 
   private callAI(type: string, contexte: any) {
-    console.log("value before AI", this.value);
     this.ai.generateComment(type, contexte).subscribe({
-      next: (text) => {
-        this.value = text && text.trim() ? text : this.defaultText;
+      next: (res) => {
+        if (res.json) {
+          this.tableauInvestissement.emit(res.json);
+        }
+        this.value = res.comment && res.comment.trim() ? res.comment : this.defaultText;
         this.data instanceof FormControl ? this.data.setValue(this.value) : this.onChange(this.value);
         this.markTouched();
         this.loading = false;
-        console.log("value after AI", this.value);
       },
       error: () => this.setError()
     });

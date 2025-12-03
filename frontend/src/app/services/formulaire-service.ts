@@ -53,7 +53,8 @@ export class FormulaireService {
         commentaire: [''],
         prevAmoN: [0],
         prevAmoN1: [0],
-        prevAmoN2: [0]
+        prevAmoN2: [0],
+        tableau: []
       }),
 
       // ===== IMPÔT SUR LES SOCIÉTÉS =====
