@@ -1,0 +1,24 @@
+<!-- Bouton rond en bas à droite -->
+<div class="chatbot-button" (click)="toggleChat()">
+    <div class="chatbot-avatar"></div>
+</div>
+
+<!-- Fenêtre de chat -->
+<div class="chatbot-window" [class.open]="isOpen">
+    <div class="chatbot-header">
+        <span class="chatbot-title">Assistant</span>
+        <button class="chatbot-close" (click)="closeChat()">×</button>
+    </div>
+
+    <div class="chatbot-body">
+        <div *ngFor="let msg of messages" class="message" [ngClass]="msg.role">
+            {{ msg.content }}
+        </div>
+    </div>
+
+    <div class="chatbot-footer">
+        <input type="text" class="chatbot-input" placeholder="Écrire..." [(ngModel)]="userInput"
+            (keyup.enter)="sendMessage()" />
+        <button class="chatbot-send" (click)="sendMessage()">Envoyer</button>
+    </div>
+</div>
