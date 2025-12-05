@@ -18,12 +18,13 @@ import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 export class ProjetAffectResultatComponent {
   @Input({ required: true }) group!: FormGroup;
   @Input() resEx = 0;
-  @Input() affectation = '';
+  affectation = '';
 
   messageErreur: string | null = null;
 
   ngOnInit() {
     const res = this.resEx.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    this.affectation = this.group.value.affectation;
     this.group.valueChanges.subscribe(values => {
       const total = ((values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0)).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 

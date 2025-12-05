@@ -39,25 +39,6 @@ export class FormulaireComponent implements OnInit {
   forme_societe = '';
   categorie_revenu = '';
 
-  choixAffectation = [
-    "Fonds associatifs",
-    "Dividendes",
-    "Au prorata des comptes courants d’associés"
-  ];
-  PA_affectation = this.choixAffectation[0];
-  valeurReserveLegale = 0;
-  valeurReserveOrdinaire = 0;
-  valeurReportNouveau = 0;
-  valeurAffectation = 0;
-
-  capitalSocial = 0;
-  montantReserveLegale = 0;
-  montantReserveOrdinaire = 0;
-  montantReportNouveau = 0;
-  montantDividendesN1 = 0;
-
-  
-
   infoChargesPersonnel: any = {};
   infoImpotSociete: any = {};
   infoClient: any = {};
@@ -76,6 +57,8 @@ export class FormulaireComponent implements OnInit {
   anaSectorielle: any;
   pointsImportants: any;
   emprunts: any;
+
+  data: any;
 
   constructor(
     private pdfService: PdfService,
@@ -105,6 +88,7 @@ export class FormulaireComponent implements OnInit {
     }).subscribe({
       next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
         console.log(data);
+        this.data = data;
         if (dotations) {        
           this.dotations = Object.values(dotations);
         }
@@ -173,11 +157,13 @@ export class FormulaireComponent implements OnInit {
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
+
         const affectation = this.fiscaliteService.calculAffectation(
           data,
           data.capitalSocial ?? 0,
           data.montantDividendesN1 ?? 0
         );
+
 
         let choixMontant = "payer";
         if (this.infoImpotSociete.IS_montant < 0) {
@@ -285,8 +271,17 @@ export class FormulaireComponent implements OnInit {
 
   onSubmit() {
     const EA = this.form.value.EA;
+    const PA = this.form.value.PA;
 
     this.form.patchValue({
+      PA: {
+        graphCapSoc: this.data.capitalSocial,
+        graphPrimeCapSoc: this.data.primeCapSoc,
+        graphResLeg: this.data.montantReserveLegale + PA.resLeg,
+        graphResOrd: this.data.montantReserveOrdinaire + PA.resOrd,
+        graphReport: this.data.montantReportNouveau + PA.report,
+        graphCapitauxPropres: this.data.capitalSocial + this.data.primeCapSoc + this.data.montantReserveLegale + PA.resLeg + this.data.montantReserveOrdinaire + PA.resOrd + this.data.montantReportNouveau + PA.report
+      },
       EA: {
         capa: EA.resEx + EA.dot - EA.rembours - EA.divi
       },

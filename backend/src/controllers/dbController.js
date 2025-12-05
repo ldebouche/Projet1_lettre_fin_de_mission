@@ -44,6 +44,7 @@ export const GetDossierInfos = async (req, res) => {
       acompte_total: aggN.acompte_total || 0,
       signataire,
       capitalSocial: aggN.capitalSocial || 0,
+      primeCapSoc: aggN.primeCapSoc || 0,
       montantReserveLegale: aggN.montantReserveLegale || 0,
       montantReserveOrdinaire: aggN.montantReserveOrdinaire || 0,
       montantReportNouveau: aggN.montantReportNouveau || 0,

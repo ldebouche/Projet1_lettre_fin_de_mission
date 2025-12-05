@@ -91,7 +91,13 @@ export class FormulaireService {
         resOrd: [0],
         report: [0],
         affectation: [''],
-        affect: [0]
+        affect: [0],
+        graphCapSoc: [0],
+        graphPrimeCapSoc: [0],
+        graphResLeg: [0],
+        graphResOrd: [0],
+        graphReport: [0],
+        graphCapitauxPropres: [0]
       }),
 
       // ===== TABLEAU D’AUTOFINANCEMENT =====

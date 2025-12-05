@@ -41,11 +41,12 @@ export class FiscaliteService {
         } else {
           result.resLeg = data.resEx;
         }
-      } else if (data.resEx < 0) {
-        if (data.resEx + data.montantReserveOrdinaire >= 0) {
-          result.resOrd = data.montantReserveOrdinaire + data.resEx;
+      } else {
+        if (- data.montantReserveOrdinaire >= data.resEx) {
+          result.resOrd = - data.montantReserveOrdinaire;
+          result.report = data.resEx - result.resOrd;
         } else {
-          result.report = data.resEx + data.montantReserveOrdinaire;
+          result.resOrd = data.resEx;
         }
       }
     }

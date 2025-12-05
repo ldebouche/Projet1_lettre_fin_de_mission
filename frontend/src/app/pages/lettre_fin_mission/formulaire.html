@@ -28,7 +28,7 @@
     <section-info-fiscale-component [formArray]="IF" [items]="informations_fiscales" ></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.PA" [affectation]="PA_affectation" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
+    <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
 
     <!-- ===== TRESORERIE ===== -->
     <section-tresorerie-component [group]="f.T" *ngIf="emprunts"></section-tresorerie-component>
