@@ -3,17 +3,17 @@ Option Explicit
 Dim pptApp, modelePath, outputPath
 Dim fso, tempFile, f
 
-' === Indique le chemin complet vers ton modèle PPTM ===
-modelePath = "C:\Users\DEBOUCHELucas\Projets_stage\Projet1_lettre_fin_de_mission\backend\src\templates\modele_complet.pptm"
+' === Chemin du modèle PPTM ===
+modelePath = "C:\Users\admin.lcd\projet_lfm\Projet1_lettre_fin_de_mission\backend\src\templates\modele_complet.pptm"
 
-' === Obtient l'argument passé au script ===
+' === Récupère le chemin du fichier de sortie ===
 If WScript.Arguments.Count > 0 Then
     outputPath = CStr(WScript.Arguments(0))
 Else
-    outputPath = ""
+    WScript.Quit
 End If
 
-' === Crée un fichier temporaire pour transmettre outputPath ===
+' === Fichier temporaire contenant le chemin de sortie ===
 Set fso = CreateObject("Scripting.FileSystemObject")
 tempFile = fso.GetSpecialFolder(2) & "\lfm_output_path.txt"
 
@@ -24,14 +24,16 @@ f.Close
 ' === Lance PowerPoint ===
 Set pptApp = CreateObject("PowerPoint.Application")
 pptApp.Visible = True
+pptApp.WindowState = 2
+pptApp.DisplayAlerts = 0
 
 ' === Ouvre le modèle ===
 pptApp.Presentations.Open modelePath
 
-' === Exécute la macro de remplissage ===
+' === Exécute la macro principale ===
 pptApp.Run "modele_complet.pptm!LancerRemplissage"
 
-WScript.Echo "Présentation générée avec succès !"
-
+' === Ferme PowerPoint ===
+On Error Resume Next
+pptApp.Quit
 Set pptApp = Nothing
-

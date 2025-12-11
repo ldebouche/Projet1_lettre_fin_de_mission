@@ -7,9 +7,9 @@ const router = express.Router();
 
 router.post('/verifCollaborateur', authMiddlewareCollaborateur, VerifCollaborateur);
 
-router.get('/getListeDossiers', /*authMiddlewareCollaborateur,*/ GetListeDossiers);
+router.get('/getListeDossiers', authMiddlewareCollaborateur, GetListeDossiers);
 
-router.post('/verifDossier', /*authMiddlewareCollaborateur,*/ VerifDossier);
+router.post('/verifDossier', authMiddlewareCollaborateur, VerifDossier);
 
 router.get('/getDossierInfos', authMiddlewareDossier, GetDossierInfos);
 

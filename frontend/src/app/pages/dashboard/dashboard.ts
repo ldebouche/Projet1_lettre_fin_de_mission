@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
-import { AuthService } from '../../services/auth-service';
 
 type SortableField = 'code_client' | '_sortableName' | 'collaborateur' | 'date_sortie';
 
@@ -62,8 +61,7 @@ export class DashboardComponent implements OnInit {
   constructor(
     private router: Router,
     private db: DbService,
-    private dataService: DataService,
-    private authService: AuthService
+    private dataService: DataService
   ) {}
 
   ngOnInit(): void {

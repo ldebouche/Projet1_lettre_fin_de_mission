@@ -25,15 +25,22 @@ export class ProjetAffectResultatComponent {
   ngOnInit() {
     const res = this.resEx.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     this.affectation = this.group.value.affectation;
-    this.group.valueChanges.subscribe(values => {
-      const total = ((values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0)).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-      if (total != res) {
-        this.messageErreur = `⚠️ La somme des affectations (${total} €) est différente du résultat de l’exercice (${res} €).`;
-      } else {
-        this.messageErreur = null;
-      }
+    const initial = this.group.value;
+    this.calculerAffections(initial, res);
+
+    this.group.valueChanges.subscribe(values => {
+      this.calculerAffections(values, res);
     });
+  }
+
+  calculerAffections(values: any, res: any) {
+    const total = ((values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0)).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (total != res) {
+      this.messageErreur = `⚠️ La somme des affectations (${total} €) est différente du résultat de l’exercice (${res} €).`;
+    } else {
+      this.messageErreur = null;
+    }
   }
 
   getValue(val?: any): string {

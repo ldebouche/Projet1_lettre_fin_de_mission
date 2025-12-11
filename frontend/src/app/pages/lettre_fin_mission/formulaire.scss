@@ -16,7 +16,7 @@
   line-height: 1.6;
 }
 
-.stack { 
+.stack {
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -26,8 +26,8 @@ form {
   margin-top: 2rem;
 }
 
-/* Spécifiques à ce composant */
-.block, .block-empty {
+.block,
+.block-empty {
   legend {
     border-left: 4px solid var(--color-blue-light);
     padding-left: 10px;
@@ -52,7 +52,6 @@ form {
   margin-left: 1.5rem;
 }
 
-/* === LOADING SCREEN === */
 .loading-screen {
   display: flex;
   flex-direction: column;
@@ -86,12 +85,103 @@ form {
   opacity: 0.9;
 }
 
+.lfm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.lfm-modal-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  width: min(520px, 90%);
+  padding: 2.2rem;
+  border-radius: 18px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  font-family: "Inter", sans-serif;
+  color: #4f6577;
+}
+
+.lfm-modal-card h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #4f6577;
+}
+
+.lfm-modal-card .subtitle {
+  margin: 0 0 1.2rem;
+  font-size: 1.05rem;
+  color: #6e7b86;
+}
+
+.pptGeneration {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.path-box {
+  padding: 0.9rem 1rem;
+  background: #f4f2ec;
+  border-radius: 12px;
+  border: 1px solid #dedad1;
+  font-size: 0.95rem;
+  color: #4f6577;
+  word-break: break-all;
+  margin-bottom: 1.6rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.action-btn {
+  background: linear-gradient(180deg, #6fa3b8, #4f6577);
+  color: #fff;
+  padding: 0.7rem 1.8rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-weight: 600;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

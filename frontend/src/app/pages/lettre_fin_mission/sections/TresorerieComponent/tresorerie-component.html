@@ -95,7 +95,7 @@
         {{ messageErreur }}
     </div>
     
-  <table class="table">
+  <table class="table" *ngIf="emprunts.length > 0">
     <thead>
       <tr>
         <th rowspan="2">Libellé</th>

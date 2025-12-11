@@ -22,7 +22,7 @@ export const GetDossierInfos = async (req, res) => {
       dbService.GetSignataire(code_client, dateFinEx),
       dbService.GetAggregats(code_client, dateFinEx),
       dbService.GetInfoEvoCharges(code_client, dateFinEx),
-      dbService.GetAnaSectorielle("9602A")
+      dbService.GetAnaSectorielle(infoClients.code_ape)
     ]);
 
     const aggN = aggregats[0] || {};
@@ -38,7 +38,6 @@ export const GetDossierInfos = async (req, res) => {
       imposable: infoClients.imposable,
       mois_cloture: infoClients.mois_cloture,
       resEx: (aggN.totalProduits || 0) - (aggN.totalCharges || 0),
-      forme_societe: infoClients.forme_societe,
       tabAutofinancement: infoClients.tabAutofinancement,
       categorie_revenu: infoClients.categorie_revenu,
       acompte_total: aggN.acompte_total || 0,
@@ -65,6 +64,7 @@ export const GetDossierInfos = async (req, res) => {
         dateCreation: new Date().toLocaleDateString('fr-FR'),
         initialesChefGroupe: infoClients.initialesChefGroupe,
         site: siteSelectionne,
+        forme_societe: infoClients.forme_societe,
       },
 
       // === Chiffres clés ===

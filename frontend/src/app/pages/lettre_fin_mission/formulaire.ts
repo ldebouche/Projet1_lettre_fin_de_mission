@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { forkJoin } from 'rxjs';
+import { Router } from '@angular/router';
+import { filter, forkJoin, interval, switchMap, take } from 'rxjs';
 
 import { DbService } from '../../services/db-service';
 import { WordService } from '../../services/word-service';
@@ -27,6 +28,9 @@ import { DataService } from '../../services/data-service';
 export class FormulaireComponent implements OnInit {
   form!: FormGroup;
   loading = true;
+  generationDone = false;
+  generatedPath: string = '';
+  pptGenerating = false;
   dateDebutEx: string | null;
   anneeN = 0;
   anneeN1Existe = true;
@@ -68,7 +72,8 @@ export class FormulaireComponent implements OnInit {
     private formatService: FormatService,
     private db: DbService,
     private wordService: WordService,
-    private dataService: DataService
+    private dataService: DataService,
+    private router: Router
   ) {
     this.informations_fiscales = this.formService.informations_fiscales;
     this.dateDebutEx = this.dataService.getDateDebutEx();
@@ -88,6 +93,8 @@ export class FormulaireComponent implements OnInit {
     }).subscribe({
       next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
         console.log(data);
+        console.log(dotations);
+        console.log(emprunts);
         this.data = data;
         if (dotations) {        
           this.dotations = Object.values(dotations);
@@ -134,7 +141,7 @@ export class FormulaireComponent implements OnInit {
         this.IS_tot = data.IS_tot;
         this.MD_salaries = data.MD_salaries;
         this.imposable = data.imposable;
-        this.forme_societe = data.forme_societe;
+        this.forme_societe = data.client.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
         
         this.dataCA = {
@@ -188,10 +195,10 @@ export class FormulaireComponent implements OnInit {
             comPerspective
           },
           I: {
-            masquerSection: data.I_classe2,
-            prevAmoN: Math.round(this.dotations[0]),
-            prevAmoN1: Math.round(this.dotations[1]),
-            prevAmoN2: Math.round(this.dotations[2])
+            masquerSection: data.I_classe2 ? false : true,
+            prevAmoN: this.dotations[0] ? Math.round(this.dotations[0]) : null,
+            prevAmoN1: this.dotations[1] ? Math.round(this.dotations[1]) : null,
+            prevAmoN2: this.dotations[2] ? Math.round(this.dotations[2]) : null
           },
           IS: {
             acomptes,
@@ -199,6 +206,7 @@ export class FormulaireComponent implements OnInit {
             phraseAcomptes
           },
           AI: {
+            masquerSection: data.imposable && this.resEx > 0 && this.IS_tot > 3000 ? false : true,
             acompte1: Math.round(data.acompte_total/4),
             acompte2: Math.round(data.acompte_total/4),
             acompte3: Math.round(data.acompte_total/4),
@@ -238,14 +246,14 @@ export class FormulaireComponent implements OnInit {
             V_autresCreances: Math.round(data.tresorerie.V_autresCreances),
             V_autresDettes: Math.round(data.tresorerie.V_autresDettes),
             tresoN: Math.round(data.tresorerie.tresoN),
-            frng: Math.round(data.tresorerie.frng),
-            bfr: Math.round(data.tresorerie.bfr),
+            frng: Math.round(data.autofinancement.AF_capa + data.tresorerie.RF_apport + data.tresorerie.RF_emprunts + data.tresorerie.RF_invest + data.tresorerie.RF_autre + data.tresorerie.EF_invest + data.tresorerie.EF_emprunts + data.tresorerie.EF_retraits + data.tresorerie.EF_divi),
+            bfr: Math.round(data.tresorerie.V_stock + data.tresorerie.V_creances + data.tresorerie.V_dettes + data.tresorerie.V_autresCreances + data.tresorerie.V_autresDettes),
             emprunts: this.emprunts
           },
           EA: {
             resEx: Math.round(this.resEx),
             dot: Math.round(this.dotations[1]),
-            rembours: emprunts.T_remboursement_emprunt ? Math.round(emprunts.T_remboursement_emprunt) : 0,
+            rembours: emprunts ? Math.round(emprunts.T_remboursement_emprunt) : 0,
           },
           MD: {
             enabled: data.MD_salaries
@@ -326,7 +334,43 @@ export class FormulaireComponent implements OnInit {
       return;
     }
 
-    const folderPath = 'C:\\Users\\DEBOUCHELucas\\lfm';
-    this.wordService.generateWord(formattedPayload, folderPath).subscribe();
+    const code_client = this.infoClient.code_client
+    
+    const folderPath = `C:\\outils-avenia\\${code_client}\\lfm`;
+    this.wordService.generateWord(formattedPayload, folderPath).subscribe({
+      next: (res) => {
+        const jobId = res.jobId;
+
+        this.pptGenerating = !!jobId;
+
+        if (!jobId) {
+          this.generatedPath = res.folder;
+          this.generationDone = true;
+          return;
+        }
+
+        interval(2000).pipe(
+          switchMap(() => this.wordService.getJobStatus(jobId)),
+          filter(r => r.status === 'done' || r.status === 'error'),
+          take(1)
+        ).subscribe({
+          next: (status) => {
+            if (status.status === 'done') {
+              this.generatedPath = res.folder;
+              this.generationDone = true;
+              this.pptGenerating = false;
+            } else {
+              alert("Erreur lors de la génération du PowerPoint.");
+            }
+          }
+        });
+      },
+      error: () => alert("Erreur lors de l’envoi du job au serveur.")
+    });
+  }
+
+  closeMessage() {
+    this.generationDone = false;
+    this.router.navigate(['/accueil']);
   }
 }

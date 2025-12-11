@@ -19,7 +19,7 @@ export const appConfig: ApplicationConfig = {
           auth: {
             clientId: "171de78f-bfbe-435a-9356-d78a744722f4",
             authority: "https://login.microsoftonline.com/f7f506f7-c551-4a8a-8c5a-b7d339828e4b",
-            redirectUri: "http://localhost:4200/"
+            redirectUri: "https://outils-avenia.fr"
           }
         }),
         {

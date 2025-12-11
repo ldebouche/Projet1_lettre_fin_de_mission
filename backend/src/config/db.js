@@ -9,9 +9,17 @@ const dbConfig = {
   server: process.env.DB_HOST,
   port: Number(process.env.DB_PORT) || 1433,
   database: process.env.DB_NAME,
+  pool: {
+    max: 10,
+    min: 0,
+    idleTimeoutMillis: 30000,
+  },
   options: {
     encrypt: true,
-    trustServerCertificate: true
+    trustServerCertificate: true,
+    requestTimeout: 60000,
+    connexionTimeout: 30000,
+    enableArithAbort: true
   }
 };
 

@@ -125,6 +125,10 @@ export async function getEmprunts(req, res) {
     const filePath = "./Etat des emprunts3.pdf";
     const emprunts = await extractEmprunts(filePath);
 
+    if (!emprunts) {
+      return res.status(200).json(null);
+    }
+
     res.status(200).json(emprunts);
   } catch (err) {
     console.error("Erreur extraction PDF:", err);

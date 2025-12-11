@@ -91,32 +91,3 @@ export function genererWord(variables, folderPath) {
 
   return finalBuf;
 }
-
-export function genererPPT(variables, folderPath) {
-  const BackendPath = "C:\\Users\\DEBOUCHELucas\\Projets_stage\\Projet1_lettre_fin_de_mission\\backend\\src\\templates";
-  const dataPath = path.join(BackendPath, "data.json");
-  const vbsPath = path.join(BackendPath, "launchPPT.vbs");
-
-  folderPath = path.join(folderPath, "ppt");
-  const resolvedFolder = path.resolve(folderPath);
-
-  if (!fs.existsSync(resolvedFolder)) {
-    fs.mkdirSync(resolvedFolder, { recursive: true });
-  }
-
-  const fileName = `lfm_${variables.code_client}_${variables.anneeN}.pptm`;
-  const filePath = path.join(resolvedFolder, fileName);
-
-  fs.writeFileSync(dataPath, JSON.stringify(variables), "utf8");
-
-  exec(`cscript //nologo "${vbsPath}" "${filePath}"`, (error, stdout, stderr) => {
-    if (error) {
-      console.error("Erreur lors du lancement du script VBS :", error);
-      return;
-    }
-    if (stderr) {
-      console.error("Erreur VBS :", stderr);
-    }
-    console.log("Script VBS exécuté avec succès :", stdout);
-  });
-}

@@ -133,8 +133,15 @@ export async function extractImmobEntree(filePath) {
 
 
 export async function extractImmobSortie(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return { lignes: [], totalGeneral: "aucunes informations" };
+  }
+
   return new Promise((resolve, reject) => {
-    const cmd = `python ./utils/extract_immobSortie.py "${filePath}"`;
+    const pythonPath = "C:\\Users\\admin.lcd\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
+    const scriptPath = path.join(process.cwd(), "utils", "extract_immobSortie.py");
+    const cmd = `"${pythonPath}" "${scriptPath}" "${filePath}"`;
 
     exec(cmd, { maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
       if (err) return reject("Erreur Python : " + stderr);
@@ -151,8 +158,15 @@ export async function extractImmobSortie(filePath) {
 
 
 export function extractAnaSectorielle(pdfPath) {
+  if (!fs.existsSync(filePath)) {
+    console.warn(`Fichier introuvable : ${filePath}`);
+    return null;
+  }
+
   return new Promise((resolve, reject) => {
-    const cmd = `python ./utils/extract_table.py "${pdfPath}"`;
+    const pythonPath = "C:\\Users\\admin.lcd\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
+    const scriptPath = path.join(process.cwd(), "utils", "extract_table.py");
+    const cmd = `"${pythonPath}" "${scriptPath}" "${pdfPath}"`;
 
     exec(cmd, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
       if (error) return reject("Python error: " + stderr);
@@ -176,7 +190,7 @@ export function extractAnaSectorielle(pdfPath) {
 export async function extractEmprunts(filePath) {
   if (!fs.existsSync(filePath)) {
     console.warn(`Fichier introuvable : ${filePath}`);
-    return { emprunts: [], remboursement_emprunt: null };
+    return null;
   }
 
   const buffer = fs.readFileSync(filePath);

@@ -31,7 +31,7 @@
     <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
 
     <!-- ===== TRESORERIE ===== -->
-    <section-tresorerie-component [group]="f.T" *ngIf="emprunts"></section-tresorerie-component>
+    <section-tresorerie-component [group]="f.T"></section-tresorerie-component>
 
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
     <section-estim-autofinancement-component [group]="f.EA"></section-estim-autofinancement-component>
@@ -55,4 +55,25 @@
       <button class="btn" type="submit">Enregistrer</button>
     </div>
   </form>
+
+  <div *ngIf="pptGenerating || generationDone" class="lfm-modal-backdrop">
+    <div *ngIf="pptGenerating" class="lfm-modal-card">
+      <h2>Génération en cours...</h2>
+      <div class="spinner"></div>
+    </div>
+    <div *ngIf="!pptGenerating && generationDone" class="lfm-modal-card">
+      <h2>Génération Terminée</h2>
+      <p class="subtitle">
+        Vos fichiers sont disponibles dans :
+      </p>
+      <div class="path-box">
+        {{ generatedPath }}
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn" (click)="closeMessage()">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

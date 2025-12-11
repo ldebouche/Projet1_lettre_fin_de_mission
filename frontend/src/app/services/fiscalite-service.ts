@@ -20,10 +20,10 @@ export class FiscaliteService {
       affect: 0
     };
 
-    if (data.forme_societe.startsWith('ASS')) {
+    if (data.client.forme_societe.startsWith('ASS')) {
       result.affectation = 'Fonds associatifs';
       result.affect = data.resEx;
-    } else if (data.forme_societe === 'SCI' && data.categorie_revenu === 'rfonc') {
+    } else if (data.client.forme_societe === 'SCI' && data.categorie_revenu === 'rfonc') {
       result.affectation = 'Au prorata des comptes courants d’associés';
       if (data.resEx > 0) result.affect = data.resEx;
       else result.report = data.resEx;

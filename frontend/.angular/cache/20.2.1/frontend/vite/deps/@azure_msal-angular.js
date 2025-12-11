@@ -1,4 +1,9 @@
 import {
+  Router
+} from "./chunk-CKHE3F3M.js";
+import "./chunk-LQS5RRJ4.js";
+import "./chunk-V54L5HVA.js";
+import {
   BrowserConfigurationAuthError,
   BrowserUtils_exports,
   EventMessageUtils,
@@ -11,14 +16,9 @@ import {
 } from "./chunk-XJHYTQQ3.js";
 import "./chunk-T7M2FLZP.js";
 import {
-  Router
-} from "./chunk-5ERU5MZU.js";
-import "./chunk-XDYD5HUB.js";
-import {
   CommonModule,
   Location
 } from "./chunk-AASISQYC.js";
-import "./chunk-V54L5HVA.js";
 import "./chunk-YW65FSQM.js";
 import {
   Component,
@@ -36,8 +36,8 @@ import {
   ɵɵdirectiveInject,
   ɵɵinject
 } from "./chunk-TSP5WI7Z.js";
-import "./chunk-HWYXSU2G.js";
 import "./chunk-JRFR6BLO.js";
+import "./chunk-HWYXSU2G.js";
 import {
   BehaviorSubject,
   EMPTY,

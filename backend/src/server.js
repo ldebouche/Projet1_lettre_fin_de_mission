@@ -13,7 +13,11 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "http://10.25.10.143:4200",
+  origin: [
+    "https://outils-avenia.fr",
+    "http://localhost:4200",
+    "http://10.25.10.143:4200"
+  ],
   credentials: true
 }));
 app.use(express.json());
