@@ -4,9 +4,15 @@ import { FormsModule } from '@angular/forms';
 
 import { AiService } from '../services/ai-service';
 
+export interface ChatSource {
+  fileName: string;
+  url: string;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  sources?: ChatSource[];
 }
 
 @Component({
@@ -21,7 +27,7 @@ export interface ChatMessage {
 export class ChatbotComponent implements AfterViewChecked {
   isOpen = false;
   messages: ChatMessage[] = [
-    { role: 'assistant', content: 'Bonjour ! Comment puis-je vous aider ?' }
+    { role: 'assistant', content: 'Bonjour ! Comment puis-je vous aider ?', sources: [] }
   ];
 
   userInput = '';
@@ -45,10 +51,11 @@ export class ChatbotComponent implements AfterViewChecked {
     
     this.aiService.askChatbot(question, this.messages).subscribe({
       next: (res) => {
-        this.messages.push({ role: 'assistant', content: res.reply });
+        console.log("Réponse du chatbot :", res.sources);
+        this.messages.push({ role: 'assistant', content: res.reply, sources: res.sources });
       },
       error: (err) => {
-        this.messages.push({ role: 'assistant', content: "Désolé, une erreur est survenue. Veuillez réessayer plus tard." });
+        this.messages.push({ role: 'assistant', content: "Désolé, une erreur est survenue. Veuillez réessayer plus tard.", sources: [] });
       }
     });
   }

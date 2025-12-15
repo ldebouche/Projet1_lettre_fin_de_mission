@@ -1,5 +1,5 @@
 import { generateAIComment } from "../services/aiService.js";
-import { callMistral } from "../services/aiService.js";
+import { askChatbotRag } from "../services/chatbotRagService.js";
 
 export const generateComment = async (req, res) => {
   try {
@@ -12,14 +12,13 @@ export const generateComment = async (req, res) => {
   }
 };
 
-export const ChatbotController = async (req, res) => {
+export const chatbotController = async (req, res) => {
   try {
-    const { message, conversation } = req.body;
-    const reply = await callMistral(message, conversation);
-    console.log("Réponse du chatbot :", reply);
-    return res.json({ reply });
+    const { message } = req.body;
+    const result = await askChatbotRag(message);
+    res.json(result);
   } catch (e) {
-    console.error("Erreur chatbot :", e);
+    console.error("Erreur chatbot RAG :", e);
     res.status(500).json({ error: e.message });
   }
 };

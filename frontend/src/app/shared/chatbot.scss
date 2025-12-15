@@ -1,4 +1,7 @@
-/* ====== CHARTE GRAPHIQUE ====== */
+/* =====================================================
+   BASE / CHARTE
+===================================================== */
+
 .chatbot-window,
 .chatbot-button,
 .message,
@@ -7,7 +10,10 @@
     font-family: var(--font-body);
 }
 
-/* ====== BOUTON FLOTTANT ====== */
+/* =====================================================
+   BOUTON FLOTTANT
+===================================================== */
+
 .chatbot-button {
     position: fixed;
     bottom: 20px;
@@ -16,47 +22,51 @@
     height: 60px;
     border-radius: var(--radius-lg);
     background: var(--color-blue-petrol);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     cursor: pointer;
     z-index: 9999;
-    transition: 0.25s;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 
     &:hover {
         transform: translateY(-3px);
-        box-shadow: 0 7px 20px rgba(0, 0, 0, 0.28);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
     }
 }
 
 .chatbot-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-lg);
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
     background-image: url('/assets/chatbot.png');
     background-size: cover;
     background-position: center;
 }
 
-/* ====== FENÊTRE ====== */
+/* =====================================================
+   FENÊTRE DE CHAT
+===================================================== */
+
 .chatbot-window {
     position: fixed;
     bottom: 96px;
     right: 24px;
-    width: 360px;
-    max-height: 520px;
+    width: 380px;
+    max-height: 560px;
     background: var(--color-light);
     border-radius: var(--radius-lg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     z-index: 9999;
+
     opacity: 0;
     transform: translateY(20px);
     pointer-events: none;
-    transition: opacity .25s ease, transform .25s ease;
+    transition: opacity 0.25s ease, transform 0.25s ease;
 
     &.open {
         opacity: 1;
@@ -65,14 +75,17 @@
     }
 }
 
-/* ====== HEADER ====== */
+/* =====================================================
+   HEADER
+===================================================== */
+
 .chatbot-header {
     background: var(--color-blue-petrol);
-    color: white;
+    color: #fff;
     padding: 14px 18px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
 }
 
 .chatbot-title {
@@ -84,78 +97,149 @@
 .chatbot-close {
     background: transparent;
     border: none;
+    color: #fff;
     font-size: 20px;
-    color: white;
     cursor: pointer;
     line-height: 1;
 }
 
-/* ====== BODY ====== */
+/* =====================================================
+   CORPS DU CHAT
+===================================================== */
+
 .chatbot-body {
+    flex: 1;
     padding: 14px;
     overflow-y: auto;
     background: var(--color-light);
-    flex: 1;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-blue-petrol) transparent;
 }
 
-/* ====== MESSAGES ====== */
+/* =====================================================
+   MESSAGES
+===================================================== */
+
 .message {
-    max-width: 80%;
-    padding: 10px 12px;
-    border-radius: var(--radius-md);
-    margin-bottom: 10px;
-    line-height: 1.4;
+    max-width: 85%;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-lg);
     font-size: 14px;
+    line-height: 1.65;
+    animation: fadeInUp 0.2s ease;
+    word-wrap: break-word;
 }
+
+/* Message assistant */
 
 .message.assistant {
-    background: var(--color-blue-light);
-    color: var(--color-dark);
+    background: var(--color-blue-petrol);
+    color: var(--color-light);
     border-bottom-left-radius: var(--radius-sm);
 }
 
+/* Message utilisateur */
+
+/* Message utilisateur */
 .message.user {
-    background: var(--color-light);
     margin-left: auto;
+    background: #fff;
+    border: none; 
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); 
     border-bottom-right-radius: var(--radius-sm);
-    border: 1px solid var(--color-blue-petrol);
+    color: var(--color-dark);
 }
 
-/* ====== FOOTER ====== */
+/* Texte */
+
+.assistant-text {
+    margin: 0;
+    white-space: pre-line;
+}
+
+/* =====================================================
+   SOURCES
+===================================================== */
+.message.assistant .assistant-sources {
+    margin-top: 14px;
+    padding-top: 10px;
+    /* CHANGEMENT: Utiliser le bleu clair comme séparateur propre */
+    border-top: 1px solid var(--color-blue-light); 
+}
+
+.message.assistant .sources-title {
+    font-size: 11px;
+    /* CHANGEMENT: Titre en clair sur le fond sombre de la bulle */
+    color: var(--color-light); 
+    /* Rendre le titre moins 'criard' que les liens */
+    font-weight: 500; 
+    text-transform: none; /* Désactiver les majuscules */
+}
+
+.message.assistant .sources-list a {
+    font-size: 13px;
+    /* CHANGEMENT: Les liens doivent être clairs sur le fond sombre */
+    color: var(--color-light); 
+    font-weight: 400;
+    /* Soulignement léger et en pointillé pour un meilleur indice d'interactivité */
+    text-decoration: underline dotted; 
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
 .chatbot-footer {
-    background: white;
+    background: #fff;
     padding: 10px;
     display: flex;
     align-items: center;
+    gap: 8px;
     border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .chatbot-input {
     flex: 1;
-    padding: 8px 12px;
+    padding: 9px 12px;
+    font-size: 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--color-blue-petrol);
-    font-size: 14px;
-    background: #fff;
     outline: none;
-}
 
-.chatbot-input:focus {
-    border-color: var(--color-blue-light);
+    &:focus {
+        border-color: var(--color-blue-light);
+    }
 }
 
 .chatbot-send {
-    padding: 8px 14px;
-    margin-left: 8px;
-    border: none;
+    padding: 9px 16px;
     border-radius: var(--radius-md);
+    border: none;
     background: var(--color-blue-petrol);
-    color: white;
+    color: #fff;
     font-weight: 500;
     cursor: pointer;
-    transition: 0.2s;
+    transition: background 0.2s ease;
 
     &:hover {
         background: var(--color-blue-light);
+    }
+}
+
+/* =====================================================
+   ANIMATIONS
+===================================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

@@ -4,6 +4,7 @@ import { generateToken } from '../utils/jwt.js';
 export const VerifCollaborateur = async (req, res) => {
   try {
     const email = "prondot@lacomptabilite.fr" /*req.user.unique_name;*/
+    console.log("Email collaborateur :", email);
 
     const collaborateur = await dbService.GetCollaborateur(email);
     if (!collaborateur) {
