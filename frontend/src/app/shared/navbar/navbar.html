@@ -9,9 +9,16 @@
       <img src="assets/navbar_image.png" alt="Logo" class="logo" />
     </div>
 
+
+
     <!-- Desktop menu -->
     <div class="links">
-      <button (click)="logout()" class="logout-button">Déconnexion</button>
+        
+        <a [routerLink]="['/chatbot-settings']" class="logout-button" *ngIf="currentUrl !== '/chatbot-settings'">
+            Gérer le Chatbot
+        </a>
+        
+        <button (click)="logout()" class="logout-button">Déconnexion</button>
     </div>
   </div>
 </nav>

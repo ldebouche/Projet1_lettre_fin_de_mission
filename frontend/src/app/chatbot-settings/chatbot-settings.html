@@ -1,0 +1,172 @@
+<div class="chatbot-manager-page">
+
+    <!-- ================= HEADER ================= -->
+    <header class="manager-header">
+        <h2>Gestion de la Base de Connaissances du Chatbot</h2>
+    </header>
+
+    <!-- ================= LAYOUT ================= -->
+    <div class="manager-layout">
+
+        <!-- ========== SIDEBAR / ARBORESCENCE ========== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Fichiers indexés</h3>
+                <button class="add-folder-btn" title="Créer un dossier à la racine" (click)="createNewFolder()">
+                    <span class="btn-icon">+</span>
+                    <span>Créer</span>
+                </button>
+            </div>
+
+            <div class="tree-view">
+
+                <ng-container *ngFor="let item of indexedItems">
+                    <div *ngIf="isItemVisible(item)"
+                        class="tree-item" 
+                        [ngClass]="{ 'is-folder': item.isFolder, 'is-expanded': item.isExpanded }"
+                        (click)="toggleFolder(item)"
+                        [style.padding-left.px]="12 + getItemDepth(item) * 20">
+                        <div class="item-label">
+                            <span class="folder-toggle-icon"></span>
+                            <img class="tree-icon" [src]="item.isFolder ? iconDossier : iconFichier" [alt]="item.isFolder ? 'Dossier' : 'Fichier'" />
+                            <a [href]="item.url" target="_blank" rel="noopener" *ngIf="!item.isFolder">
+                                {{ item.name }}
+                            </a>
+                            <span *ngIf="item.isFolder">{{ item.name }}</span>
+                        </div>
+    
+                        <div class="item-actions">
+                            <button *ngIf="item.isFolder" class="item-action add-subfolder" title="Créer un sous-dossier"
+                                (click)="$event.stopPropagation(); createNewFolder(item.id)">
+                                +
+                            </button>
+                            <button class="item-action delete-action" title="Supprimer"
+                                (click)="$event.stopPropagation(); confirmDelete(item)">
+                                &times;
+                            </button>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <div *ngIf="indexedItems.length === 0" class="error-formulaire">
+                    La base de connaissances est vide.
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- ========== CONTENU PRINCIPAL ========== -->
+        <main class="content-panel">
+
+            <section class="upload-card">
+                <legend>Ajouter et indexer de nouveaux documents</legend>
+
+                <!-- ===== DROPZONE ===== -->
+                <div class="upload-dropzone" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+                    (drop)="onFileDrop($event)">
+                    <img class="dropzone-icon" [src]="iconExportation" alt="Uploader des fichiers" />
+
+                    <p>
+                        Glissez-déposez vos fichiers (PDF, DOCX, TXT…),<br />
+                        ou cliquez pour sélectionner.
+                    </p>
+
+                    <input type="file" id="file-upload" multiple class="hidden-input"
+                        (change)="onFileSelected($event)" />
+
+                    <label for="file-upload" class="upload-label">
+                        Choisir des fichiers
+                    </label>
+                </div>
+
+                <!-- ===== OPTIONS ===== -->
+                <div class="upload-settings">
+
+                    <div class="input-group">
+                        <label for="target-folder">Ranger dans le dossier</label>
+                        <div class="select-wrapper">
+                            <select id="target-folder" [(ngModel)]="targetFolder" [compareWith]="compareFolders">
+                                <option [ngValue]="null">Racine</option>
+                                <option *ngFor="let folder of availableFolders" [ngValue]="folder">
+                                    {{ getIndentationForSelect(folder) }}{{ folder.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ===== FILES EN ATTENTE ===== -->
+                <h4>
+                    Fichiers en attente d’indexation
+                    ({{ filesToUpload.length }})
+                </h4>
+
+                <ul class="file-list-status">
+
+                    <li *ngFor="let file of filesToUpload" class="status-item">
+                        <div class="item-label">
+                            <img class="tree-icon" [src]="iconFichier" alt="Icône de fichier" />
+                            <span class="file-name">{{ file.name }}</span>
+                            <span class="file-size">
+                                ({{ (file.size / 1024 / 1024) | number:'1.2-2' }} MB)
+                            </span>
+                        </div>
+
+                        <button class="item-action delete-action" title="Retirer" (click)="removeFile(file)">
+                            &times;
+                        </button>
+                    </li>
+
+                    <li *ngIf="filesToUpload.length === 0" class="status-item empty">
+                        Aucun fichier en attente.
+                    </li>
+
+                </ul>
+
+                <!-- ===== ACTIONS ===== -->
+                <div class="indexing-actions">
+                    <button class="btn" [disabled]="filesToUpload.length === 0" (click)="startIndexing()">
+                        Lancer l’indexation des fichiers
+                    </button>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODALE ================= -->
+    <div class="modal-overlay" *ngIf="isModalOpen">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+
+            <h3 class="modal-title">{{ modalConfig.title }}</h3>
+
+            <p class="modal-message" *ngIf="modalConfig.message">{{ modalConfig.message }}</p>
+
+            <!-- Champ de saisie pour le type 'prompt' -->
+            <div *ngIf="modalConfig.type === 'prompt'" class="modal-input-group">
+                <input type="text" [(ngModel)]="modalInputValue" class="modal-input"
+                    (keyup.enter)="confirmModal()" />
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="modal-actions">
+                <button class="btn-secondary" (click)="closeModal()">
+                    {{ modalConfig.cancelButtonText || 'Annuler' }}
+                </button>
+                <button *ngIf="modalConfig.type !== 'alert'" class="btn-primary" (click)="confirmModal()"
+                    [disabled]="modalConfig.type === 'prompt' && !modalInputValue.trim()">
+                    {{ modalConfig.confirmButtonText || 'Confirmer' }}
+                </button>
+            </div>
+
+            <!-- Bouton de fermeture -->
+            <button class="modal-close-btn" (click)="closeModal()" title="Fermer">
+                &times;
+            </button>
+
+        </div>
+    </div>
+
+</div>

@@ -10,6 +10,7 @@ import dbRoutes from './routes/dbRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import wordRoutes from './routes/wordRoute.js';
 import pdfRoutes from './routes/pdfRoutes.js';
+import chatbotSettingsRoutes from './routes/chatbotSettingsRoutes.js';
 
 
 dotenv.config();
@@ -26,8 +27,8 @@ app.use('/api/db', dbRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/word', wordRoutes);
 app.use('/api/pdf', pdfRoutes);
-app.use("/api/files", /*authMiddlewareCollaborateur,*/ express.static(path.join(process.cwd(), "documents_chatbot"))
-);
+app.use('/api/chatbot-settings', chatbotSettingsRoutes);
+app.use("/api/files", /*authMiddlewareCollaborateur,*/ express.static(path.join(process.cwd(), "documents_chatbot")));
 
 async function start() {
   try {
@@ -39,12 +40,10 @@ async function start() {
   }
 }
 
-start();
+//start();
 
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log("API disponible sur toutes les interfaces");
 });
-
-
