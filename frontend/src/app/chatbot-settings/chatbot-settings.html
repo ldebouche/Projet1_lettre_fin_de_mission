@@ -21,22 +21,22 @@
             <div class="tree-view">
 
                 <ng-container *ngFor="let item of indexedItems">
-                    <div *ngIf="isItemVisible(item)"
-                        class="tree-item" 
+                    <div *ngIf="isItemVisible(item)" class="tree-item"
                         [ngClass]="{ 'is-folder': item.isFolder, 'is-expanded': item.isExpanded }"
-                        (click)="toggleFolder(item)"
-                        [style.padding-left.px]="12 + getItemDepth(item) * 20">
+                        (click)="toggleFolder(item)" [style.padding-left.px]="12 + getItemDepth(item) * 20">
                         <div class="item-label">
-                            <span class="folder-toggle-icon"></span>
-                            <img class="tree-icon" [src]="item.isFolder ? iconDossier : iconFichier" [alt]="item.isFolder ? 'Dossier' : 'Fichier'" />
+                            <span class="folder-toggle-icon" *ngIf="item.isFolder && hasChildren(item)"></span>
+                            <img class="tree-icon" [src]="item.isFolder ? iconDossier : iconFichier"
+                                [alt]="item.isFolder ? 'Dossier' : 'Fichier'" />
                             <a [href]="item.url" target="_blank" rel="noopener" *ngIf="!item.isFolder">
                                 {{ item.name }}
                             </a>
                             <span *ngIf="item.isFolder">{{ item.name }}</span>
                         </div>
-    
+
                         <div class="item-actions">
-                            <button *ngIf="item.isFolder" class="item-action add-subfolder" title="Créer un sous-dossier"
+                            <button *ngIf="item.isFolder" class="item-action add-subfolder"
+                                title="Créer un sous-dossier"
                                 (click)="$event.stopPropagation(); createNewFolder(item.id)">
                                 +
                             </button>
@@ -67,7 +67,7 @@
                     <img class="dropzone-icon" [src]="iconExportation" alt="Uploader des fichiers" />
 
                     <p>
-                        Glissez-déposez vos fichiers (PDF, DOCX, TXT…),<br />
+                        Glissez-déposez vos fichiers (PDF),<br />
                         ou cliquez pour sélectionner.
                     </p>
 
@@ -142,30 +142,38 @@
 
             <h3 class="modal-title">{{ modalConfig.title }}</h3>
 
-            <p class="modal-message" *ngIf="modalConfig.message">{{ modalConfig.message }}</p>
-
-            <!-- Champ de saisie pour le type 'prompt' -->
-            <div *ngIf="modalConfig.type === 'prompt'" class="modal-input-group">
-                <input type="text" [(ngModel)]="modalInputValue" class="modal-input"
-                    (keyup.enter)="confirmModal()" />
+            <div *ngIf="isIndexing" class="modal-loading">
+                <div class="spinner"></div>
+                <p class="modal-message">
+                    {{ modalConfig.message }}
+                </p>
             </div>
 
-            <!-- Boutons d'action -->
-            <div class="modal-actions">
-                <button class="btn-secondary" (click)="closeModal()">
-                    {{ modalConfig.cancelButtonText || 'Annuler' }}
-                </button>
-                <button *ngIf="modalConfig.type !== 'alert'" class="btn-primary" (click)="confirmModal()"
-                    [disabled]="modalConfig.type === 'prompt' && !modalInputValue.trim()">
-                    {{ modalConfig.confirmButtonText || 'Confirmer' }}
+            <div *ngIf="!isIndexing">
+                <p class="modal-message" *ngIf="modalConfig.message">{{ modalConfig.message }}</p>
+
+                <!-- Champ de saisie pour le type 'prompt' -->
+                <div *ngIf="modalConfig.type === 'prompt'" class="modal-input-group">
+                    <input type="text" [(ngModel)]="modalInputValue" class="modal-input"
+                        (keyup.enter)="confirmModal()" />
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="modal-actions">
+                    <button class="btn-secondary" (click)="closeModal()">
+                        {{ modalConfig.cancelButtonText || 'Annuler' }}
+                    </button>
+                    <button *ngIf="modalConfig.type !== 'alert'" class="btn-primary" (click)="confirmModal()"
+                        [disabled]="modalConfig.type === 'prompt' && !modalInputValue.trim()">
+                        {{ modalConfig.confirmButtonText || 'Confirmer' }}
+                    </button>
+                </div>
+
+                <!-- Bouton de fermeture -->
+                <button class="modal-close-btn" (click)="closeModal()" title="Fermer">
+                    &times;
                 </button>
             </div>
-
-            <!-- Bouton de fermeture -->
-            <button class="modal-close-btn" (click)="closeModal()" title="Fermer">
-                &times;
-            </button>
-
         </div>
     </div>
 

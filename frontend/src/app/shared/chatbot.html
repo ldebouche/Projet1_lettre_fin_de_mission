@@ -13,9 +13,7 @@
   <div class="chatbot-body">
     <div *ngFor="let msg of messages" class="message" [ngClass]="msg.role">
 
-      <p class="assistant-text">
-        {{ msg.content }}
-      </p>
+      <div class="assistant-text" [innerHTML]="parseMarkdown(msg.content)"></div>
 
       <div class="assistant-sources" *ngIf="msg.sources?.length && msg.role === 'assistant'">
         <div class="sources-title">Sources utilisées</div>

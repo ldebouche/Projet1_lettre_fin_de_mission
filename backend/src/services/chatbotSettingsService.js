@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import { removePdfFromIndex, indexPdfFile } from "./chatbotRagService.js";
 
 let idCounter = 1;
 
@@ -47,6 +48,15 @@ export async function deleteItemFromIndexedItems(item, indexedItems) {
     if (!indexedItems.find(i => i.id === parseInt(item.id))) {
         throw new Error("Item not found");
     }
+
+    if (!item.isFolder) {
+        const relativePath = path
+            .relative(path.join(process.cwd(), "documents_chatbot"), item.filePath)
+            .replace(/\\/g, "/");
+
+        removePdfFromIndex(relativePath);
+    }
+
     await fs.rm(item.filePath, { recursive: true, force: true });
 }
 
@@ -69,5 +79,11 @@ export async function addFileToIndexedItems(files, targetFolder) {
     for (const file of files) {
         const filePath = path.join(targetPath, file.originalname);
         await fs.writeFile(filePath, file.buffer);
+
+        const relativePath = path
+            .relative(path.join(process.cwd(), "documents_chatbot"), filePath)
+            .replace(/\\/g, "/");
+
+        await indexPdfFile(filePath, relativePath, file.originalname);
     }
 }

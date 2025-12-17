@@ -1,24 +1,12 @@
 import {
-  BrowserConfigurationAuthError,
-  BrowserUtils_exports,
-  EventMessageUtils,
-  InteractionStatus,
-  InteractionType,
-  NavigationClient,
-  StringUtils,
-  UrlString,
-  WrapperSKU
-} from "./chunk-XJHYTQQ3.js";
-import "./chunk-T7M2FLZP.js";
-import {
   Router
-} from "./chunk-5ERU5MZU.js";
-import "./chunk-XDYD5HUB.js";
+} from "./chunk-CKHE3F3M.js";
+import "./chunk-LQS5RRJ4.js";
+import "./chunk-V54L5HVA.js";
 import {
   CommonModule,
   Location
 } from "./chunk-AASISQYC.js";
-import "./chunk-V54L5HVA.js";
 import "./chunk-YW65FSQM.js";
 import {
   Component,
@@ -52,6 +40,18 @@ import {
   switchMap,
   take
 } from "./chunk-MARUHEWW.js";
+import {
+  BrowserConfigurationAuthError,
+  BrowserUtils_exports,
+  EventMessageUtils,
+  InteractionStatus,
+  InteractionType,
+  NavigationClient,
+  StringUtils,
+  UrlString,
+  WrapperSKU
+} from "./chunk-XJHYTQQ3.js";
+import "./chunk-T7M2FLZP.js";
 import {
   __async,
   __spreadProps,

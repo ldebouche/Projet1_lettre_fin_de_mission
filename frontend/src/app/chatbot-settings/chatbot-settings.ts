@@ -39,6 +39,8 @@ export class ChatbotSettingsComponent implements OnInit {
   indexedItems: IndexedItem[] = [];
 
   isModalOpen = false;
+  isIndexing = false;
+  indexingDone = false;
   modalConfig!: ModalConfig;
   modalInputValue = '';
   private depthCache = new Map<number, number>();
@@ -55,6 +57,10 @@ export class ChatbotSettingsComponent implements OnInit {
 
   get availableFolders(): IndexedItem[] {
     return this.indexedItems.filter(item => item.isFolder);
+  }
+
+  hasChildren(folder: IndexedItem): boolean {
+    return this.indexedItems.some(item => item.parentId === folder.id);
   }
 
   getTree(): void {
@@ -100,22 +106,49 @@ export class ChatbotSettingsComponent implements OnInit {
   }
 
   startIndexing(): void {
-    if (this.filesToUpload.length > 0) {
+    if (this.filesToUpload.length === 0) return;
 
-      this.openModal({
-        type: 'confirm',
-        title: 'Indexation lancée',
-        message: `${this.filesToUpload.length} fichier(s) ont été envoyé(s) pour indexation.`,
-        cancelButtonText: 'Fermer',
-        confirmButtonText: 'Indexer',
-        onConfirm: () => {
-          this.chatbotSettingsService.AddFile(this.filesToUpload, this.targetFolder).subscribe(() => {
-            this.getTree();
-            this.filesToUpload = [];
-          });
+    this.isIndexing = true;
+    this.indexingDone = false;
+
+    this.openModal({
+      type: 'alert',
+      title: 'Indexation en cours',
+      message: 'Les fichiers sont en cours de traitement. Merci de patienter…',
+      onConfirm: () => {}
+    });
+
+    this.chatbotSettingsService
+      .AddFile(this.filesToUpload, this.targetFolder)
+      .subscribe({
+        next: () => {
+          this.getTree();
+          this.filesToUpload = [];
+
+          this.isIndexing = false;
+          this.indexingDone = true;
+
+          this.modalConfig = {
+            type: 'alert',
+            title: 'Indexation terminée',
+            message: 'Les fichiers ont été indexés avec succès.',
+            cancelButtonText: 'Fermer',
+            onConfirm: () => this.closeModal()
+          };
+        },
+        error: () => {
+          this.isIndexing = false;
+          this.indexingDone = true;
+
+          this.modalConfig = {
+            type: 'alert',
+            title: 'Erreur',
+            message: 'Une erreur est survenue lors de l’indexation.',
+            cancelButtonText: 'Fermer',
+            onConfirm: () => this.closeModal()
+          };
         }
       });
-    }
   }
 
   confirmDelete(item: IndexedItem): void {

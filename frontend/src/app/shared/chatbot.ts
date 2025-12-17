@@ -1,6 +1,8 @@
 import { Component, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
 
 import { AiService } from '../services/ai-service';
 
@@ -14,6 +16,10 @@ export interface ChatMessage {
   content: string;
   sources?: ChatSource[];
 }
+
+marked.setOptions({
+  async: false
+});
 
 @Component({
   selector: 'app-chatbot',
@@ -32,7 +38,15 @@ export class ChatbotComponent implements AfterViewChecked {
 
   userInput = '';
 
-  constructor(private aiService: AiService) {}
+  constructor(
+    private aiService: AiService,
+    private sanitizer: DomSanitizer
+  ) {}
+
+  parseMarkdown(content: string): SafeHtml {
+    const html = marked.parse(content) as string;
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
 
   toggleChat() {
     this.isOpen = !this.isOpen;

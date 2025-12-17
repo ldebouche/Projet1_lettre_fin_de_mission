@@ -1,13 +1,13 @@
 import {
+  withHttpTransferCache
+} from "./chunk-V54L5HVA.js";
+import {
   CommonModule,
   DomAdapter,
   PLATFORM_BROWSER_ID,
   getDOM,
   setRootDomAdapter
 } from "./chunk-AASISQYC.js";
-import {
-  withHttpTransferCache
-} from "./chunk-V54L5HVA.js";
 import {
   XhrFactory,
   parseCookieValue
@@ -2074,4 +2074,4 @@ export {
    * License: MIT
    *)
 */
-//# sourceMappingURL=chunk-XDYD5HUB.js.map
+//# sourceMappingURL=chunk-LQS5RRJ4.js.map

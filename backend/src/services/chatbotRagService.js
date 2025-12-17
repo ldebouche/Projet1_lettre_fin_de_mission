@@ -2,34 +2,37 @@ import fs from "fs";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import axios from "axios";
 import path from "path";
+import { db, logDbStatus } from "../config/vectorStore.js";
+import { log } from "console";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const MISTRAL_BASE_URL = process.env.MISTRAL_BASE_URL;
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL;
 
-// ---- Mini base vectorielle temporaire ----
-let vectorDb = [];
+export async function indexPdfFile(absolutePath, relativePath, fileName) {
+    const text = await extractPdfText(absolutePath);
+    const chunks = chunkText(text, 800);
 
-function getAllPdfFiles(dir, baseDir = dir, files = []) {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    const insert = db.prepare(`
+        INSERT INTO embeddings (file_path, file_name, content, vector)
+        VALUES (?, ?, ?, ?)
+    `);
 
-    for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-
-        if (entry.isDirectory()) {
-            getAllPdfFiles(fullPath, baseDir, files);
-        }
-
-        if (entry.isFile() && entry.name.toLowerCase().endsWith(".pdf")) {
-            files.push({
-                name: entry.name,
-                absolutePath: fullPath,
-                relativePath: path.relative(baseDir, fullPath)
-            });
-        }
+    for (const chunk of chunks) {
+        const vector = await embed(chunk);
+        insert.run(
+            relativePath,
+            fileName,
+            chunk,
+            JSON.stringify(vector)
+        );
     }
+}
 
-    return files;
+export function removePdfFromIndex(relativePath) {
+    db.prepare(`
+        DELETE FROM embeddings WHERE file_path = ?
+    `).run(relativePath);
 }
 
 async function extractPdfText(filePath) {
@@ -47,10 +50,6 @@ async function extractPdfText(filePath) {
 
     return fullText;
 }
-
-/* ===============================
-    1. Utilitaires
-================================ */
 
 function chunkText(text, size = 400) {
     const chunks = [];
@@ -81,85 +80,50 @@ function cosineSimilarity(a, b) {
     return dot / (magA * magB);
 }
 
-/* ===============================
-    2. Ingestion PDF (mini-RAG)
-================================ */
-
-export async function ingestPdfDirectory() {
-    vectorDb = [];
-
-    const baseDir = "documents_chatbot";
-    const files = getAllPdfFiles(baseDir);
-
-    for (const file of files) {
-        console.log(`📄 Ingestion du fichier : ${file.relativePath}`);
-        const text = await extractPdfText(file.absolutePath);
-        const chunks = chunkText(text);
-
-        for (const chunk of chunks) {
-            const vector = await embed(chunk);
-
-            vectorDb.push({
-                vector,
-                text: chunk,
-                fileName: file.name,
-                sourceUrl: `/api/files/${file.relativePath.replace(/\\/g, "/")}`
-            });
-        }
-    }
-
-    console.log(`📚 RAG prêt : ${vectorDb.length} chunks indexés`);
-}
-
-
-/* ===============================
-    3. Chatbot RAG
-================================ */
-
 export async function askChatbotRag(message) {
+    logDbStatus();
+
     const questionVector = await embed(message);
 
-    const scored = vectorDb.map(item => ({
-        ...item,
-        score: cosineSimilarity(questionVector, item.vector)
+    const rows = db.prepare(`
+        SELECT file_path, file_name, content, vector
+        FROM embeddings
+    `).all();
+
+    const scored = rows.map(r => ({
+        ...r,
+        vector: JSON.parse(r.vector),
+        score: cosineSimilarity(questionVector, JSON.parse(r.vector))
     }));
 
     scored.sort((a, b) => b.score - a.score);
-    const top = scored.slice(0, 3);
+    const top = scored
+        .filter(s => s.score >= 0.75)
+        .slice(0, 6);
 
-    const context = top.map(t => t.text).join("\n\n");
+    const context = top.map(t => t.content).join("\n\n");
 
     const resp = await axios.post(
-        `${process.env.MISTRAL_BASE_URL}/chat/completions`,
+        `${MISTRAL_BASE_URL}/chat/completions`,
         {
-            model: process.env.MISTRAL_MODEL,
+            model: MISTRAL_MODEL,
             messages: [
-                {
-                    role: "system",
-                    content: `
-                        Tu es un assistant professionnel.
-                        Tu réponds uniquement à partir du contexte fourni.
-                        Tu n’inventes rien.
-                        Tu écris en texte brut, sans mise en forme.
-                        `
-                },
+                { role: "system", content: "Tu réponds uniquement à partir du contexte fourni." },
                 { role: "system", content: "Contexte :\n" + context },
                 { role: "user", content: message }
             ],
             temperature: 0.3
         },
-        {
-            headers: { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` }
-        }
+        { headers: { Authorization: `Bearer ${MISTRAL_API_KEY}` } }
     );
 
-    const uniqueSources = Array.from(
+    const sources = Array.from(
         new Map(
             top.map(t => [
-                t.fileName,
+                t.file_path,
                 {
-                    fileName: t.fileName,
-                    url: t.sourceUrl
+                    fileName: t.file_name,
+                    url: `/api/files/${encodeURI(t.file_path)}`
                 }
             ])
         ).values()
@@ -167,6 +131,6 @@ export async function askChatbotRag(message) {
 
     return {
         reply: resp.data.choices[0].message.content,
-        sources: uniqueSources
+        sources
     };
 }
