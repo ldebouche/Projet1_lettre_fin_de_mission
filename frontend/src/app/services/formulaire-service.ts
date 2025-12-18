@@ -19,7 +19,8 @@ export class FormulaireService {
     'Non affiliation à la médecine du travail',
     'Retard dépot déclaration fiscale : retard dépot documents',
     'Retard dépot déclaration fiscale : retard règlement honoraires',
-    'Protection sociale'
+    'Protection sociale',
+    'Facturation électronique'
   ];
 
   buildForm(): FormGroup {

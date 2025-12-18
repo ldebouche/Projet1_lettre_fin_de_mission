@@ -31,7 +31,9 @@ export class FormulaireComponent implements OnInit {
   generationDone = false;
   generatedPath: string = '';
   pptGenerating = false;
+  codeClient: any | null;
   dateDebutEx: string | null;
+  dateFinEx: any | null;
   anneeN = 0;
   anneeN1Existe = true;
   I_classe2 = true;
@@ -77,6 +79,8 @@ export class FormulaireComponent implements OnInit {
   ) {
     this.informations_fiscales = this.formService.informations_fiscales;
     this.dateDebutEx = this.dataService.getDateDebutEx();
+    this.codeClient = this.dataService.getCodeClient();
+    this.dateFinEx = this.dataService.getDateFinEx();
   }
 
   
@@ -86,10 +90,10 @@ export class FormulaireComponent implements OnInit {
 
     forkJoin({
       data: this.db.GetDossierInfos(),
-      dotations: this.pdfService.getDotations(),
-      immobs: this.pdfService.getImmob(),
-      pointsImportants: this.pdfService.getPointsImportants(),
-      emprunts: this.pdfService.getEmprunts()
+      dotations: this.pdfService.getDotations(this.codeClient, this.dateFinEx),
+      immobs: this.pdfService.getImmob(this.codeClient, this.dateFinEx),
+      pointsImportants: this.pdfService.getPointsImportants(this.codeClient, this.dateFinEx),
+      emprunts: this.pdfService.getEmprunts(this.codeClient, this.dateFinEx)
     }).subscribe({
       next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
         console.log(data);
@@ -118,8 +122,9 @@ export class FormulaireComponent implements OnInit {
             data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')
           ];
         }
-
+        
         if (emprunts) {
+        
           this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
         }
         
@@ -179,7 +184,7 @@ export class FormulaireComponent implements OnInit {
         const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.impotSociete.IS_tot);
         const acomptes = data.impotSociete.IS_acomptes;
         
-        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges).subscribe({
+        this.chargesService.loadEvoChargesWithComments(data.evolutionCharges, this.codeClient, this.dateFinEx).subscribe({
           next: (res) => {
             this.infoEvolutionCharges = this.chargesService.formatEvoCharges(res, this.form.value);
             this.loading = false;
@@ -253,7 +258,7 @@ export class FormulaireComponent implements OnInit {
           EA: {
             resEx: Math.round(this.resEx),
             dot: Math.round(this.dotations[1]),
-            rembours: emprunts ? Math.round(emprunts.T_remboursement_emprunt) : 0,
+            rembours: emprunts ? Math.round(emprunts.totalRemboursN1) : 0,
           },
           MD: {
             enabled: data.MD_salaries

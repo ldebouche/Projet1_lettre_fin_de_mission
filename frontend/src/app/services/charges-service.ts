@@ -9,10 +9,10 @@ import { PdfService } from './pdf-service';
 export class ChargesService {
   constructor(private db: DbService, private pdf: PdfService) {}
 
-  loadEvoChargesWithComments(evoCharges: any[]) {
+  loadEvoChargesWithComments(evoCharges: any[], code_client: any, datefinex: any) {
     const requests = evoCharges.map(ligne => {
       if (ligne.EC_comment) {
-        return this.pdf.getComments(ligne.EC_numCompte).pipe(
+        return this.pdf.getComments(ligne.EC_numCompte, code_client, datefinex).pipe(
           switchMap((rawComment: any) => {
             let comptes: string[] = [];
             let comment_tab: any[] = [];

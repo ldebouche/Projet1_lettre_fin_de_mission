@@ -10,26 +10,25 @@ export class PdfService {
   private http = inject(HttpClient);
 
 
-  getDotations() {
-    return this.http.get(`/api/pdf/cumuls`);
+  getDotations(code_client: any, datefinex: any) {
+    console.log(code_client, datefinex);
+    return this.http.get(`/api/pdf/cumuls`, { params: { code_client, datefinex } });
   }
 
-  getComments(compte: string): Observable<any> {
-    return this.http.get<string>(`/api/pdf/comments`, {
-      params: { compte }
-    });
+  getComments(compte: string, code_client: any, datefinex: any): Observable<any> {
+    return this.http.get<string>(`/api/pdf/comments`, { params: { compte, code_client, datefinex } });
   }
 
-  getPointsImportants() {
-    return this.http.get(`/api/pdf/points-importants`);
+  getPointsImportants(code_client: any, datefinex: any) {
+    return this.http.get(`/api/pdf/points-importants`, { params: { code_client, datefinex } });
   }
 
-  getImmob() {
-    return this.http.get(`/api/pdf/immob`);
+  getImmob(code_client: any, datefinex: any) {
+    return this.http.get(`/api/pdf/immob`, { params: { code_client, datefinex } });
   }
 
-  getEmprunts() {
-    return this.http.get(`/api/pdf/emprunts`);
+  getEmprunts(code_client: any, datefinex: any) {
+    return this.http.get(`/api/pdf/emprunts`, { params: { code_client, datefinex } });
   }
 
   getEcheancier(file: any): Observable<any> {

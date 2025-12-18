@@ -198,13 +198,12 @@ export async function extractEmprunts(filePath) {
   const text = data.text;
 
   const regexEmprunt =
-    /(?<numero>\d{6,10})\s+(?<T_designation>.+?)Entreprise[\s\S]*?(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s+(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=\n\d{6,10}\s|Cumul|$)/g;
+    /(?<numero>\d{8})\s*(?<T_designation>.+?)Entreprise[\s\S]*?(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s*(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=(?:\n|\r)\d{8}|Cumul|$)/g;
 
 
   const emprunts = [];
   const regexNombre = /\d{1,3}(?: ?\d{3})*,\d{1,2}/g;
   const regexRemboursN1 = /I[^\d]*(\d{1,3}(?: ?\d{3})*,\d{1,2})/;
-
   for (const match of text.matchAll(regexEmprunt)) {
     const { T_designation, T_date_debut, T_date_fin, bloc } = match.groups;
 

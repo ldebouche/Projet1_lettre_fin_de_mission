@@ -1,12 +1,24 @@
 import { extractCumuls, extractComments, extractPointsImportants, extractImmobEntree, extractImmobSortie, extractAnaSectorielle, extractEmprunts, extractEcheancier } from "../services/pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
 import { generateAIComment } from "../services/aiService.js";
+import { buildPdfPath } from "../utils/pdfPathBuilder.js";
 import pLimit from "p-limit";
 
 
 export async function getCumuls(req, res) {
   try {
-    const filePath = "./Simul des amorts sur 3 ans3.pdf";
+    const { code_client, datefinex } = req.query;
+
+    if (!code_client || !datefinex) {
+      return res.status(400).json({ error: "code_client et datefinex requis" });
+    }
+
+    const filePath = buildPdfPath({
+      codeClient: code_client,
+      type: "Simul des amorts sur 3 ans",
+      dateFinEx: datefinex
+    });
+
     const result = await extractCumuls(filePath);
     
     if (!result) {
@@ -22,9 +34,20 @@ export async function getCumuls(req, res) {
 
 export async function getComments(req, res) {
   try {
-    const { compte } = req.query;
-    const filePath = "./Liste pts imp, N. syn, Report3.pdf";
+    const { compte, code_client, datefinex } = req.query;
+
+    if (!code_client || !datefinex) {
+      return res.status(400).json({ error: "code_client et datefinex requis" });
+    }
+
+    const filePath = buildPdfPath({
+      codeClient: code_client,
+      type: "Liste pts imp, N_ syn, Report_",
+      dateFinEx: datefinex
+    });
+
     const limit = pLimit(2);
+
     const comments = await extractComments(filePath, compte);
     
     if (!comments) {
@@ -53,7 +76,17 @@ export async function getComments(req, res) {
 
 export async function getPointsImportants(req, res) {
   try {
-    const filePath = "./Liste pts imp, N. syn, Report3.pdf";
+    const { code_client, datefinex } = req.query;
+
+    if (!code_client || !datefinex) {
+      return res.status(400).json({ error: "code_client et datefinex requis" });
+    }
+
+    const filePath = buildPdfPath({
+      codeClient: code_client,
+      type: "Liste pts imp, N_ syn, Report_",
+      dateFinEx: datefinex
+    });
     const points = await extractPointsImportants(filePath);
 
     res.status(200).json(points);
@@ -65,8 +98,24 @@ export async function getPointsImportants(req, res) {
 
 export async function getImmob(req, res) {
   try {
-    const filePathEntree = "./Immobs Entrées de l'exercice3.pdf";
-    const filePathSortie = "./Immobs Sorties de l'exercice3.pdf";
+    const { code_client, datefinex } = req.query;
+
+    if (!code_client || !datefinex) {
+      return res.status(400).json({ error: "code_client et datefinex requis" });
+    }
+
+    const filePathEntree = buildPdfPath({
+      codeClient: code_client,
+      type: "Immobs Entrées de l'exercice",
+      dateFinEx: datefinex
+    });
+
+    const filePathSortie = buildPdfPath({
+      codeClient: code_client,
+      type: "Immobs Sorties de l'exercice",
+      dateFinEx: datefinex
+    });
+
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
     
@@ -122,7 +171,18 @@ export async function getAnaSectorielle(req, res) {
 
 export async function getEmprunts(req, res) {
   try {
-    const filePath = "./Etat des emprunts3.pdf";
+    const { code_client, datefinex } = req.query;
+
+    if (!code_client || !datefinex) {
+      return res.status(400).json({ error: "code_client et datefinex requis" });
+    }
+
+    const filePath = buildPdfPath({
+      codeClient: code_client,
+      type: "Etat des emprunts (Et fiscal)",
+      dateFinEx: datefinex
+    });
+
     const emprunts = await extractEmprunts(filePath);
 
     if (!emprunts) {

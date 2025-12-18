@@ -7,19 +7,27 @@ export class DataService {
   private nomEntreprise?: string;
 
   setCodeClient(code: string) {
-    this.codeClient = code;
+    localStorage.setItem('codeClient', code);
   }
 
   getCodeClient(): string | null {
-    return this.codeClient || null;
+    return localStorage.getItem('codeClient') || null;
   }
 
   setDateDebutEx(date: string): void {
-    this.dateDebutEx = date;
+    localStorage.setItem('dateDebutEx', date);
   }
 
   getDateDebutEx(): string | null {
-    return this.dateDebutEx || null;
+    return localStorage.getItem('dateDebutEx') || null;
+  }
+
+  setDateFinEx(date: string): void {
+    localStorage.setItem('dateFinEx', date);
+  }
+
+  getDateFinEx(): string | null {
+    return localStorage.getItem('dateFinEx') || null;
   }
 
   setNomEntreprise(nom: string) {

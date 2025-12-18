@@ -50,6 +50,7 @@ export class LoginComponent {
       next: (res) => {
         this.dataService.setCodeClient(this.form.value.code_client);
         this.dataService.setDateDebutEx(this.form.value.dateDebutEx);
+        this.dataService.setDateFinEx(this.form.value.dateFinEx);
         
         this.dataService.setNomEntreprise(this.formatNomEntreprise(res.client));
         this.errorMessage = '';

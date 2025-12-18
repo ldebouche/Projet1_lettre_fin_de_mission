@@ -52,11 +52,11 @@ export class AccueilComponent {
       ]
     },
     {
-      title: 'Fin de mission',
+      title: 'Fin d\'exercice',
       description: 'Clôturer, documenter et générer les livrables.',
       accentColor: 'sand',
       actions: [
-        { label: 'Accéder au formulaire de fin de mission', route: '/formulaire' }
+        { label: 'Accéder au formulaire de fin d\'exercice', route: '/formulaire' }
       ]
     }
   ];
