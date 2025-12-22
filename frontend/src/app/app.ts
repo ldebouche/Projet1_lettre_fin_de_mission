@@ -4,7 +4,7 @@ import { NavbarComponent } from './shared/navbar/navbar';
 import { CommonModule } from '@angular/common';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { EventMessage, EventType } from '@azure/msal-browser';
-import { ChatbotComponent } from './shared/chatbot';
+import { ChatbotComponent } from './shared/chatbot/chatbot';
 
 
 @Component({

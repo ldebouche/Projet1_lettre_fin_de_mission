@@ -39,15 +39,23 @@ with pdfplumber.open(pdf_path) as pdf:
             code_ape = match_ape.group(1).replace(".", "")
 
         capture = False
+
         for line in lines:
-            if line.strip().startswith("3.1."):
+            clean = line.strip()
+
+            if re.match(r"^3\.\d+\.\s+Les perspectives", clean, re.IGNORECASE):
                 capture = True
                 continue
+
+            if capture and re.match(r"^\d+\.\d+\.", clean):
+                break
+
             if capture:
-                if re.match(r"^\d+\.\d+", line.strip()):
-                    capture = False
-                    break
-                cleaned_line = line.replace("➜", "-").replace("", "-").strip()
+                cleaned_line = (
+                    line.replace("➜", "-")
+                        .replace("", "-")
+                        .strip()
+                )
                 perspectives.append(cleaned_line)
 
         if "Tranche 1" in text and "Tranche 5" in text and not output_tranches:

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { ChatMessage } from '../shared/chatbot';
+import { ChatMessage } from '../shared/chatbot/chatbot';
 
 @Injectable({ providedIn: 'root' })
 export class AiService {

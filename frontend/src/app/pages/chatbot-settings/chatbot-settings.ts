@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ChatbotSettingsService } from '../services/chatbot-settings-service';
+import { ChatbotSettingsService } from '../../services/chatbot-settings-service';
 
 interface IndexedItem {
   id: number;

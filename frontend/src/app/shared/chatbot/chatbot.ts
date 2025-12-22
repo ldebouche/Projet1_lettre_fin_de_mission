@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 
-import { AiService } from '../services/ai-service';
+import { AiService } from '../../services/ai-service';
 
 export interface ChatSource {
   fileName: string;
