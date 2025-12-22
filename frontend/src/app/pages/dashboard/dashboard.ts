@@ -243,7 +243,7 @@ export class DashboardComponent implements OnInit {
   openDossier(nomEntreprise: string, code_client: string) {
     this.dataService.setNomEntreprise(nomEntreprise);
     this.dataService.setCodeClient(code_client);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login-dossier']);
   }
 
   consulterHistorique(dossier: Dossier) {

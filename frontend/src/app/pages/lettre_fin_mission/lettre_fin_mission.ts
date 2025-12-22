@@ -16,7 +16,7 @@ import { DataService } from '../../services/data-service';
 import { ModalComponent } from '../../shared/modal/modal';
 
 @Component({
-  selector: 'app-formulaire',
+  selector: 'app-lettre-fin-mission',
   standalone: true,
   imports: [
     CommonModule,
@@ -24,10 +24,10 @@ import { ModalComponent } from '../../shared/modal/modal';
     SectionsModule,
     ModalComponent
   ],
-  templateUrl: './formulaire.html',
-  styleUrls: ['./formulaire.scss']
+  templateUrl: './lettre_fin_mission.html',
+  styleUrls: ['./lettre_fin_mission.scss']
 })
-export class FormulaireComponent implements OnInit {
+export class LettreFinMissionComponent implements OnInit {
   form!: FormGroup;
   loading = true;
   generationDone = false;

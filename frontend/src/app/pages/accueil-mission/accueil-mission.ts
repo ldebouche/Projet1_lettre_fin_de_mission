@@ -16,13 +16,13 @@ interface CartePrincipale {
 }
 
 @Component({
-  selector: 'app-accueil',
+  selector: 'app-accueil-mission',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './accueil.html',
-  styleUrls: ['./accueil.scss']
+  templateUrl: './accueil-mission.html',
+  styleUrls: ['./accueil-mission.scss']
 })
-export class AccueilComponent {
+export class AccueilMissionComponent {
   collaborateur: any | null = localStorage.getItem('collaborateur') ? JSON.parse(localStorage.getItem('collaborateur')!) : null;
   nomEntreprise: string = '';
 
@@ -56,7 +56,7 @@ export class AccueilComponent {
       description: 'Clôturer, documenter et générer les livrables.',
       accentColor: 'sand',
       actions: [
-        { label: 'Accéder au formulaire de fin d\'exercice', route: '/formulaire' }
+        { label: 'Accéder au formulaire de fin d\'exercice', route: '/lettre-fin-mission' }
       ]
     }
   ];

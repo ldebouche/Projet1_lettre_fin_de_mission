@@ -7,15 +7,15 @@ import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-login-dossier',
   imports: [
     ReactiveFormsModule,
     CommonModule
   ],
-  templateUrl: './login.html',
-  styleUrl: './login.scss'
+  templateUrl: './login-dossier.html',
+  styleUrl: './login-dossier.scss'
 })
-export class LoginComponent {
+export class LoginDossierComponent {
   nomEntreprise = localStorage.getItem('nomEntreprise') || '';
   form!: FormGroup;
   errorMessage: string = '';
@@ -54,7 +54,7 @@ export class LoginComponent {
         
         this.dataService.setNomEntreprise(this.formatNomEntreprise(res.client));
         this.errorMessage = '';
-        this.router.navigate(['/accueil']);
+        this.router.navigate(['/accueil-mission']);
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
