@@ -56,24 +56,27 @@
     </div>
   </form>
 
-  <div *ngIf="pptGenerating || generationDone" class="lfm-modal-backdrop">
-    <div *ngIf="pptGenerating" class="lfm-modal-card">
-      <h2>Génération en cours...</h2>
-      <div class="spinner"></div>
+  <app-modal
+    [isOpen]="pptGenerating"
+    [showCloseButton]="false"
+    [closeOnBackdropClick]="false">
+    <h2>Génération en cours...</h2>
+    <div class="spinner"></div>
+  </app-modal>
+
+  <app-modal
+    [isOpen]="generationDone"
+    title="Génération Terminée"
+    (closeEvent)="closeMessage()">
+    <div modal-body>
+        <p class="subtitle">Vos fichiers sont disponibles dans :</p>
+        <div class="path-box">
+          {{ generatedPath }}
+        </div>
     </div>
-    <div *ngIf="!pptGenerating && generationDone" class="lfm-modal-card">
-      <h2>Génération Terminée</h2>
-      <p class="subtitle">
-        Vos fichiers sont disponibles dans :
-      </p>
-      <div class="path-box">
-        {{ generatedPath }}
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="action-btn" (click)="closeMessage()">
-          OK
-        </button>
-      </div>
+
+    <div modal-footer class="modal-actions">
+        <button type="button" class="action-btn" (click)="closeMessage()">OK</button>
     </div>
-  </div>
+  </app-modal>
 </div>

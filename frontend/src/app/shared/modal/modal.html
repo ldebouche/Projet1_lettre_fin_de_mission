@@ -1,0 +1,17 @@
+<div class="lfm-modal-backdrop" *ngIf="isOpen" (click)="closeOnBackdropClick && closeModal()">
+    <div class="lfm-modal-card" [class.large]="isLarge"] (click)="$event.stopPropagation()">
+        <div class="modal-header" *ngIf="title">
+            <h2 class="modal-title">{{ title }}</h2>
+            <button *ngIf="showCloseButton" class="modal-close-button" (click)="closeModal()"
+                aria-label="Fermer la modale">
+                &times;
+            </button>
+        </div>
+        <div class="modal-body">
+            <ng-content select="[modal-body]"></ng-content>
+        </div>
+        <div class="modal-footer">
+            <ng-content select="[modal-footer]"></ng-content>
+        </div>
+    </div>
+</div>

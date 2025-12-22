@@ -1,4 +1,6 @@
 @use '../../../styles/variables' as *;
+@use '../../../styles/button' as *;
+
 
 :host {
     display: flex;
@@ -270,19 +272,22 @@ table {
 }
 
 .mes-dossiers-table th:nth-child(1),
-.mes-dossiers-table td:nth-child(1) { width: 12%; }
+.mes-dossiers-table td:nth-child(1) { width: 10%; }
 
 .mes-dossiers-table th:nth-child(2),
 .mes-dossiers-table td:nth-child(2) { width: 60%; }
 
 .mes-dossiers-table th:nth-child(3),
-.mes-dossiers-table td:nth-child(3) { width: 15%; }
+.mes-dossiers-table td:nth-child(3) { width: 13%; }
 
 .mes-dossiers-table th:nth-child(4),
-.mes-dossiers-table td:nth-child(4) { width: 10%; }
+.mes-dossiers-table td:nth-child(4) { width: 8%; }
+
+.mes-dossiers-table th:nth-child(5),
+.mes-dossiers-table td:nth-child(5) { width: 9%; }
 
 .equipe-table th:nth-child(1),
-.equipe-table td:nth-child(1) { width: 12%; }
+.equipe-table td:nth-child(1) { width: 10%; }
 
 .equipe-table th:nth-child(2),
 .equipe-table td:nth-child(2) { width: 35%; }
@@ -291,10 +296,13 @@ table {
 .equipe-table td:nth-child(3) { width: 25%; }
 
 .equipe-table th:nth-child(4),
-.equipe-table td:nth-child(4) { width: 15%; }
+.equipe-table td:nth-child(4) { width: 13%; }
 
 .equipe-table th:nth-child(5),
-.equipe-table td:nth-child(5) { width: 10%; }
+.equipe-table td:nth-child(5) { width: 8%; }
+
+.equipe-table th:nth-child(6),
+.equipe-table td:nth-child(6) { width: 9%; }
 
 .pagination {
     display: flex;

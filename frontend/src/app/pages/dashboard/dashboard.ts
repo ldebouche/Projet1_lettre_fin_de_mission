@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
+import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
+import { ModalComponent } from '../../shared/modal/modal';
 
 type SortableField = 'code_client' | '_sortableName' | 'collaborateur' | 'date_sortie';
 
@@ -21,7 +23,9 @@ interface Dossier {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    ListeHistoriqueComponent,
+    ModalComponent
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
@@ -46,17 +50,20 @@ export class DashboardComponent implements OnInit {
   currentPage = 1;
   itemsPerPage = 10;
   readonly Math = Math;
-  private totalFilteredItems = 0;
+  totalFilteredItems = 0;
 
-  private _allMesDossiers: Dossier[] = [];
-  private _allDossiersEquipe: Dossier[] = [];
+  _allMesDossiers: Dossier[] = [];
+  _allDossiersEquipe: Dossier[] = [];
 
-  private sortLabelMap: { [key in SortableField]: string } = {
+  sortLabelMap: { [key in SortableField]: string } = {
     'code_client': 'Code Client',
     '_sortableName': 'Nom du Dossier',
     'collaborateur': 'Collaborateur',
     'date_sortie': 'Date de sortie'
   };
+
+  isHistoriqueModalOpen = false;
+  selectedCodeClient: string | null = null;
 
   constructor(
     private router: Router,
@@ -174,8 +181,8 @@ export class DashboardComponent implements OnInit {
     }
 
     if (!this.showExitedClients) {
-        sourceData = sourceData.filter(d => !d.date_sortie);
-    }
+      sourceData = sourceData.filter(d => !d.date_sortie);
+    }
 
     sourceData.sort((a, b) => {
         const isAsc = this.sortDirection === 'asc';
@@ -237,5 +244,15 @@ export class DashboardComponent implements OnInit {
     this.dataService.setNomEntreprise(nomEntreprise);
     this.dataService.setCodeClient(code_client);
     this.router.navigate(['/login']);
+  }
+
+  consulterHistorique(dossier: Dossier) {
+    this.selectedCodeClient = dossier.code_client;
+    this.isHistoriqueModalOpen = true;
+  }
+
+  closeHistoriqueModal() {
+    this.isHistoriqueModalOpen = false;
+    this.selectedCodeClient = null;
   }
 }

@@ -1,0 +1,98 @@
+@use '../../../styles/variables.scss' as *;
+
+.history-container {
+    max-height: 60vh; // Permet de scroller à l'intérieur de la modale si trop d'années
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.year-block {
+    margin-bottom: 2rem;
+    border: 1px solid #eef2f5;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.year-header {
+    background: var(--color-blue-petrol);
+    color: white;
+    padding: 10px 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    border-radius: 11px 11px 0 0;
+
+    .year-label { font-size: 0.75rem; opacity: 0.8; text-transform: uppercase; font-weight: 500; }
+    .year-value { font-size: 1.3rem; margin: 0; font-weight: 700; }
+}
+
+.history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0; 
+    padding: 15px;
+}
+
+.history-column {
+    padding: 0 15px;
+    &:first-child { border-right: 1px solid #f0f0f0; }
+}
+
+.column-header {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4f6577;
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; }
+    &.depot .dot { background: #6fa3b8; }
+    &.restit .dot { background: var(--color-blue-petrol); }
+}
+
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #f8fafb;
+    border: 1px solid #edf2f7;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    transition: all 0.2s ease;
+    cursor: default;
+
+    &:hover {
+        background: #fff;
+        border-color: var(--color-blue-petrol);
+        transform: translateX(3px);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+    }
+
+    .file-icon { font-size: 1rem; opacity: 0.7; }
+    .file-name {
+        font-size: 0.8rem;
+        color: #4a5568;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.empty-msg {
+    font-size: 0.75rem;
+    color: #a0aec0;
+    font-style: italic;
+    padding: 10px;
+}

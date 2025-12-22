@@ -14,3 +14,20 @@
   --radius-md: 12px;
   --radius-lg: 16px;
 }
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid rgba(0, 0, 0, 0.1);
+  border-top: 6px solid var(--color-blue-petrol);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 18px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

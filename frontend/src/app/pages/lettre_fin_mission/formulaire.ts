@@ -13,6 +13,7 @@ import { ChargesService } from '../../services/charges-service';
 import { FormatService } from '../../services/format-service';
 import { SectionsModule } from './sections/sections-module';
 import { DataService } from '../../services/data-service';
+import { ModalComponent } from '../../shared/modal/modal';
 
 @Component({
   selector: 'app-formulaire',
@@ -20,7 +21,8 @@ import { DataService } from '../../services/data-service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    SectionsModule
+    SectionsModule,
+    ModalComponent
   ],
   templateUrl: './formulaire.html',
   styleUrls: ['./formulaire.scss']
@@ -122,7 +124,7 @@ export class FormulaireComponent implements OnInit {
             data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')
           ];
         }
-        
+
         if (emprunts) {
         
           this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
@@ -341,7 +343,7 @@ export class FormulaireComponent implements OnInit {
 
     const code_client = this.infoClient.code_client
     
-    const folderPath = `C:\\outils-avenia\\${code_client}\\lfm`;
+    const folderPath = `C:\\outils-avenia\\${code_client}\\LFM\\${formattedPayload.anneeN}\\RESTITUTION`;
     this.wordService.generateWord(formattedPayload, folderPath).subscribe({
       next: (res) => {
         const jobId = res.jobId;

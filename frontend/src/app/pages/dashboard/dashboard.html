@@ -69,6 +69,7 @@
                             Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th>Action</th>
+                        <th>Historique</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,6 +81,12 @@
                             <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
                                 class="action-button">
                                 Ouvrir
+                            </button></div>
+                        </td>
+                        <td><div class="cell-content">
+                            <button (click)="consulterHistorique(dossier)"
+                                class="action-button">
+                                Consulter
                             </button></div>
                         </td>
                     </tr>
@@ -124,6 +131,7 @@
                             Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th>Action</th>
+                        <th>Historique</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -138,6 +146,12 @@
                                 Ouvrir
                             </button></div>
                         </td>
+                        <td><div class="cell-content">
+                            <button (click)="consulterHistorique(dossier)"
+                                class="action-button">
+                                Consulter
+                            </button></div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -149,3 +163,19 @@
         </div>
     </div>
 </main>
+
+<app-modal 
+    [isOpen]="isHistoriqueModalOpen" 
+    [title]="'Historique des documents'" 
+    [isLarge]="true"
+    (closeEvent)="closeHistoriqueModal()">
+    
+    <app-liste-historique
+        modal-body 
+        [codeClient]="selectedCodeClient">
+    </app-liste-historique>
+
+    <div modal-footer class="modal-actions">
+        <button type="button" class="btn" (click)="closeHistoriqueModal()">Fermer</button>
+    </div>
+</app-modal>

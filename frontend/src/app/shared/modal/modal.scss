@@ -1,0 +1,69 @@
+.lfm-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+}
+
+.lfm-modal-card {
+    background: #fff;
+    padding: 2.2rem;
+    border-radius: 18px;
+    width: min(520px, 90%);
+    &.large {
+        width: min(850px, 95%);
+        text-align: left;
+    }
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    font-family: var(--font-body);
+    color: #4f6577;
+    animation: slide-down 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-title {
+    margin: 0;
+    font-family: var(--font-title);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #4f6577;
+}
+
+.modal-close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.modal-body {
+    font-size: 1.05rem;
+    color: #6e7b86;
+}
+
+.modal-footer {
+    margin-top: 1.6rem;
+}
+
+@keyframes slide-down {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

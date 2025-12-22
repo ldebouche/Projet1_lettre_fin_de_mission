@@ -1,0 +1,47 @@
+<div class="history-container">
+    <div *ngIf="isLoading" class="loader-container">
+        <div class="spinner"></div>
+        <p>Chargement de l'arborescence...</p>
+    </div>
+
+    <div *ngIf="!isLoading">
+        <div *ngFor="let annee of annees" class="year-block">
+            <div class="year-header">
+                <span class="year-label">Exercice</span>
+                <h2 class="year-value">{{ annee }}</h2>
+            </div>
+
+            <div class="history-grid">
+                <section class="history-column">
+                    <h3 class="column-header depot">
+                        <span class="dot"></span> Dépôts
+                    </h3>
+                    <ul class="file-list">
+                        <li *ngFor="let file of historiqueData[annee].DEPOT" class="file-item">
+                            <div class="file-icon">📄</div>
+                            <span class="file-name" [title]="file.nom">{{ file.nom }}</span>
+                        </li>
+                        <li *ngIf="historiqueData[annee].DEPOT?.length === 0" class="empty-msg">
+                            Aucun document déposé
+                        </li>
+                    </ul>
+                </section>
+
+                <section class="history-column">
+                    <h3 class="column-header restit">
+                        <span class="dot"></span> Restitutions
+                    </h3>
+                    <ul class="file-list">
+                        <li *ngFor="let file of historiqueData[annee].RESTITUTION" class="file-item">
+                            <div class="file-icon">📄</div>
+                            <span class="file-name" [title]="file.nom">{{ file.nom }}</span>
+                        </li>
+                        <li *ngIf="historiqueData[annee].RESTITUTION?.length === 0" class="empty-msg">
+                            Aucune restitution disponible
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>

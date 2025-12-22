@@ -7,6 +7,7 @@ import dbRoutes from './routes/dbRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import wordRoutes from './routes/wordRoute.js';
 import pdfRoutes from './routes/pdfRoutes.js';
+import dashboardRoutes from './routes/dashboardRoute.js';
 
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/api/db', dbRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/word', wordRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 
 const PORT = process.env.PORT || 4000;
