@@ -1,8 +1,8 @@
-@use '../../../styles/variables' as *;
+@use '../../../styles.scss';
 /* ---- PAGE ---- */
 
 .accueil-wrapper {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--navbar-height) - 96px);
   padding: 48px 24px;
   background: var(--color-light);
   font-family: var(--font-body);

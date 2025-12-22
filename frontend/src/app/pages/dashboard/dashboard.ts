@@ -72,17 +72,8 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.db.VerifCollaborateur().subscribe({
-      next: (res) => {
-        localStorage.setItem('collaborateur', JSON.stringify(res.collaborateur));
-        this.collaborateur = res.collaborateur;
-        this.loadData();
-      },
-      error: (err) => {
-        this.errorMessage = "Le code collaborateur est invalide.";
-        console.error(err);
-      }
-    });
+    this.collaborateur = JSON.parse(localStorage.getItem('collaborateur') || 'null');
+    this.loadData();
   }
 
   private prepareData(data: any[]): Dossier[] {

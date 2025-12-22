@@ -33,12 +33,14 @@ export class NavbarComponent implements OnInit {
   }
 
   handleReturn() {
-    if (this.currentUrl === '/formulaire') {
-      this.router.navigate(['/accueil']);
-    } else if (this.currentUrl === '/accueil') {
-      this.router.navigate(['/login']);
-    } else if (this.currentUrl === '/login') {
+    if (this.currentUrl === '/lettre-fin-mission') {
+      this.router.navigate(['/accueil-mission']);
+    } else if (this.currentUrl === '/accueil-mission') {
+      this.router.navigate(['/login-dossier']);
+    } else if (this.currentUrl === '/login-dossier') {
       this.router.navigate(['/dashboard']);
+    } else if (this.currentUrl === '/dashboard') {
+      this.router.navigate(['/accueil-intranet']);
     }
   }
 

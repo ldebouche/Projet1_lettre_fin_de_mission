@@ -1,11 +1,4 @@
-@use '../../../styles/variables' as *;
-@use '../../../styles/layout';
-@use '../../../styles/form';
-@use '../../../styles/inputs';
-@use '../../../styles/button';
-@use '../../../styles/table';
-@use '../../../styles/checkbox';
-@use '../../../styles/actions';
+@use '../../../styles.scss';
 
 .page {
   padding: 32px;

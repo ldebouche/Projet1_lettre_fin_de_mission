@@ -1,22 +1,19 @@
-// Couleurs issues de ta charte
-$color-dark: #47413c;
-$color-blue: #72bfcc;
-$color-petrol: #447a87;
-$color-sand: #786e54;
-$color-light: #ebe3d5;
+@use '../../../styles.scss';
 
 .navbar {
   font-family: 'Neou', sans-serif;
   font-size: 1.3rem;
-  color: $color-blue;
+  color: --color-blue;
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   position: relative;
   top: 0;
   z-index: 1000;
+  height: var(--navbar-height);
 
   .container {
-    padding: 0.5rem 1rem;
+    padding: 0 1rem;
+    height: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -43,7 +40,7 @@ $color-light: #ebe3d5;
       transition: color 0.2s;
 
       &:hover {
-        color: $color-petrol;
+        color: --color-petrol;
         cursor: pointer;
       }
     }
