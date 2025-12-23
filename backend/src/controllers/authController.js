@@ -1,14 +1,19 @@
 import dbService from '../services/dbService.js';
 import { generateToken } from '../utils/jwt.js';
+import { getUserGroupsByOid } from '../services/graphService.js';
 
 export const VerifCollaborateur = async (req, res) => {
   try {
     const email = req.user.unique_name;
+    const userOid = req.user.oid;
 
     const collaborateur = await dbService.GetCollaborateur(email);
     if (!collaborateur) {
       return res.status(404).json({ error: 'Collaborateur introuvable' });
     }
+
+    const groups = await getUserGroupsByOid(userOid);
+    console.log(groups);
 
     res.json({ collaborateur });
   } catch (err) {
