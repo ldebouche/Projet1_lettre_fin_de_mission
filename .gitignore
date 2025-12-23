@@ -19,7 +19,7 @@ bazel-out/
 # ------------------------------
 # Angular cache
 # ------------------------------
-.angular/cache/
+**/.angular/cache/
 
 # ------------------------------
 # Backend TypeScript build
