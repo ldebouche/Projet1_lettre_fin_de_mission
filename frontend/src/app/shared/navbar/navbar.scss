@@ -1,5 +1,6 @@
 @use '../../../styles.scss';
 
+
 .navbar {
   font-family: 'Neou', sans-serif;
   font-size: 1.3rem;
@@ -36,17 +37,16 @@
   }
 
   .links {
+    justify-content: space-evenly;
+
     a {
-      transition: color 0.2s;
+      text-decoration: none;
 
       &:hover {
         color: --color-petrol;
         cursor: pointer;
+        text-decoration: underline;
       }
-    }
-
-    @media (max-width: 768px) {
-      display: none;
     }
   }
 

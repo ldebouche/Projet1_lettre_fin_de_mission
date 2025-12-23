@@ -7,6 +7,7 @@ export const VerifCollaborateur = async (req, res) => {
     const email = req.user.unique_name;
     const userOid = req.user.oid;
 
+
     const collaborateur = await dbService.GetCollaborateur(email);
     if (!collaborateur) {
       return res.status(404).json({ error: 'Collaborateur introuvable' });

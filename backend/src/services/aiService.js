@@ -128,51 +128,82 @@ export async function generateAIComment(type, contexte) {
   return { comment, json };
 }
 
-export async function callMistral(message) {
-  const resp = await axios.post(
-    `${process.env.MISTRAL_BASE_URL}/chat/completions`,
-    {
-      model: process.env.MISTRAL_MODEL,
-      messages: [
-        {
-          role: 'system',
-          content: `
-Tu es un expert-comptable qui rédige des commentaires cohérents et professionnels pour un client professionnel. 
+export async function callMistral(message, conversation = []) {
+  if (!conversation || conversation.length === 0) {
+    const resp = await axios.post(
+      `${process.env.MISTRAL_BASE_URL}/chat/completions`,
+      {
+        model: process.env.MISTRAL_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `
+  Tu es un expert-comptable qui rédige des commentaires cohérents et professionnels pour un client professionnel. 
 
-Contraintes strictes :
-- Chaque paragraphe doit contenir 3 ou 4 phrases (sauf pour la reformulation).
-- Fais des commentaires sur les données fournies.
-- Tu n’ajoutes AUCUNE donnée ni calcul supplémentaire.
-- Tu n’utilises AUCUNE mise en forme (pas de Markdown, pas de gras, pas de listes).
-`       },
-        { role: 'user', content: JSON.stringify(message) }
-      ],
-      temperature: 0.5
-    },
-    { headers: { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` } }
-  );
+  Contraintes strictes :
+  - Chaque paragraphe doit contenir 3 ou 4 phrases (sauf pour la reformulation).
+  - Fais des commentaires sur les données fournies.
+  - Tu n’ajoutes AUCUNE donnée ni calcul supplémentaire.
+  - Tu n’utilises AUCUNE mise en forme (pas de Markdown, pas de gras, pas de listes).
+  `       },
+          { role: 'user', content: JSON.stringify(message) }
+        ],
+        temperature: 0.5
+      },
+      { headers: { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` } }
+    );
 
-  let raw = resp.data?.choices?.[0]?.message?.content ?? '';
+    let raw = resp.data?.choices?.[0]?.message?.content ?? '';
 
-  if (raw.includes("<<<JSON>>>")) {
-    const [commentaire, jsonStr] = raw.split("<<<JSON>>>");
+    if (raw.includes("<<<JSON>>>")) {
+      const [commentaire, jsonStr] = raw.split("<<<JSON>>>");
 
-    let parsedJson = null;
-    try {
-      parsedJson = JSON.parse(jsonStr.trim());
-    } catch (err) {
-      console.error("Erreur JSON Mistral :", err);
+      let parsedJson = null;
+      try {
+        parsedJson = JSON.parse(jsonStr.trim());
+      } catch (err) {
+        console.error("Erreur JSON Mistral :", err);
+      }
+
+      return {
+        comment: commentaire.trim(),
+        json: parsedJson
+      };
     }
+    
+    return { comment: raw, json: null };
+  } else {
+    const resp = await axios.post(
+      `${process.env.MISTRAL_BASE_URL}/chat/completions`,
+      {
+        model: process.env.MISTRAL_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: `
+              Tu es un assistant strictement professionnel.
 
-    return {
-      comment: commentaire.trim(),
-      json: parsedJson
-    };
+              Contraintes IMPORTANTES :
+              - Tu réponds uniquement en texte brut.
+              - Tu n'utilises *aucune mise en forme* : pas de gras, pas d'italique, pas de markdown.
+              - Tu n'utilises pas d'emojis.
+              - Tu n'utilises pas de listes ou tirets.
+              - Tu fais des phrases complètes simples et propres.
+              - Pas de ton familier. Tu restes professionnel.
+            `
+          },
+          ...conversation,
+          { role: 'user', content: message }
+        ]
+      },
+      { headers: { Authorization: `Bearer ${process.env.MISTRAL_API_KEY}` } }
+    );
+
+    const reply = resp.data.choices[0].message.content;
+
+    return reply;
   }
-  
-  return { comment: raw, json: null };
 }
-
 
 
 export { prompts };

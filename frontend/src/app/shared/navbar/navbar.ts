@@ -3,7 +3,7 @@ import { RouterModule } from '@angular/router';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { MsalService } from '@azure/msal-angular';
 
 @Component({
@@ -21,6 +21,7 @@ export class NavbarComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private location: Location,
     private msalService: MsalService
   ) {
     this.router.events.subscribe(() => {
@@ -33,15 +34,7 @@ export class NavbarComponent implements OnInit {
   }
 
   handleReturn() {
-    if (this.currentUrl === '/lettre-fin-mission') {
-      this.router.navigate(['/accueil-mission']);
-    } else if (this.currentUrl === '/accueil-mission') {
-      this.router.navigate(['/login-dossier']);
-    } else if (this.currentUrl === '/login-dossier') {
-      this.router.navigate(['/dashboard']);
-    } else if (this.currentUrl === '/dashboard') {
-      this.router.navigate(['/accueil-intranet']);
-    }
+    this.location.back();
   }
 
   logout() {

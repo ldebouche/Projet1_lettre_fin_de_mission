@@ -1,0 +1,283 @@
+/* =====================================================
+   BASE / CHARTE
+===================================================== */
+
+.chatbot-window,
+.chatbot-button,
+.message,
+.chatbot-input,
+.chatbot-send {
+    font-family: var(--font-body);
+}
+
+/* =====================================================
+   BOUTON FLOTTANT
+===================================================== */
+
+.chatbot-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-lg);
+    background: var(--color-blue-petrol);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 9999;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.chatbot-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    background: url('/assets/chatbot.png') center / cover no-repeat;
+}
+
+/* =====================================================
+   FENÊTRE DE CHAT
+===================================================== */
+
+.chatbot-window {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    width: 380px;
+    max-height: 560px;
+    background: var(--color-light);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+
+    &.open {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.chatbot-header {
+    background: var(--color-blue-petrol);
+    color: #fff;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chatbot-title {
+    font-family: var(--font-title);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.chatbot-close {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* =====================================================
+   CORPS DU CHAT
+===================================================== */
+
+.chatbot-body {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    background: var(--color-light);
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-blue-petrol) transparent;
+}
+
+/* =====================================================
+   MESSAGES
+===================================================== */
+
+.message {
+    max-width: 82%;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    line-height: 1.55;
+    word-wrap: break-word;
+    animation: fadeInUp 0.2s ease;
+}
+
+/* ===== Message assistant ===== */
+
+.message.assistant {
+    background: linear-gradient(180deg,
+            rgba(68, 122, 135, 0.95),
+            rgba(68, 122, 135, 0.88));
+    color: var(--color-light);
+    border-bottom-left-radius: var(--radius-sm);
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+/* ===== Message utilisateur ===== */
+
+.message.user {
+    margin-left: auto;
+    background: #fff;
+    color: var(--color-dark);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    border-bottom-right-radius: var(--radius-sm);
+    max-width: 75%;
+}
+
+/* =====================================================
+   TEXTE MARKDOWN (ASSISTANT)
+===================================================== */
+
+.assistant-text {
+    margin: 0;
+    white-space: normal;
+
+    p {
+        margin: 0 0 6px;
+    }
+
+    h1,
+    h2,
+    h3 {
+        margin: 10px 0 4px;
+        font-size: 14.5px;
+        font-weight: 600;
+    }
+
+    ul,
+    ol {
+        margin: 6px 0 6px 18px;
+    }
+
+    li {
+        margin-bottom: 3px;
+    }
+
+    strong {
+        font-weight: 600;
+    }
+}
+
+/* =====================================================
+   SOURCES
+===================================================== */
+
+.message.assistant .assistant-sources {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.4);
+}
+
+.message.assistant .sources-title {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-bottom: 4px;
+}
+
+.message.assistant .sources-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+        margin-bottom: 3px;
+    }
+
+    a {
+        font-size: 12.5px;
+        color: var(--color-light);
+        text-decoration: underline dotted;
+        opacity: 0.9;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.chatbot-footer {
+    background: #fff;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.chatbot-input {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-blue-petrol);
+    outline: none;
+
+    &:focus {
+        border-color: var(--color-blue-light);
+    }
+}
+
+.chatbot-send {
+    padding: 9px 16px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--color-blue-petrol);
+    color: #fff;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: var(--color-blue-light);
+    }
+}
+
+/* =====================================================
+   ANIMATIONS
+===================================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
