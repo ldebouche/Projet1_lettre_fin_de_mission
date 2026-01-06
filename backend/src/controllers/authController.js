@@ -14,7 +14,7 @@ export const VerifCollaborateur = async (req, res) => {
     }
 
     const groups = await getUserGroupsByOid(userOid);
-    console.log(groups);
+    collaborateur.groupes_microsoft = groups;
 
     res.json({ collaborateur });
   } catch (err) {

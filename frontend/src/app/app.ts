@@ -31,6 +31,15 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.msalService.instance.handleRedirectPromise()
+      .then(() => {
+        const accounts = this.msalService.instance.getAllAccounts();
+        if (accounts.length > 0) {
+          this.msalService.instance.setActiveAccount(accounts[0]);
+        }
+      })
+      .catch(console.error);
+      
     this.msalBroadcast.msalSubject$
       .subscribe((message: EventMessage) => {
         if (message.eventType === EventType.LOGOUT_SUCCESS) {

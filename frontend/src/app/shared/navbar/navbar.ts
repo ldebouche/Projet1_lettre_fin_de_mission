@@ -6,6 +6,8 @@ import { OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { MsalService } from '@azure/msal-angular';
 
+import { DataService } from '../../services/data-service';
+
 @Component({
   selector: 'app-navbar',
   standalone: true,
@@ -18,11 +20,14 @@ import { MsalService } from '@azure/msal-angular';
 })
 export class NavbarComponent implements OnInit {
   currentUrl: string = '';
+  collaborateur: any;
+  hasRole: boolean = false;
 
   constructor(
     private router: Router,
     private location: Location,
-    private msalService: MsalService
+    private msalService: MsalService,
+    private dataService: DataService
   ) {
     this.router.events.subscribe(() => {
       this.currentUrl = this.router.url;
@@ -31,6 +36,10 @@ export class NavbarComponent implements OnInit {
 
   ngOnInit() {
     this.currentUrl = this.router.url;
+    this.dataService.collaborateur$.subscribe((collab) => {
+      this.collaborateur = collab;
+      this.collaborateur.groupes_microsoft.includes('COMITE INFORMATIQUE') ? this.hasRole = true : this.hasRole = false;
+    });
   }
 
   handleReturn() {
@@ -38,18 +47,12 @@ export class NavbarComponent implements OnInit {
   }
 
   logout() {
+    this.dataService.clearData();
+    this.dataService.clearCollaborateur();
+
     this.msalService.instance.logoutRedirect({
       account: this.msalService.instance.getActiveAccount(),
-      onRedirectNavigate: (url) => {
-        this.msalService.instance.setActiveAccount(null);
-        setTimeout(() => {
-          this.router.navigateByUrl('/refresh', { skipLocationChange: true }).then(() => {
-            this.router.navigateByUrl('/');
-          });
-        }, 0);
-
-        return false;
-      }
+      postLogoutRedirectUri: "https://outils-avenia.fr/"
     });
   }
 }

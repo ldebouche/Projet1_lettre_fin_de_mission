@@ -16,7 +16,7 @@
     <!-- Desktop menu -->
     <div class="links">
         
-        <a [routerLink]="['/chatbot-settings']" class="logout-button" *ngIf="currentUrl !== '/chatbot-settings'">
+        <a [routerLink]="['/chatbot-settings']" class="logout-button" *ngIf="currentUrl !== '/chatbot-settings' && hasRole">
             Gérer le Chatbot
         </a>
         
