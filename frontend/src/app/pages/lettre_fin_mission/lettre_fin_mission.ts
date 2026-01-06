@@ -114,15 +114,8 @@ export class LettreFinMissionComponent implements OnInit {
           this.pointsImportants = this.formatService.formatPointsImportants(pointsImportants);
         }
 
-        if (data.anaSectorielle.valeurs.length) {
-          this.anaSectorielle = [
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Tranches'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Nombre d’entreprises'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Effectif moyen (exploitant inclus)'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires par personne en €'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')
-          ];
+        if (data.anaSectorielle) {
+          this.anaSectorielle = data.anaSectorielle;
         }
 
         if (emprunts) {

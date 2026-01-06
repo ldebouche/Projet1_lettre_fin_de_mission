@@ -22,7 +22,7 @@ export const GetDossierInfos = async (req, res) => {
       dbService.GetSignataire(code_client, dateFinEx),
       dbService.GetAggregats(code_client, dateFinEx),
       dbService.GetInfoEvoCharges(code_client, dateFinEx),
-      dbService.GetAnaSectorielle(infoClients.code_ape)
+      dbService.GetAnaSectorielle(/*infoClients.code_ape*/'9602A')
     ]);
 
     const aggN = aggregats[0] || {};
@@ -204,19 +204,8 @@ export const GetDossierInfos = async (req, res) => {
 
       // === Analyse sectorielle ===
       anaSectorielle: {
-        valeurs: anaSectorielle.filter(r => r.type_donnee === 'valeur').map(r => ({
-          libelle: r.libelle || null,
-          millesime: r.millesime || null,
-          tranches: {
-            tranche_1: r.tranche_1 || null,
-            tranche_2: r.tranche_2 || null,
-            tranche_3: r.tranche_3 || null,
-            tranche_4: r.tranche_4 || null,
-            tranche_5: r.tranche_5 || null,
-            globale: r.tranche_globale || null
-          } 
-        })),
-        commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives) || null
+        millesime: anaSectorielle[0].millesime || null,
+        commentaire: anaSectorielle[0].commentaire || null
       },
 
       tresorerie: {
