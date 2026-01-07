@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { ChatbotSettingsService } from '../../services/chatbot-settings-service';
+import { ModalComponent } from '../../shared/modal/modal';
+import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
 
 interface IndexedItem {
   id: number;
@@ -11,6 +13,7 @@ interface IndexedItem {
   parentId: number | null;
   isExpanded?: boolean;
   url?: string;
+  importedAt?: string | null;
 }
 
 interface ModalConfig {
@@ -27,7 +30,12 @@ interface ModalConfig {
   templateUrl: './chatbot-settings.html',
   styleUrls: ['./chatbot-settings.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [
+    CommonModule,
+    FormsModule,
+    ModalComponent,
+    BoutonFiltreComponent
+  ]
 })
 export class ChatbotSettingsComponent implements OnInit {
   iconDossier = '/assets/icons/dossier.png';
@@ -45,6 +53,9 @@ export class ChatbotSettingsComponent implements OnInit {
   modalInputValue = '';
   private depthCache = new Map<number, number>();
   targetFolder: any = null;
+  dateSortOrder: 'asc' | 'desc' = 'desc';
+  activeTab: 'upload' | 'link' = 'upload';
+  externalLink: string = '';
 
   constructor(
     private chatbotSettingsService: ChatbotSettingsService
@@ -75,8 +86,83 @@ export class ChatbotSettingsComponent implements OnInit {
         }
         return item;
       });
-      this.indexedItems = newItems;
+      this.indexedItems = this.sortTreeByImportedAt(newItems, this.dateSortOrder);
     });
+  }
+
+  private sortTreeByImportedAt(items: IndexedItem[], order: 'asc' | 'desc'): IndexedItem[] {
+    // enfants par parent
+    const children = new Map<number | null, IndexedItem[]>();
+    for (const it of items) {
+      const k = it.parentId ?? null;
+      if (!children.has(k)) children.set(k, []);
+      children.get(k)!.push(it);
+    }
+
+    const time = (v?: string | null) => {
+      if (!v) return null;
+      const t = Date.parse(v);
+      return Number.isNaN(t) ? null : t;
+    };
+
+    // date “effective” (fichier: importedAt, dossier: max descendants)
+    const eff = new Map<number, number | null>();
+
+    const effectiveTime = (it: IndexedItem): number | null => {
+      if (eff.has(it.id)) return eff.get(it.id)!;
+
+      let best = it.isFolder ? null : time(it.importedAt);
+      for (const ch of (children.get(it.id) ?? [])) {
+        const t = effectiveTime(ch);
+        if (t !== null) best = best === null ? t : Math.max(best, t);
+      }
+      eff.set(it.id, best);
+      return best;
+    };
+
+    const cmp = (a: IndexedItem, b: IndexedItem) => {
+      const ta = effectiveTime(a);
+      const tb = effectiveTime(b);
+
+      // ✅ les éléments “vides” (ta/tb null) vont à la fin
+      if (ta === null && tb !== null) return 1;
+      if (ta !== null && tb === null) return -1;
+
+      // si tous les deux vides => alpha
+      if (ta === null && tb === null) {
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+      }
+
+      // tri date
+      const diff = ta! - tb!;
+      if (diff !== 0) return order === 'asc' ? diff : -diff;
+
+      // égalité => alpha
+      return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+    };
+
+    // trier les enfants de chaque parent
+    for (const [k, arr] of children.entries()) {
+      arr.sort(cmp);
+      children.set(k, arr);
+    }
+
+    // rebuild flat list
+    const out: IndexedItem[] = [];
+    const walk = (pid: number | null) => {
+      for (const it of (children.get(pid) ?? [])) {
+        out.push(it);
+        if (it.isFolder) walk(it.id);
+      }
+    };
+    walk(null);
+
+    return out;
+  }
+
+
+  setTab(tab: 'upload' | 'link'): void {
+    this.activeTab = tab;
   }
 
   onFileSelected(event: any): void {
@@ -105,6 +191,53 @@ export class ChatbotSettingsComponent implements OnInit {
     this.filesToUpload = this.filesToUpload.filter((f: any) => f !== file);
   }
 
+  addExternalLink(): void {
+    if (!this.externalLink) return;
+
+    this.isIndexing = true;
+    this.indexingDone = false;
+
+    this.openModal({
+      type: 'alert',
+      title: 'Création en cours',
+      message: 'La procédure est en cours de création. Merci de patienter…',
+      onConfirm: () => { }
+    });
+
+    // A modifier pour ajouter le fichier pdf créé par le lien externe, le fichier devra être téléchargeable et visualisable par la personne
+    this.chatbotSettingsService
+      .AddFile(this.filesToUpload, this.targetFolder)
+      .subscribe({
+        next: () => {
+          this.getTree();
+          this.filesToUpload = [];
+
+          this.isIndexing = false;
+          this.indexingDone = true;
+
+          this.modalConfig = {
+            type: 'alert',
+            title: 'Création terminée',
+            message: 'La procédure a été crée avec succès.',
+            cancelButtonText: 'Fermer',
+            onConfirm: () => this.closeModal()
+          };
+        },
+        error: () => {
+          this.isIndexing = false;
+          this.indexingDone = true;
+
+          this.modalConfig = {
+            type: 'alert',
+            title: 'Erreur',
+            message: 'Une erreur est survenue lors de la création.',
+            cancelButtonText: 'Fermer',
+            onConfirm: () => this.closeModal()
+          };
+        }
+      });
+  }
+
   startIndexing(): void {
     if (this.filesToUpload.length === 0) return;
 
@@ -115,7 +248,7 @@ export class ChatbotSettingsComponent implements OnInit {
       type: 'alert',
       title: 'Indexation en cours',
       message: 'Les fichiers sont en cours de traitement. Merci de patienter…',
-      onConfirm: () => {}
+      onConfirm: () => { }
     });
 
     this.chatbotSettingsService
@@ -255,5 +388,15 @@ export class ChatbotSettingsComponent implements OnInit {
     }
     this.modalConfig.onConfirm(this.modalInputValue);
     this.closeModal();
+  }
+
+  toggleSortByDate(): void {
+    this.dateSortOrder = this.dateSortOrder === 'asc' ? 'desc' : 'asc';
+    this.indexedItems = this.sortTreeByImportedAt(this.indexedItems, this.dateSortOrder);
+    this.depthCache.clear();
+  }
+
+  getSortLabel(): string {
+    return 'Date';
   }
 }

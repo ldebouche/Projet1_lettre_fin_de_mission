@@ -1,14 +1,11 @@
 <div class="chatbot-manager-page">
 
-    <!-- ================= HEADER ================= -->
     <header class="manager-header">
         <h2>Gestion de la Base de Connaissances du Chatbot</h2>
     </header>
 
-    <!-- ================= LAYOUT ================= -->
     <div class="manager-layout">
 
-        <!-- ========== SIDEBAR / ARBORESCENCE ========== -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h3>Fichiers indexés</h3>
@@ -16,14 +13,16 @@
                     <span class="btn-icon">+</span>
                     <span>Créer</span>
                 </button>
+                <app-bouton-filtre [label]="getSortLabel()" [direction]="dateSortOrder"
+                    [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="toggleSortByDate()">
+                </app-bouton-filtre>
             </div>
-
             <div class="tree-view">
-
                 <ng-container *ngFor="let item of indexedItems">
                     <div *ngIf="isItemVisible(item)" class="tree-item"
                         [ngClass]="{ 'is-folder': item.isFolder, 'is-expanded': item.isExpanded }"
-                        (click)="toggleFolder(item)" [style.padding-left.px]="12 + getItemDepth(item) * 20">
+                        [class]="'depth-' + getItemDepth(item)" (click)="toggleFolder(item)">
+
                         <div class="item-label">
                             <span class="folder-toggle-icon" *ngIf="item.isFolder && hasChildren(item)"></span>
                             <img class="tree-icon" [src]="item.isFolder ? iconDossier : iconFichier"
@@ -51,37 +50,51 @@
                 <div *ngIf="indexedItems.length === 0" class="error-formulaire">
                     La base de connaissances est vide.
                 </div>
-
             </div>
         </aside>
 
-        <!-- ========== CONTENU PRINCIPAL ========== -->
         <main class="content-panel">
-
             <section class="upload-card">
                 <legend>Ajouter et indexer de nouveaux documents</legend>
-
-                <!-- ===== DROPZONE ===== -->
-                <div class="upload-dropzone" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
-                    (drop)="onFileDrop($event)">
-                    <img class="dropzone-icon" [src]="iconExportation" alt="Uploader des fichiers" />
-
-                    <p>
-                        Glissez-déposez vos fichiers (PDF),<br />
-                        ou cliquez pour sélectionner.
-                    </p>
-
-                    <input type="file" id="file-upload" multiple class="hidden-input"
-                        (change)="onFileSelected($event)" />
-
-                    <label for="file-upload" class="upload-label">
-                        Choisir des fichiers
-                    </label>
+                <div class="tabs-nav">
+                    <button class="tab-btn" [class.active]="activeTab === 'upload'" (click)="setTab('upload')">
+                        Fichiers locaux
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab === 'link'" (click)="setTab('link')">
+                        Lien externe
+                    </button>
                 </div>
 
-                <!-- ===== OPTIONS ===== -->
-                <div class="upload-settings">
+                <div class="tab-content" *ngIf="activeTab === 'upload'">
+                    <div class="upload-dropzone" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)"
+                        (drop)="onFileDrop($event)">
+                        <img class="dropzone-icon" [src]="iconExportation" alt="Uploader des fichiers" />
+                        <p>Glissez-déposez vos fichiers (PDF),<br /> ou cliquez pour sélectionner.</p>
+                        <input type="file" id="file-upload" multiple class="hidden-input"
+                            (change)="onFileSelected($event)" />
+                        <label for="file-upload" class="upload-label">Choisir des fichiers</label>
+                    </div>
+                </div>
 
+                <div class="tab-content" *ngIf="activeTab === 'link'">
+                    <div class="link-container">
+                        <p class="tab-description">Entrez l'URL d'un site web ou d'un document en ligne pour l'indexer.
+                        </p>
+                        <div class="input-group">
+                            <input type="url" [(ngModel)]="externalLink" placeholder="https://exemple.com/mon-document"
+                                class="modal-input" />
+                        </div>
+                        <div class="link-actions">
+                            <button class="btn" [disabled]="!externalLink" (click)="addExternalLink()">
+                                Ajouter le lien
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="separator" />
+
+                <div class="upload-settings">
                     <div class="input-group">
                         <label for="target-folder">Ranger dans le dossier</label>
                         <div class="select-wrapper">
@@ -93,17 +106,11 @@
                             </select>
                         </div>
                     </div>
-
                 </div>
 
-                <!-- ===== FILES EN ATTENTE ===== -->
-                <h4>
-                    Fichiers en attente d’indexation
-                    ({{ filesToUpload.length }})
-                </h4>
+                <h4>Fichiers en attente d’indexation ({{ filesToUpload.length }})</h4>
 
                 <ul class="file-list-status">
-
                     <li *ngFor="let file of filesToUpload" class="status-item">
                         <div class="item-label">
                             <img class="tree-icon" [src]="iconFichier" alt="Icône de fichier" />
@@ -112,69 +119,50 @@
                                 ({{ (file.size / 1024 / 1024) | number:'1.2-2' }} MB)
                             </span>
                         </div>
-
                         <button class="item-action delete-action" title="Retirer" (click)="removeFile(file)">
                             &times;
                         </button>
                     </li>
-
                     <li *ngIf="filesToUpload.length === 0" class="status-item empty">
                         Aucun fichier en attente.
                     </li>
-
                 </ul>
 
-                <!-- ===== ACTIONS ===== -->
                 <div class="indexing-actions">
                     <button class="btn" [disabled]="filesToUpload.length === 0" (click)="startIndexing()">
                         Lancer l’indexation des fichiers
                     </button>
                 </div>
-
             </section>
-
         </main>
     </div>
 
-    <!-- ================= MODALE ================= -->
-    <div class="modal-overlay" *ngIf="isModalOpen">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-
-            <h3 class="modal-title">{{ modalConfig.title }}</h3>
-
-            <div *ngIf="isIndexing" class="modal-loading">
+    <app-modal *ngIf="isModalOpen && modalConfig" [isOpen]="isModalOpen" [title]="modalConfig.title"
+        (closeEvent)="closeModal()">
+        <div modal-body>
+            <div *ngIf="isIndexing" class="modal-loading-state">
                 <div class="spinner"></div>
-                <p class="modal-message">
-                    {{ modalConfig.message }}
-                </p>
+                <p class="modal-message">{{ modalConfig.message }}</p>
             </div>
 
             <div *ngIf="!isIndexing">
                 <p class="modal-message" *ngIf="modalConfig.message">{{ modalConfig.message }}</p>
-
-                <!-- Champ de saisie pour le type 'prompt' -->
-                <div *ngIf="modalConfig.type === 'prompt'" class="modal-input-group">
+                <div *ngIf="modalConfig.type === 'prompt'" class="modal-prompt-wrapper">
                     <input type="text" [(ngModel)]="modalInputValue" class="modal-input"
-                        (keyup.enter)="confirmModal()" />
+                        placeholder="Saisissez un nom..." (keyup.enter)="confirmModal()" />
                 </div>
-
-                <!-- Boutons d'action -->
-                <div class="modal-actions">
-                    <button class="btn-secondary" (click)="closeModal()">
-                        {{ modalConfig.cancelButtonText || 'Annuler' }}
-                    </button>
-                    <button *ngIf="modalConfig.type !== 'alert'" class="btn-primary" (click)="confirmModal()"
-                        [disabled]="modalConfig.type === 'prompt' && !modalInputValue.trim()">
-                        {{ modalConfig.confirmButtonText || 'Confirmer' }}
-                    </button>
-                </div>
-
-                <!-- Bouton de fermeture -->
-                <button class="modal-close-btn" (click)="closeModal()" title="Fermer">
-                    &times;
-                </button>
             </div>
         </div>
-    </div>
 
+        <div modal-footer class="modal-footer-layout">
+            <button class="btn secondary" (click)="closeModal()">
+                {{ modalConfig.cancelButtonText || 'Annuler' }}
+            </button>
+
+            <button *ngIf="modalConfig.type !== 'alert'" class="btn" (click)="confirmModal()"
+                [disabled]="modalConfig.type === 'prompt' && !modalInputValue.trim()">
+                {{ modalConfig.confirmButtonText || 'Confirmer' }}
+            </button>
+        </div>
+    </app-modal>
 </div>

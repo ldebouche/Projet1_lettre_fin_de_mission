@@ -7,6 +7,7 @@ import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
 import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
 import { ModalComponent } from '../../shared/modal/modal';
+import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
 
 type SortableField = 'code_client' | '_sortableName' | 'collaborateur' | 'date_sortie';
 
@@ -25,7 +26,8 @@ interface Dossier {
     CommonModule,
     FormsModule,
     ListeHistoriqueComponent,
-    ModalComponent
+    ModalComponent,
+    BoutonFiltreComponent
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']

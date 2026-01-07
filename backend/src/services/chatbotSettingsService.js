@@ -16,6 +16,9 @@ async function scanDirectory(directoryPath, parentId = null, currentRelativePath
 
             const url = entry.isFile() ? `/api/files/${relativePath.replace(/\\/g, "/")}` : null;
 
+            const stats = await fs.stat(fullPath);
+            const importedAt = entry.isFile() ? stats.birthtime.toISOString() : stats.mtime.toISOString();
+
             const item = {
                 id: currentId,
                 name: entry.name,
@@ -23,7 +26,8 @@ async function scanDirectory(directoryPath, parentId = null, currentRelativePath
                 parentId: parentId,
                 isExpanded: false,
                 url: url,
-                filePath: fullPath
+                filePath: fullPath,
+                importedAt: importedAt
             };
             items.push(item);
 

@@ -1,0 +1,9 @@
+<button type="button" class="add-folder-btn" [class.active]="active" (click)="clicked.emit()">
+
+    <img class="filter-icon" [src]="filterIconSrc" alt="Filtre" aria-hidden="true" />
+
+    <span class="label">{{ label }}</span>
+
+    <i class="sort-triangle" [class.asc]="direction === 'asc'" [class.desc]="direction === 'desc'">
+    </i>
+</button>
