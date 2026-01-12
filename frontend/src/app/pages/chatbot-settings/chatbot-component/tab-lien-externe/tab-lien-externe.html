@@ -1,0 +1,21 @@
+<div class="tab-content">
+    <div class="link-container">
+        <p class="tab-description">
+            Entrez l'URL d'un site web ou d'un document en ligne pour l'indexer.
+        </p>
+
+        <div class="input-group">
+            <input type="text" [ngModel]="procedureName"
+                placeholder="Nom du document" class="modal-input" />
+
+            <input type="url" [ngModel]="externalLink"
+                placeholder="https://exemple.com/mon-document" class="modal-input" />
+        </div>
+
+        <div class="link-actions">
+            <button class="btn" [disabled]="boutonDesactive" (click)="submit()">
+                Ajouter le lien
+            </button>
+        </div>
+    </div>
+</div>

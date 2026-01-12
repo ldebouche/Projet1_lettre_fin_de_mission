@@ -1,0 +1,97 @@
+<div class="tab-content verif-tab" *ngIf="!isLoading">
+
+    <div class="verif-toolbar">
+        <div class="input-group verif-search">
+            <label>Rechercher</label>
+            <input class="modal-input" type="text" [(ngModel)]="recherche" placeholder="Nom, URL source..." />
+        </div>
+
+        <div class="verif-controls">
+            <app-bouton-filtre class="filtre" [label]="tri === 'date' ? 'Date' : 'Nom'" [direction]="ordre"
+                [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="onClickFiltre()">
+            </app-bouton-filtre>
+        </div>
+    </div>
+
+    <div class="verif-layout">
+
+        <!-- LISTE -->
+        <div class="verif-list">
+            <h4>En attente ({{ fichiersFiltres.length }})</h4>
+
+            <ul class="file-list-status">
+                <li *ngFor="let f of fichiersFiltres" class="status-item" [class.is-selected]="selection?.nom === f.nom"
+                    (click)="selectionner(f)">
+
+                    <div class="item-label">
+                        <img class="tree-icon" src="assets/icons/fichier.png" alt="Icône fichier" />
+                        <div class="verif-row-text">
+                            <div class="file-name">{{ f.nom }}</div>
+                            <div class="verif-sub">
+                                <span>{{ formatDate(f.dateCreation) }}</span>
+                                <span>•</span>
+                                <span>{{ f.tailleMo | number:'1.2-2' }} MB</span>
+                            </div>
+                            <div class="verif-source">
+                                Source :
+                                <a [href]="f.urlSource" target="_blank" rel="noopener"
+                                    (click)="$event.stopPropagation()">
+                                    {{ f.urlSource }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </li>
+
+                <li *ngIf="fichiersFiltres.length === 0" class="status-item empty">
+                    Aucun fichier en attente.
+                </li>
+            </ul>
+        </div>
+
+        <!-- PREVIEW + ACTIONS -->
+        <div class="verif-preview">
+            <div class="verif-preview-header" *ngIf="selection; else noSelection">
+                <div class="verif-preview-title">
+                    <div class="title">{{ selection.nom }}</div>
+                    <div class="subtitle">{{ formatDate(selection.dateCreation) }}</div>
+                </div>
+
+                <div class="verif-actions">
+                    <button class="btn secondary" (click)="simulerRejeter()">Rejeter</button>
+                    <button class="btn" (click)="accepterProced()">Accepter</button>
+                </div>
+            </div>
+
+            <ng-template #noSelection>
+                <div class="verif-empty">
+                    Sélectionne un fichier pour l’aperçu.
+                </div>
+            </ng-template>
+
+            <div class="verif-preview-wrapper" *ngIf="selection">
+                <ng-container *ngIf="pdfSafeUrl; else noPdf">
+                    <iframe class="verif-iframe" [src]="pdfSafeUrl" title="Prévisualisation PDF">
+                    </iframe>
+                </ng-container>
+
+                <ng-template #noPdf>
+                    <div class="verif-placeholder">
+                        Aucun PDF disponible pour l’aperçu.
+                    </div>
+                </ng-template>
+            </div>
+            <div class="verif-preview-toolbar">
+                <button class="btn secondary" type="button" (click)="ouvrirPdf()">
+                    Ouvrir le PDF ↗
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div *ngIf="isLoading" class="loader">
+    Chargement des fichiers...
+</div>

@@ -1,0 +1,37 @@
+<div class="tab-indexation">
+    <ul class="file-list-status">
+        <li *ngFor="let file of filesToIndex" class="status-item">
+            <div class="item-label clickable" (click)="ouvrirPdf(file)">
+                <img class="tree-icon" [src]="iconFichier" alt="Icône de fichier" />
+                <span class="file-name">{{ file.nom }}</span>
+                <span class="file-size">
+                    ({{ file.tailleMo | number:'1.2-2' }} MB)
+                </span>
+            </div>
+
+            <div class="per-file-select">
+                <select [(ngModel)]="file.targetFolder" [compareWith]="compareFolders">
+                    <option [ngValue]="null">Racine</option>
+                    <option *ngFor="let folder of availableFolders" [ngValue]="folder">
+                        {{ getIndentationForSelect(folder) }}{{ folder.name }}
+                    </option>
+                </select>
+            </div>
+
+            <button class="item-action delete-action" title="Retirer" (click)="removeFile(file)">
+                &times;
+            </button>
+        </li>
+
+        <li *ngIf="filesToIndex.length === 0" class="status-item empty">
+            Aucun fichier en attente.
+        </li>
+    </ul>
+
+    <div class="indexing-actions">
+        <button class="btn" [disabled]="filesToIndex.length === 0" (click)="startIndexing()">
+            Lancer l’indexation des fichiers
+        </button>
+    </div>
+
+</div>

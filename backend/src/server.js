@@ -24,7 +24,7 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
 app.use('/api/db', dbRoutes);
@@ -33,7 +33,7 @@ app.use('/api/word', wordRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chatbot-settings', chatbotSettingsRoutes);
-app.use("/api/files", /*authMiddlewareCollaborateur,*/ express.static(path.join(process.cwd(), "documents_chatbot")));
+app.use("/api/files", /*authMiddlewareCollaborateur,*/ express.static(path.join(process.cwd(), "documents")));
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, "0.0.0.0", () => {

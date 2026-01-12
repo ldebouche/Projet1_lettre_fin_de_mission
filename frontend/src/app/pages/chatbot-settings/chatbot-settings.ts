@@ -1,12 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { ChatbotSettingsService } from '../../services/chatbot-settings-service';
 import { ModalComponent } from '../../shared/modal/modal';
-import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
 
-interface IndexedItem {
+import { SidebarTreeComponent } from './chatbot-component/sidebar-tree/sidebar-tree';
+import { TabUploadLocalComponent } from './chatbot-component/tab-upload-local/tab-upload-local';
+import { TabLienExterneComponent } from './chatbot-component/tab-lien-externe/tab-lien-externe';
+import { TabVerificationComponent } from './chatbot-component/tab-verification/tab-verification';
+import { TabIndexationComponent } from './chatbot-component/tab-indexation/tab-indexation';
+
+export interface IndexedItem {
   id: number;
   name: string;
   isFolder: boolean;
@@ -30,11 +35,16 @@ interface ModalConfig {
   templateUrl: './chatbot-settings.html',
   styleUrls: ['./chatbot-settings.scss'],
   standalone: true,
+  encapsulation: ViewEncapsulation.None,
   imports: [
     CommonModule,
     FormsModule,
     ModalComponent,
-    BoutonFiltreComponent
+    SidebarTreeComponent,
+    TabUploadLocalComponent,
+    TabLienExterneComponent,
+    TabVerificationComponent,
+    TabIndexationComponent
   ]
 })
 export class ChatbotSettingsComponent implements OnInit {
@@ -42,28 +52,31 @@ export class ChatbotSettingsComponent implements OnInit {
   iconFichier = 'assets/icons/fichier.png';
   iconExportation = 'assets/icons/exportation.png';
 
-  filesToUpload: any[] = [];
-
+  filesToUpload: File[] = [];
   indexedItems: IndexedItem[] = [];
 
   isModalOpen = false;
-  isIndexing = false;
-  indexingDone = false;
+  isProcessing = false;
   modalConfig!: ModalConfig;
   modalInputValue = '';
   private depthCache = new Map<number, number>();
-  targetFolder: any = null;
-  dateSortOrder: 'asc' | 'desc' = 'desc';
-  activeTab: 'upload' | 'link' = 'upload';
-  externalLink: string = '';
 
-  constructor(
-    private chatbotSettingsService: ChatbotSettingsService
-  ) { }
+  dateSortOrder: 'asc' | 'desc' = 'desc';
+  activeTab: 'upload' | 'link' | 'verif' | 'index' = 'upload';
+
+  loading_tree = false;
+
+  compteurFichiersVerif = 0;
+  compteurFichiersIndex = 0;
+
+  actualiserIndexation = 0;
+
+  constructor(private chatbotSettingsService: ChatbotSettingsService) { }
 
   ngOnInit(): void {
     this.depthCache.clear();
     this.getTree();
+    this.getCompteursFichiers();
   }
 
   get availableFolders(): IndexedItem[] {
@@ -75,23 +88,28 @@ export class ChatbotSettingsComponent implements OnInit {
   }
 
   getTree(): void {
+    this.loading_tree = true;
     this.depthCache.clear();
+
     const expandedFolderIds = new Set(
-      this.indexedItems.filter(item => item.isFolder && item.isExpanded).map(item => item.id)
+      this.indexedItems.filter(i => i.isFolder && i.isExpanded).map(i => i.id)
     );
+
     this.chatbotSettingsService.GetTree().subscribe((data: any) => {
       const newItems = data.map((item: IndexedItem) => {
-        if (item.isFolder && expandedFolderIds.has(item.id)) {
-          item.isExpanded = true;
-        }
+        if (item.isFolder && expandedFolderIds.has(item.id)) item.isExpanded = true;
         return item;
       });
+
       this.indexedItems = this.sortTreeByImportedAt(newItems, this.dateSortOrder);
+
+      this.getCompteursFichiers();
+
+      this.loading_tree = false;
     });
   }
 
   private sortTreeByImportedAt(items: IndexedItem[], order: 'asc' | 'desc'): IndexedItem[] {
-    // enfants par parent
     const children = new Map<number | null, IndexedItem[]>();
     for (const it of items) {
       const k = it.parentId ?? null;
@@ -105,12 +123,10 @@ export class ChatbotSettingsComponent implements OnInit {
       return Number.isNaN(t) ? null : t;
     };
 
-    // date “effective” (fichier: importedAt, dossier: max descendants)
     const eff = new Map<number, number | null>();
 
     const effectiveTime = (it: IndexedItem): number | null => {
       if (eff.has(it.id)) return eff.get(it.id)!;
-
       let best = it.isFolder ? null : time(it.importedAt);
       for (const ch of (children.get(it.id) ?? [])) {
         const t = effectiveTime(ch);
@@ -124,30 +140,24 @@ export class ChatbotSettingsComponent implements OnInit {
       const ta = effectiveTime(a);
       const tb = effectiveTime(b);
 
-      // ✅ les éléments “vides” (ta/tb null) vont à la fin
       if (ta === null && tb !== null) return 1;
       if (ta !== null && tb === null) return -1;
 
-      // si tous les deux vides => alpha
       if (ta === null && tb === null) {
         return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
       }
 
-      // tri date
       const diff = ta! - tb!;
       if (diff !== 0) return order === 'asc' ? diff : -diff;
 
-      // égalité => alpha
       return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
     };
 
-    // trier les enfants de chaque parent
     for (const [k, arr] of children.entries()) {
       arr.sort(cmp);
       children.set(k, arr);
     }
 
-    // rebuild flat list
     const out: IndexedItem[] = [];
     const walk = (pid: number | null) => {
       for (const it of (children.get(pid) ?? [])) {
@@ -160,193 +170,19 @@ export class ChatbotSettingsComponent implements OnInit {
     return out;
   }
 
-
-  setTab(tab: 'upload' | 'link'): void {
-    this.activeTab = tab;
-  }
-
-  onFileSelected(event: any): void {
-    const files: FileList = event.target.files;
-    if (files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        this.filesToUpload.push(file);
-      }
-    }
-  }
-
-  onFileDrop(event: DragEvent): void {
-    event.preventDefault();
-    const dataTransfer = event.dataTransfer;
-    if (dataTransfer && dataTransfer.files.length > 0) {
-      const files = dataTransfer.files;
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        this.filesToUpload.push(file);
-      }
-    }
-  }
-
-  removeFile(file: any): void {
-    this.filesToUpload = this.filesToUpload.filter((f: any) => f !== file);
-  }
-
-  addExternalLink(): void {
-    if (!this.externalLink) return;
-
-    this.isIndexing = true;
-    this.indexingDone = false;
-
-    this.openModal({
-      type: 'alert',
-      title: 'Création en cours',
-      message: 'La procédure est en cours de création. Merci de patienter…',
-      onConfirm: () => { }
-    });
-
-    // A modifier pour ajouter le fichier pdf créé par le lien externe, le fichier devra être téléchargeable et visualisable par la personne
-    this.chatbotSettingsService
-      .AddFile(this.filesToUpload, this.targetFolder)
-      .subscribe({
-        next: () => {
-          this.getTree();
-          this.filesToUpload = [];
-
-          this.isIndexing = false;
-          this.indexingDone = true;
-
-          this.modalConfig = {
-            type: 'alert',
-            title: 'Création terminée',
-            message: 'La procédure a été crée avec succès.',
-            cancelButtonText: 'Fermer',
-            onConfirm: () => this.closeModal()
-          };
-        },
-        error: () => {
-          this.isIndexing = false;
-          this.indexingDone = true;
-
-          this.modalConfig = {
-            type: 'alert',
-            title: 'Erreur',
-            message: 'Une erreur est survenue lors de la création.',
-            cancelButtonText: 'Fermer',
-            onConfirm: () => this.closeModal()
-          };
-        }
-      });
-  }
-
-  startIndexing(): void {
-    if (this.filesToUpload.length === 0) return;
-
-    this.isIndexing = true;
-    this.indexingDone = false;
-
-    this.openModal({
-      type: 'alert',
-      title: 'Indexation en cours',
-      message: 'Les fichiers sont en cours de traitement. Merci de patienter…',
-      onConfirm: () => { }
-    });
-
-    this.chatbotSettingsService
-      .AddFile(this.filesToUpload, this.targetFolder)
-      .subscribe({
-        next: () => {
-          this.getTree();
-          this.filesToUpload = [];
-
-          this.isIndexing = false;
-          this.indexingDone = true;
-
-          this.modalConfig = {
-            type: 'alert',
-            title: 'Indexation terminée',
-            message: 'Les fichiers ont été indexés avec succès.',
-            cancelButtonText: 'Fermer',
-            onConfirm: () => this.closeModal()
-          };
-        },
-        error: () => {
-          this.isIndexing = false;
-          this.indexingDone = true;
-
-          this.modalConfig = {
-            type: 'alert',
-            title: 'Erreur',
-            message: 'Une erreur est survenue lors de l’indexation.',
-            cancelButtonText: 'Fermer',
-            onConfirm: () => this.closeModal()
-          };
-        }
-      });
-  }
-
-  confirmDelete(item: IndexedItem): void {
-    const confirmMsg = item.isFolder
-      ? `Êtes-vous sûr de vouloir supprimer le dossier "${item.name}" et son contenu ?`
-      : `Êtes-vous sûr de vouloir supprimer le fichier "${item.name}" de la base de connaissances ?`;
-
-    this.openModal({
-      type: 'confirm',
-      title: 'Confirmation de suppression',
-      message: confirmMsg,
-      confirmButtonText: 'Supprimer',
-      onConfirm: () => {
-        this.chatbotSettingsService.DeleteItem(item, this.indexedItems).subscribe(() => {
-          this.getTree();
-        });
-      }
-    });
-  }
-
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-  }
-
-  onDragLeave(event: DragEvent): void {
-    event.preventDefault();
-  }
-
-  createNewFolder(parentId: number | null = null): void {
-    this.openModal({
-      type: 'prompt',
-      title: 'Créer un nouveau dossier',
-      message: 'Entrez le nom du nouveau dossier :',
-      confirmButtonText: 'Créer',
-      onConfirm: (folderName: string) => {
-        this.chatbotSettingsService.CreateFolder(folderName, parentId, this.indexedItems).subscribe(() => {
-          this.getTree();
-        });
-      }
-    });
-  }
-
   toggleFolder(folder: IndexedItem): void {
-    if (folder.isFolder) {
-      folder.isExpanded = !folder.isExpanded;
-    }
+    if (folder.isFolder) folder.isExpanded = !folder.isExpanded;
   }
 
   isItemVisible(item: IndexedItem): boolean {
-    if (item.parentId === null) {
-      return true; // Les éléments à la racine sont toujours visibles
-    }
-
+    if (item.parentId === null) return true;
     const parent = this.indexedItems.find(p => p.id === item.parentId);
-    if (!parent) {
-      return true; // Orphelin, on l'affiche par sécurité
-    }
-
+    if (!parent) return true;
     return parent.isExpanded ? this.isItemVisible(parent) : false;
   }
 
   getItemDepth(item: IndexedItem): number {
-    if (this.depthCache.has(item.id)) {
-      return this.depthCache.get(item.id)!;
-    }
+    if (this.depthCache.has(item.id)) return this.depthCache.get(item.id)!;
 
     if (item.parentId === null) {
       this.depthCache.set(item.id, 0);
@@ -372,6 +208,55 @@ export class ChatbotSettingsComponent implements OnInit {
     return a.path === b.path;
   }
 
+  createNewFolder(parentId: number | null = null): void {
+    this.openModal({
+      type: 'prompt',
+      title: 'Créer un nouveau dossier',
+      message: 'Entrez le nom du nouveau dossier :',
+      confirmButtonText: 'Créer',
+      onConfirm: (folderName: string) => {
+        this.chatbotSettingsService.CreateFolder(folderName, parentId, this.indexedItems).subscribe(() => {
+          this.getTree();
+          this.getCompteursFichiers();
+        });
+      }
+    });
+  }
+
+  confirmDelete(item: IndexedItem): void {
+    const confirmMsg = item.isFolder
+      ? `Êtes-vous sûr de vouloir supprimer le dossier "${item.name}" et son contenu ?`
+      : `Êtes-vous sûr de vouloir supprimer le fichier "${item.name}" de la base de connaissances ?`;
+
+    this.openModal({
+      type: 'confirm',
+      title: 'Confirmation de suppression',
+      message: confirmMsg,
+      confirmButtonText: 'Supprimer',
+      onConfirm: () => {
+        this.chatbotSettingsService.DeleteItem(item, this.indexedItems).subscribe(() => {
+          this.getTree();
+          this.getCompteursFichiers();
+        });
+      }
+    });
+  }
+
+  toggleSortByDate(): void {
+    this.dateSortOrder = this.dateSortOrder === 'asc' ? 'desc' : 'asc';
+    this.indexedItems = this.sortTreeByImportedAt(this.indexedItems, this.dateSortOrder);
+    this.depthCache.clear();
+  }
+
+  getSortLabel(): string {
+    return 'Date';
+  }
+
+  setTab(tab: 'upload' | 'link' | 'verif' | 'index'): void {
+    this.activeTab = tab;
+    this.getCompteursFichiers();
+  }
+
   openModal(config: ModalConfig): void {
     this.modalConfig = config;
     this.modalInputValue = '';
@@ -383,20 +268,51 @@ export class ChatbotSettingsComponent implements OnInit {
   }
 
   confirmModal(): void {
-    if (this.modalConfig.type === 'prompt' && !this.modalInputValue.trim()) {
-      return; // Ne rien faire si le champ est vide pour un prompt
-    }
+    if (this.modalConfig.type === 'prompt' && !this.modalInputValue.trim()) return;
     this.modalConfig.onConfirm(this.modalInputValue);
     this.closeModal();
   }
 
-  toggleSortByDate(): void {
-    this.dateSortOrder = this.dateSortOrder === 'asc' ? 'desc' : 'asc';
-    this.indexedItems = this.sortTreeByImportedAt(this.indexedItems, this.dateSortOrder);
-    this.depthCache.clear();
+  startProcessing(title: string, message: string) {
+    this.isProcessing = true;
+    this.openModal({
+      type: 'alert',
+      title,
+      message,
+      cancelButtonText: 'Fermer',
+      onConfirm: () => { }
+    });
   }
 
-  getSortLabel(): string {
-    return 'Date';
+  endProcessing(title: string, message: string) {
+    this.isProcessing = false;
+
+    if (!this.isModalOpen) this.isModalOpen = true;
+
+    this.modalConfig = {
+      type: 'alert',
+      title,
+      message,
+      cancelButtonText: 'Fermer',
+      onConfirm: () => this.closeModal()
+    };
+  }
+
+  getCompteursFichiers() {
+    this.chatbotSettingsService.GetCompteurFichiers().subscribe({
+      next: (data: any) => {
+        this.compteurFichiersVerif = data.compteur.verif ?? 0;
+        this.compteurFichiersIndex = data.compteur.index ?? 0;
+      },
+      error: () => {
+        this.compteurFichiersVerif = 0;
+        this.compteurFichiersIndex = 0;
+      }
+    });
+  }
+
+  onVerificationUpdated() {
+    this.getCompteursFichiers();
+    this.actualiserIndexation++;
   }
 }

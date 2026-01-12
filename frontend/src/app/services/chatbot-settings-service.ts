@@ -19,15 +19,32 @@ export class ChatbotSettingsService {
     return this.http.post(`/api/chatbot-settings/createFolder`, { folderName, parentId, indexedItems });
   }
 
-  AddFile(files: any, targetFolder: any | null) {
+  AddFile(payload: any) {
+    return this.http.post(`/api/chatbot-settings/addFile`, payload);
+  }
+
+  CreateProcedureFromFiles(files: File[]) {
     const formData = new FormData();
 
     for (const file of files) {
-      formData.append('files', file, file.name);
+      formData.append('files', file);
     }
+    return this.http.post(`/api/chatbot-settings/createProcedureFromFiles`, formData);
+  }
 
-    formData.append('targetFolder', JSON.stringify(targetFolder));
+  CreateProcedureFromUrl(procedureName: string, externalLink: any) {
+    return this.http.post(`/api/chatbot-settings/createProcedureFromUrl`, { procedureName, externalLink, });
+  }
 
-    return this.http.post(`/api/chatbot-settings/addFile`, formData);
+  GetProcedures(folderName: string) {
+    return this.http.get(`/api/chatbot-settings/getProcedures`, { params: { folderName }});
+  }
+
+  AccepterProcedure(procedureName: string) {
+    return this.http.post(`/api/chatbot-settings/accepterProcedure`, { procedureName });
+  }
+
+  GetCompteurFichiers() {
+    return this.http.get(`/api/chatbot-settings/compteurFichiers`);
   }
 }

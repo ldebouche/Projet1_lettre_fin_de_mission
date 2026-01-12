@@ -90,5 +90,6 @@ Thumbs.db
 # Documents chatbot
 # ------------------------------
 documents_chatbot/
+documents/
 
 *.tsbuildinfo

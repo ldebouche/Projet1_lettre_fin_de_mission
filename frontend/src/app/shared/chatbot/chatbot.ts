@@ -37,11 +37,12 @@ export class ChatbotComponent implements AfterViewChecked {
   ];
 
   userInput = '';
+  isTyping = false;
 
   constructor(
     private aiService: AiService,
     private sanitizer: DomSanitizer
-  ) {}
+  ) { }
 
   parseMarkdown(content: string): SafeHtml {
     const html = marked.parse(content) as string;
@@ -62,13 +63,15 @@ export class ChatbotComponent implements AfterViewChecked {
     this.messages.push({ role: 'user', content: this.userInput });
     const question = this.userInput;
     this.userInput = '';
-    
+    this.isTyping = true;
+
     this.aiService.askChatbot(question, this.messages).subscribe({
       next: (res) => {
-        console.log("Réponse du chatbot :", res.sources);
+        this.isTyping = false;
         this.messages.push({ role: 'assistant', content: res.reply, sources: res.sources });
       },
       error: (err) => {
+        this.isTyping = false;
         this.messages.push({ role: 'assistant', content: "Désolé, une erreur est survenue. Veuillez réessayer plus tard.", sources: [] });
       }
     });
@@ -79,5 +82,12 @@ export class ChatbotComponent implements AfterViewChecked {
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
+  }
+
+  ouvrirSource(source: { url: string }) {
+    if (!source?.url) return;
+
+    const url = `${source.url}?t=${Date.now()}`;
+    window.open(url, '_blank');
   }
 }

@@ -22,6 +22,15 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
 }
 
+.loader,
+.empty-state {
+    text-align: center;
+    padding: 4rem;
+    font-family: var(--font-body);
+    color: var(--color-sand);
+    font-size: 1.1rem;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
