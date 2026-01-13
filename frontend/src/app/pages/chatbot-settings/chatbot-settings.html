@@ -10,7 +10,8 @@
             [iconDossier]="iconDossier" [iconFichier]="iconFichier" [isItemVisibleFn]="isItemVisible.bind(this)"
             [getItemDepthFn]="getItemDepth.bind(this)" [hasChildrenFn]="hasChildren.bind(this)" [loading]="loading_tree"
             (createFolder)="createNewFolder($event)" (deleteItem)="confirmDelete($event)"
-            (toggleFolder)="toggleFolder($event)" (toggleSortByDate)="toggleSortByDate()">
+            (toggleFolder)="toggleFolder($event)" (toggleSortByDate)="toggleSortByDate()"
+            (openSearch)="openSearchModal()">
         </app-sidebar-tree>
 
         <main class="content-panel">
@@ -33,23 +34,21 @@
                 </div>
 
                 <app-tab-upload-local *ngIf="activeTab === 'upload'" [iconExportation]="iconExportation"
-                    [iconFichier]="iconFichier"
+                    [iconFichier]="iconFichier" (created)="getCompteursFichiers()"
                     (processingStart)="startProcessing($event.title, $event.message)"
                     (processingEnd)="endProcessing($event.title, $event.message)">
                 </app-tab-upload-local>
 
-                <app-tab-lien-externe *ngIf="activeTab === 'link'"
+                <app-tab-lien-externe *ngIf="activeTab === 'link'" (created)="getCompteursFichiers()"
                     (processingStart)="startProcessing($event.title, $event.message)"
                     (processingEnd)="endProcessing($event.title, $event.message)">
                 </app-tab-lien-externe>
 
-                <app-tab-verification *ngIf="activeTab === 'verif'"
-                    (updated)="onVerificationUpdated()">
+                <app-tab-verification *ngIf="activeTab === 'verif'" (updated)="onVerificationUpdated()">
                 </app-tab-verification>
 
                 <app-tab-indexation *ngIf="activeTab === 'index'" [iconFichier]="iconFichier"
-                    [indexedItems]="indexedItems"
-                    (filesToUploadChange)="filesToUpload = $event"
+                    [indexedItems]="indexedItems" (filesToUploadChange)="filesToUpload = $event"
                     [getIndentationForSelect]="getIndentationForSelect.bind(this)"
                     [compareFolders]="compareFolders.bind(this)" (indexed)="getTree()"
                     [actualiserIndexation]="actualiserIndexation"
@@ -73,6 +72,27 @@
                 <div *ngIf="modalConfig.type === 'prompt'" class="modal-prompt-wrapper">
                     <input type="text" [(ngModel)]="modalInputValue" class="modal-input"
                         placeholder="Saisissez un nom..." (keyup.enter)="confirmModal()" />
+                </div>
+                <div *ngIf="modalConfig.type === 'search'" class="modal-prompt-wrapper">
+                    <input type="text" [(ngModel)]="searchQuery" class="modal-input" placeholder="Nom, date…"
+                        (input)="updateSearchResults()" />
+
+                    <ul class="search-list">
+                        <li *ngFor="let f of searchResults clickable" class="search-item" (click)="openFileFromSearch(f)">
+                            <div class="search-left">
+                                <div class="search-meta">
+                                    <span>{{ f.importedAt | date:'short' }}</span>
+                                    <span>•</span>
+                                    <span class="search-name">{{ f.name }}</span>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li *ngIf="searchResults.length === 0" class="search-empty">
+                            Aucun résultat.
+                        </li>
+                    </ul>
+
                 </div>
             </div>
         </div>

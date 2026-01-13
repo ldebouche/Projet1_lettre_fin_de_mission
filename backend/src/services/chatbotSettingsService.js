@@ -357,7 +357,7 @@ async function creerProcedureEnAttente({ titre, source, texte, utilisateur, nomP
             nom: path.basename(cheminPdf, ".pdf"),
             urlSource: source,
             dateCreation: new Date().toISOString(),
-            creePar: utilisateur ? { nom: utilisateur.name ?? null, email: utilisateur.email ?? null } : null,
+            creePar: utilisateur ? { nom: utilisateur.name ?? null, email: utilisateur.unique_name ?? null } : null,
         };
 
         await ecrireJsonProcedure(cheminPdf, meta);

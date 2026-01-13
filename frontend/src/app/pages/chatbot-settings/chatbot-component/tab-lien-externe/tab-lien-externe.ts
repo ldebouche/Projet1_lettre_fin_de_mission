@@ -20,6 +20,8 @@ export class TabLienExterneComponent {
   @Output() processingStart = new EventEmitter<{ title: string; message: string }>();
   @Output() processingEnd = new EventEmitter<{ title: string; message: string }>();
 
+  @Output() created = new EventEmitter<void>();
+
   constructor(
     private chatbotSettingsService: ChatbotSettingsService
   ) {}
@@ -42,6 +44,7 @@ export class TabLienExterneComponent {
           title: 'Création terminée',
           message: 'La procédure a été créée avec succès.'
         });
+        this.created.emit();
       },
       error: () => {
         this.processingEnd.emit({

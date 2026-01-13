@@ -19,10 +19,11 @@ export interface IndexedItem {
   isExpanded?: boolean;
   url?: string;
   importedAt?: string | null;
+  filePath?: string | null;
 }
 
 interface ModalConfig {
-  type: 'alert' | 'confirm' | 'prompt';
+  type: 'alert' | 'confirm' | 'prompt' | 'search';
   title: string;
   message?: string;
   confirmButtonText?: string;
@@ -71,6 +72,9 @@ export class ChatbotSettingsComponent implements OnInit {
 
   actualiserIndexation = 0;
 
+  searchQuery = '';
+  searchResults: IndexedItem[] = [];
+
   constructor(private chatbotSettingsService: ChatbotSettingsService) { }
 
   ngOnInit(): void {
@@ -102,7 +106,6 @@ export class ChatbotSettingsComponent implements OnInit {
       });
 
       this.indexedItems = this.sortTreeByImportedAt(newItems, this.dateSortOrder);
-
       this.getCompteursFichiers();
 
       this.loading_tree = false;
@@ -314,5 +317,65 @@ export class ChatbotSettingsComponent implements OnInit {
   onVerificationUpdated() {
     this.getCompteursFichiers();
     this.actualiserIndexation++;
+  }
+
+  openSearchModal(): void {
+    this.searchQuery = '';
+    this.updateSearchResults();
+
+    this.openModal({
+      type: 'search',
+      title: 'Rechercher un fichier',
+      confirmButtonText: 'Fermer',
+      onConfirm: () => this.closeModal()
+    });
+
+    this.modalInputValue = '';
+    setTimeout(() => {
+    });
+  }
+
+  private getChatbotFiles(): IndexedItem[] {
+    return (this.indexedItems || [])
+      .filter(i => !i.isFolder)
+      .filter(i => (i.filePath || '').toLowerCase().includes('\\documents\\chatbot\\'));
+  }
+
+  updateSearchResults(): void {
+    const files = this.getChatbotFiles();
+    const q = this.searchQuery.trim().toLowerCase();
+
+    const formatFr = (iso?: any) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+
+      const fr = d.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+      });
+
+      const frLoose = fr.replace(/^0/, '').replace('/0', '/');
+
+      return `${fr} ${frLoose}`;
+    };
+
+    this.searchResults = !q
+      ? files.slice(0, 50)
+      : files
+        .filter(f => {
+          const name = (f.name || '').toLowerCase();
+          const iso = (f.importedAt || '').toLowerCase();
+          const fr = formatFr(f.importedAt).toLowerCase();
+
+          return name.includes(q) || iso.includes(q) || fr.includes(q);
+        })
+        .slice(0, 100);
+  }
+
+  openFileFromSearch(item: IndexedItem): void {
+    if (!item?.url) return;
+    window.open(`${item.url}?t=${Date.now()}`, '_blank');
   }
 }

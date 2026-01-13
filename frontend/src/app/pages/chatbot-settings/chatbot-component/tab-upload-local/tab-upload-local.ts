@@ -20,6 +20,8 @@ export class TabUploadLocalComponent {
   @Output() processingStart = new EventEmitter<{ title: string; message: string }>();
   @Output() processingEnd = new EventEmitter<{ title: string; message: string }>();
 
+  @Output() created = new EventEmitter<void>();
+
   constructor(
     private chatbotSettingsService: ChatbotSettingsService
   ) { }
@@ -71,6 +73,7 @@ export class TabUploadLocalComponent {
           message: 'Les procédures ont été créées avec succès.'
         });
         this.filesToUpload = [];
+        this.created.emit();
       },
       error: () => {
         this.processingEnd.emit({

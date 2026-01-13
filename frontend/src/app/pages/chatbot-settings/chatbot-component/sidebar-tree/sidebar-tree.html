@@ -1,19 +1,34 @@
 <div class="sidebar-header">
-    <h3>Fichiers indexés</h3>
+    <div class="header-left">
+        <div class="title-line">Fichiers</div>
+        <div class="title-line">indexés</div>
+    </div>
 
-    <button class="add-folder-btn" title="Créer un dossier à la racine" (click)="demanderCreationRacine()">
-        <span class="btn-icon">+</span>
-        <span>Créer</span>
-    </button>
+    <div class="header-right">
+        <div class="actions-top">
+            <button class="add-folder-btn" title="Créer un dossier à la racine" (click)="demanderCreationRacine()">
+                <span class="btn-icon">+</span>
+                <span>Créer</span>
+            </button>
 
-    <app-bouton-filtre class="filtre" [label]="getSortLabel()" [direction]="dateSortOrder" [filterIconSrc]="'/assets/icons/filtre.png'"
-        (clicked)="toggleSortByDate.emit()">
-    </app-bouton-filtre>
+            <app-bouton-filtre class="filtre" [label]="getSortLabel()" [direction]="dateSortOrder"
+                [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="toggleSortByDate.emit()">
+            </app-bouton-filtre>
+        </div>
+
+        <div class="actions-bottom">
+            <button class="add-folder-btn recherche" title="Rechercher un fichier" (click)="ouvrirRecherche()">
+                <span class="btn-icon">🔎</span>
+                <span>Rechercher</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 <div class="tree-view" *ngIf="!loading">
     <ng-container *ngFor="let item of indexedItems">
-        <div *ngIf="isItemVisibleFn(item)" class="tree-item" [ngClass]="classesItem(item)" (click)="item.isFolder ? demanderToggle(item) : ouvrirPdf(item, $event)">
+        <div *ngIf="isItemVisibleFn(item)" class="tree-item" [ngClass]="classesItem(item)"
+            (click)="item.isFolder ? demanderToggle(item) : ouvrirPdf(item, $event)">
 
             <div class="item-label clickable">
                 <span class="folder-toggle-icon" *ngIf="item.isFolder && hasChildrenFn(item)"></span>
