@@ -1,4 +1,4 @@
-import { getFileTree, deleteItemFromIndexedItems, createFolderToIndexedItems, addFileToIndexedItems, creerPdfDepuisFichierPdfBuffer, creerPdfDepuisUrl, getProced, accepterProcedure, getCompteurFichiers } from '../services/chatbotSettingsService.js';
+import { getFileTree, deleteItemFromIndexedItems, createFolderToIndexedItems, addFileToIndexedItems, creerPdfDepuisFichierPdfBuffer, creerPdfDepuisUrl, getProced, accepterProcedure, rejeterProcedure, getCompteurFichiers, getProcedureEditable, updateProcedureFromEdit } from '../services/chatbotSettingsService.js';
 
 export const getTreeController = async (req, res) => {
     try {
@@ -116,6 +116,18 @@ export const accepterProcedureController = async (req, res) => {
     }
 };
 
+export const rejeterProcedureController = async (req, res) => {
+    try {
+        const { procedureName } = req.body;
+        await rejeterProcedure(procedureName);
+
+        res.status(200).send({ message: "La procédure a été refusée avec succès." });
+    } catch (error) {
+        console.error("Erreur lors de la refus de la procédure :", error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+};
+
 export const getCompteurFichiersController = async (req, res) => {
     try {
         const compteur = await getCompteurFichiers();
@@ -125,3 +137,25 @@ export const getCompteurFichiersController = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur." });
     }
 };
+
+export const getProcedureText = async (req, res) => {
+    try {
+        const { folderName, procedureName } = req.query;
+        const { nom, urlSource, procedureHtml, procedure } = await getProcedureEditable(folderName, procedureName);
+        res.json({ nom, urlSource, procedureHtml, procedure });
+    } catch (error) {
+        console.error("Erreur lors de la récupération du texte de la procédure :", error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}
+
+export const updateProcedureText = async (req, res) => {
+    try {
+        const { folderName, procedureName, text } = req.body;
+        const procedureHtml = await updateProcedureFromEdit(folderName, procedureName, text);
+        res.json({ procedureHtml });
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du texte de la procédure :", error);
+        res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+}

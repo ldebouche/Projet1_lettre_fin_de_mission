@@ -6,6 +6,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { BoutonFiltreComponent } from '../../../../shared/bouton-filtre/bouton-filtre';
 import { ChatbotSettingsService } from '../../../../services/chatbot-settings-service';
+import { EditProcedureComponent } from './edit-procedure/edit-procedure';
 
 interface FichierEnAttente {
   nom: string;
@@ -14,15 +15,17 @@ interface FichierEnAttente {
   tailleMo: number;
   pdfUrl?: string;
   targetFolder?: any;
+  isLocalFile?: boolean;
 }
 
 @Component({
   selector: 'app-tab-verification',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     FormsModule,
-    BoutonFiltreComponent
+    BoutonFiltreComponent,
+    EditProcedureComponent
   ],
   templateUrl: './tab-verification.html'
 })
@@ -38,13 +41,17 @@ export class TabVerificationComponent implements OnInit {
 
   isLoading = false;
 
+  isEditOpen = false;
+  isSavingEdit = false;
+  editText = '';
+
   @Output() updated = new EventEmitter<void>();
 
 
   constructor(
     private chatbotSettingsService: ChatbotSettingsService,
     private sanitizer: DomSanitizer
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadProcedures();
@@ -62,6 +69,7 @@ export class TabVerificationComponent implements OnInit {
         tailleMo: Number((p.tailleOctets ?? 0) / 1024 / 1024),
         pdfUrl: p.pdfUrl ?? '',
         targetFolder: p.targetFolder ?? null,
+        isLocalFile: p.urlSource?.startsWith('Fichier local :') ? true : false,
       }));
       this.selection = this.fichiers[0] ?? null;
       this.mettreAJourPreviewPdf();
@@ -123,10 +131,14 @@ export class TabVerificationComponent implements OnInit {
     );
   }
 
-  simulerRejeter() {
+  rejeterProced() {
     if (!this.selection) return;
-    this.selection = this.fichiersFiltres[0] ?? null;
-    this.updated.emit();
+    this.chatbotSettingsService.RejeterProcedure(this.selection.nom).subscribe(
+      () => {
+        this.loadProcedures();
+        this.updated.emit();
+      }
+    );
   }
 
   formatDate(iso: string): string {
@@ -142,6 +154,40 @@ export class TabVerificationComponent implements OnInit {
 
     const url = `${this.selection.pdfUrl}?t=${Date.now()}`;
     this.pdfSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  modifierPdf(): void {
+    if (!this.selection?.nom) return;
+
+    this.chatbotSettingsService.GetProcedureText('attente', this.selection.nom).subscribe(
+      (res: any) => {
+        console.log(res);
+        this.editText = res?.procedureHtml || '';
+        this.isEditOpen = true;
+      });
+  }
+
+  fermerEdit(): void {
+    this.isEditOpen = false;
+    this.isSavingEdit = false;
+  }
+
+  validerModif(text: string): void {
+    if (!this.selection?.nom) return;
+
+    this.isSavingEdit = true;
+
+    this.chatbotSettingsService.UpdateProcedureText('attente', this.selection.nom, text).subscribe({
+      next: () => {
+        this.isSavingEdit = false;
+        this.fermerEdit();
+        this.loadProcedures();
+        this.updated.emit();
+      },
+      error: () => {
+        this.isSavingEdit = false;
+      }
+    });
   }
 
   ouvrirPdf(): void {

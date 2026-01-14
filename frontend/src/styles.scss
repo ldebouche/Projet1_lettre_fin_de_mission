@@ -7,6 +7,8 @@
 @use 'styles/button';
 @use 'styles/actions';
 @use 'styles/error';
+@use 'styles/settings-shared';
+@import "quill/dist/quill.snow.css";
 
 /* =========================
    League Spartan (titres)

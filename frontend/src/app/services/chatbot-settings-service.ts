@@ -44,7 +44,19 @@ export class ChatbotSettingsService {
     return this.http.post(`/api/chatbot-settings/accepterProcedure`, { procedureName });
   }
 
+  RejeterProcedure(procedureName: string) {
+    return this.http.post(`/api/chatbot-settings/rejeterProcedure`, { procedureName });
+  }
+
   GetCompteurFichiers() {
     return this.http.get(`/api/chatbot-settings/compteurFichiers`);
+  }
+
+  GetProcedureText(folderName: string, procedureName: string) {
+    return this.http.get(`/api/chatbot-settings/getProcedureText`, { params: { folderName, procedureName }});
+  }
+
+  UpdateProcedureText(folderName: string, procedureName: string, text: string) {
+    return this.http.post(`/api/chatbot-settings/updateProcedureText`, { folderName, procedureName, text });
   }
 }

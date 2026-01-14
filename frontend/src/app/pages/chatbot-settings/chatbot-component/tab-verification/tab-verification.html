@@ -34,10 +34,11 @@
                             </div>
                             <div class="verif-source">
                                 Source :
-                                <a [href]="f.urlSource" target="_blank" rel="noopener"
+                                <a *ngIf="!f.isLocalFile" [href]="f.urlSource" target="_blank" rel="noopener"
                                     (click)="$event.stopPropagation()">
                                     {{ f.urlSource }}
                                 </a>
+                                <span *ngIf="f.isLocalFile">{{ f.urlSource }}</span>
                             </div>
                         </div>
                     </div>
@@ -59,7 +60,7 @@
                 </div>
 
                 <div class="verif-actions">
-                    <button class="btn secondary" (click)="simulerRejeter()">Rejeter</button>
+                    <button class="btn secondary" (click)="rejeterProced()">Rejeter</button>
                     <button class="btn" (click)="accepterProced()">Accepter</button>
                 </div>
             </div>
@@ -83,15 +84,21 @@
                 </ng-template>
             </div>
             <div class="verif-preview-toolbar">
+                <button class="btn secondary" type="button" (click)="modifierPdf()">
+                    Modifier le PDF ✎
+                </button>
                 <button class="btn secondary" type="button" (click)="ouvrirPdf()">
                     Ouvrir le PDF ↗
                 </button>
             </div>
         </div>
-
     </div>
 </div>
 
 <div *ngIf="isLoading" class="loader">
     Chargement des fichiers...
 </div>
+
+<app-edit-procedure [open]="isEditOpen" [docName]="selection?.nom || ''"
+    [docSource]="selection?.urlSource || ''" [loading]="isSavingEdit" [html]="editText" (save)="validerModif($event)"
+    (cancel)="fermerEdit()"></app-edit-procedure>
