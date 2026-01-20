@@ -5,13 +5,14 @@ import { ModalComponent } from '../../../../../shared/modal/modal';
 import { marked } from 'marked';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import Quill from 'quill';
+import { ChatbotSettingsService } from '../../../../../services/chatbot-settings-service';
 
 @Component({
   selector: 'app-edit-procedure',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
+    CommonModule,
+    FormsModule,
     ModalComponent
   ],
   templateUrl: './edit-procedure.html',
@@ -25,6 +26,9 @@ export class EditProcedureComponent {
   @Input() loading = false;
 
   @Input() html = '';
+
+  @Input() folderName = 'attente';
+  @Input() procedureName = '';
   @Output() textChange = new EventEmitter<string>();
 
   @Output() save = new EventEmitter<string>();
@@ -39,13 +43,16 @@ export class EditProcedureComponent {
 
   draft = '';
 
+  toolbar: any;
+
   private undoStack: string[] = [];
   private redoStack: string[] = [];
   private lastSnapshot = '';
 
   constructor(
-    private sanitizer: DomSanitizer
-  ) {}
+    private sanitizer: DomSanitizer,
+    private chatbotSettingsService: ChatbotSettingsService
+  ) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open']?.currentValue === true) {
@@ -78,11 +85,14 @@ export class EditProcedureComponent {
           [{ header: [1, 2, 3, false] }],
           ['bold', 'italic', 'underline'],
           [{ list: 'ordered' }, { list: 'bullet' }],
-          ['link'],
+          ['link', 'image'],
           ['clean'],
         ],
       },
     });
+
+    this.toolbar = this.quill.getModule('toolbar');
+    this.toolbar.addHandler('image', () => this.pickAndUploadImage());
 
     this.quill.clipboard.dangerouslyPasteHTML(this.html || '');
     this.quill.setSelection(0, 0, 'silent'); // ✅ évite addRange
@@ -96,6 +106,39 @@ export class EditProcedureComponent {
     if (host) host.innerHTML = '';
 
     this.quill = null;
+  }
+
+  private pickAndUploadImage() {
+    if (!this.quill) return;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      // upload
+      this.chatbotSettingsService.UploadProcedureImage(this.folderName, this.procedureName, file)
+        .subscribe((res: any) => {
+          const name = res?.name;
+          const url = res?.url;
+          if (!name || !url) return;
+
+          const range = this.quill!.getSelection(true) || { index: this.quill!.getLength(), length: 0 };
+
+          const html = `
+          <div class="img-bloc">
+            <img src="${url}" data-asset="${name}" alt="${name}" />
+          </div>
+        `;
+
+          this.quill!.clipboard.dangerouslyPasteHTML(range.index, html);
+          this.quill!.setSelection(range.index + 1, 0, 'silent');
+        });
+    };
   }
 
   close() {
@@ -142,20 +185,20 @@ export class EditProcedureComponent {
   //    const start = ta.selectionStart ?? 0;
   //    const end = ta.selectionEnd ?? 0;
   //    const selected = this.draft.slice(start, end) || 'texte';
-//
+  //
   //    this.draft =
   //      this.draft.slice(0, start) +
   //      before + selected + after +
   //      this.draft.slice(end);
-//
+  //
   //    this.onInput();
-//
+  //
   //    const s = start + before.length;
   //    const e = s + selected.length;
   //    requestAnimationFrame(() => ta.setSelectionRange(s, e));
   //  });
   //}
-//
+  //
   //insertHeading() {
   //  this.withTextarea((ta) => {
   //    const start = ta.selectionStart ?? 0;
@@ -165,7 +208,7 @@ export class EditProcedureComponent {
   //    requestAnimationFrame(() => ta.setSelectionRange(start + 3, start + 3));
   //  });
   //}
-//
+  //
   //insertList() {
   //  this.withTextarea((ta) => {
   //    const start = ta.selectionStart ?? 0;
@@ -177,7 +220,7 @@ export class EditProcedureComponent {
   //    requestAnimationFrame(() => ta.setSelectionRange(start, start + lines.length));
   //  });
   //}
-//
+  //
   //insertLink() {
   //  this.withTextarea((ta) => {
   //    const start = ta.selectionStart ?? 0;
@@ -189,7 +232,7 @@ export class EditProcedureComponent {
   //    requestAnimationFrame(() => ta.setSelectionRange(start + 1, start + 1 + selected.length));
   //  });
   //}
-//
+  //
   //parseMarkdown(content: string): SafeHtml {
   //  const html = marked.parse(content) as string;
   //  return this.sanitizer.bypassSecurityTrustHtml(html);

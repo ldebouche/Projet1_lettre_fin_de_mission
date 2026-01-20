@@ -37,7 +37,7 @@ export class ChatbotSettingsService {
   }
 
   GetProcedures(folderName: string) {
-    return this.http.get(`/api/chatbot-settings/getProcedures`, { params: { folderName }});
+    return this.http.get(`/api/chatbot-settings/getProcedures`, { params: { folderName } });
   }
 
   AccepterProcedure(procedureName: string) {
@@ -53,10 +53,23 @@ export class ChatbotSettingsService {
   }
 
   GetProcedureText(folderName: string, procedureName: string) {
-    return this.http.get(`/api/chatbot-settings/getProcedureText`, { params: { folderName, procedureName }});
+    return this.http.get(`/api/chatbot-settings/getProcedureText`, { params: { folderName, procedureName } });
   }
 
   UpdateProcedureText(folderName: string, procedureName: string, text: string) {
     return this.http.post(`/api/chatbot-settings/updateProcedureText`, { folderName, procedureName, text });
+  }
+
+  UploadProcedureImage(folderName: string, procedureName: string, file: File) {
+    const form = new FormData();
+    form.append('folderName', folderName);
+    form.append('procedureName', procedureName);
+    form.append('file', file);
+
+    return this.http.post('/api/chatbot-settings/upload-procedure-image', form, { withCredentials: true });
+  }
+
+  EditFromChatbot(item: any) {
+    return this.http.post('/api/chatbot-settings/edit-from-chatbot', { item });
   }
 }

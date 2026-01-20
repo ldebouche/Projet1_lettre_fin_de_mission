@@ -9,6 +9,7 @@
                 </div>
 
                 <div class="editor-status" *ngIf="loading">
+                    <div class="spinner"></div>
                     Mise en forme en cours…
                 </div>
             </div>
@@ -16,38 +17,6 @@
             <div *ngIf="open" class="editor-body">
                 <div #quillHost class="quill-host"></div>
             </div>
-
-            <!--- <div class="editor-tabs">
-                <button type="button" class="tab" [class.active]="tab==='edit'" (click)="tab='edit'">Édition</button>
-                <button type="button" class="tab" [class.active]="tab==='preview'"
-                    (click)="tab='preview'">Aperçu</button>
-            </div>
-
-            <div class="editor-toolbar" *ngIf="tab==='edit'">
-                <button type="button" class="tool" (click)="insertHeading()">H</button>
-                <button type="button" class="tool" (click)="wrapSelection('**','**')"><b>B</b></button>
-                <button type="button" class="tool" (click)="wrapSelection('*','*')"><i>I</i></button>
-                <button type="button" class="tool" (click)="insertList()">• Liste</button>
-                <button type="button" class="tool" (click)="insertLink()">🔗 Lien</button>
-                <span class="spacer"></span>
-                <button type="button" class="tool secondary" (click)="undo()">↶</button>
-                <button type="button" class="tool secondary" (click)="redo()">↷</button>
-            </div>
-
-            <div class="editor-body">
-                <ng-container *ngIf="tab==='edit'; else preview">
-                    <textarea #editorArea class="editor-textarea" [(ngModel)]="draft" (input)="onInput()"
-                        placeholder="Écris ici… (Markdown simple)"></textarea>
-
-                    <div class="editor-help">
-                        <b>Astuce :</b> <code>##</code> titre, <code>-</code> liste, <code>**gras**</code>
-                    </div>
-                </ng-container>
-
-                <ng-template #preview>
-                    <div class="editor-preview" [innerHTML]="parseMarkdown(draft)"></div>
-                </ng-template>
-            </div> --->
         </div>
     </div>
     <div modal-footer class="modal-footer-layout">

@@ -1,9 +1,8 @@
 import fs from "fs";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import axios from "axios";
-import path from "path";
 import { db, logDbStatus } from "../config/vectorStore.js";
-import { log } from "console";
+import { extraireTexteDepuisPdfBuffer } from "./procedures/procedureOcrService.js";
 
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
 const MISTRAL_BASE_URL = process.env.MISTRAL_BASE_URL;
@@ -23,19 +22,21 @@ async function embedCached(text) {
 
 export async function indexPdfFile(absolutePath, relativePath, fileName) {
     const text = await extractPdfText(absolutePath);
-    const chunks = chunkText(text, 800);
+    const chunks = chunkText(text, 1200, 200);
+    console.log("INDEX:", fileName, "chars:", text.length, "chunks:", chunks.length);
 
     const insert = db.prepare(`
         INSERT INTO embeddings (file_path, file_name, content, vector)
         VALUES (?, ?, ?, ?)
     `);
 
+    let chunkIndex = 0;
     for (const chunk of chunks) {
-        const vector = await embed(chunk);
+        const vector = await embedCached(chunk);
         insert.run(
             relativePath,
             fileName,
-            chunk,
+            `[CHUNKIDX:${chunkIndex++}]\n${chunk}`,
             JSON.stringify(vector)
         );
     }
@@ -48,27 +49,83 @@ export function removePdfFromIndex(relativePath) {
 }
 
 async function extractPdfText(filePath) {
-    const data = new Uint8Array(fs.readFileSync(filePath));
-    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    const buffer = fs.readFileSync(filePath);
 
     let fullText = "";
+    try {
+        const data = new Uint8Array(buffer);
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map(item => item.str).join(" ");
-        fullText += pageText + "\n";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items.map(item => item.str).join(" ");
+            fullText += pageText + "\n";
+        }
+
+        fullText = cleanupExtractedText(fullText);
+    } catch {
+        fullText = "";
+    }
+
+    if ((fullText || "").trim().length < 3000) {
+        const ocr = await extraireTexteDepuisPdfBuffer(
+            buffer,
+            filePath.split(/[\\/]/).pop() || "document.pdf",
+            20000
+        );
+        fullText = cleanupExtractedText(ocr?.texte || "");
     }
 
     return fullText;
 }
 
-function chunkText(text, size = 400) {
-    const chunks = [];
-    for (let i = 0; i < text.length; i += size) {
-        chunks.push(text.slice(i, i + size));
+function cleanupExtractedText(text) {
+    return (text || "")
+        .replace(/\r/g, "")
+        .replace(/Créé par .*? \d+\/\d+\s*/gi, "")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+
+function chunkText(text, targetSize = 1200, overlap = 200) {
+    const cleaned = (text || "")
+        .replace(/\r/g, "")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+    const paragraphs = cleaned.split("\n\n").map(p => p.trim()).filter(Boolean);
+
+    const merged = [];
+    let buf = "";
+
+    for (const p of paragraphs) {
+        if (!buf) {
+            buf = p;
+            continue;
+        }
+        if ((buf.length + 2 + p.length) <= targetSize) {
+            buf += "\n\n" + p;
+        } else {
+            merged.push(buf);
+            buf = p;
+        }
     }
-    return chunks;
+    if (buf) merged.push(buf);
+
+    const chunks = [];
+    let prev = "";
+
+    for (const current of merged) {
+        const head = prev ? prev.slice(-overlap) + "\n" : "";
+        chunks.push((head + current).trim());
+        prev = current;
+    }
+
+    return chunks.filter(c => c.length >= 200);
 }
 
 async function embed(text) {
@@ -114,19 +171,20 @@ export async function askChatbotRag(message) {
 
     const best = scored[0]?.score ?? 0;
 
-    if (best < 0.75) {
+    if (best < 0.72) {
         return {
             reply: "Je n’ai pas trouvé d’information suffisamment pertinente dans les documents pour répondre.",
             sources: []
         };
     }
 
-    const top = scored
-        .filter(s => s.score >= 0.75 && (best - s.score) <= 0.06)
-        .slice(0, 4);
+    const topK = scored.slice(0, 10);
+    const filtered = topK.filter(s => s.score >= Math.max(0.72, best * 0.92)).slice(0, 8);
+
+    const top = filtered.length ? filtered : topK.slice(0, 6);
 
     const context = top
-        .map(t => t.content.slice(0, 900))
+        .map((t, idx) => `[CHUNK_${idx}] (fichier: ${t.file_name})\n${t.content.slice(0, 1400)}`)
         .join("\n\n---\n\n");
 
     const resp = await axios.post(
@@ -136,17 +194,18 @@ export async function askChatbotRag(message) {
             messages: [
                 {
                     role: "system", content: [
-                        "Tu es un assistant de procédures.",
-                        "Tu réponds UNIQUEMENT à partir du contexte fourni.",
-                        "Interdictions strictes : ne jamais mentionner l’auteur, l’entreprise, la date, ni le contexte interne.",
-                        "Ne pas écrire de section 'Sources'. Les sources sont ajoutées automatiquement par le système.",
-                        "Réponds sous forme d’étapes claires et structurées."
+                        "Tu es un assistant RAG.",
+                        "Tu dois répondre UNIQUEMENT à partir du CONTEXTE fourni.",
+                        "Si une information nécessaire manque, réponds exactement : Je ne peux pas répondre à partir des documents fournis.",
+                        "Interdiction d'inventer, déduire, compléter, reformuler avec des ajouts.",
+                        "Réponds sous forme de liste à puces courtes.",
+                        "Chaque puce DOIT se terminer par une ou plusieurs références [CHUNK_X]."
                     ].join("\n")
                 },
                 { role: "system", content: "Contexte :\n" + context },
                 { role: "user", content: message }
             ],
-            temperature: 0.3,
+            temperature: 0,
             max_tokens: 650
         },
         { headers: { Authorization: `Bearer ${MISTRAL_API_KEY}` } }
@@ -164,8 +223,31 @@ export async function askChatbotRag(message) {
         ).values()
     );
 
+    let answer = resp.data.choices[0].message.content || "";
+
+    if (!/\[CHUNK_\d+\]/.test(answer)) {
+        return {
+            reply: "Je ne peux pas répondre à partir des documents fournis.",
+            sources: []
+        };
+    }
+
+    const maxChunk = top.length - 1;
+    const cited = [...answer.matchAll(/\[CHUNK_(\d+)\]/g)].map(m => Number(m[1]));
+    if (cited.some(n => Number.isNaN(n) || n < 0 || n > maxChunk)) {
+        return {
+            reply: "Je ne peux pas répondre à partir des documents fournis.",
+            sources: []
+        };
+    }
+
+    answer = (answer || "")
+        .replace(/\s*\[CHUNK_\d+\]\s*/g, "")
+        .replace(/[ \t]+\n/g, "\n")
+        .trim();
+
     return {
-        reply: resp.data.choices[0].message.content,
+        reply: answer,
         sources
     };
 }

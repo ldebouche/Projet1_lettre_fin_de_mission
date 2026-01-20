@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { getTreeController, deleteItem, createFolder, addFile, createProcedureFromFiles, createProcedureFromUrl, getProcedure, accepterProcedureController, rejeterProcedureController, getCompteurFichiersController, getProcedureText, updateProcedureText } from '../controllers/chatbotSettingsController.js';
+import { getTreeController, deleteItem, createFolder, addFile, createProcedureFromFiles, createProcedureFromUrl, getProcedure, accepterProcedureController, rejeterProcedureController, getCompteurFichiersController, getProcedureText, updateProcedureText, uploadProcedureImageController, editFromChatbotController } from '../controllers/chatbotSettingsController.js';
 import { authMiddlewareCollaborateur } from '../middlewares/auth.js';
 import { get } from 'http';
 const router = express.Router();
@@ -29,5 +29,9 @@ router.get('/compteurFichiers', getCompteurFichiersController);
 router.get('/getProcedureText', getProcedureText);
 
 router.post('/updateProcedureText', updateProcedureText);
+
+router.post("/upload-procedure-image", upload.single("file"), uploadProcedureImageController);
+
+router.post("/edit-from-chatbot", editFromChatbotController);
 
 export default router;

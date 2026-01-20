@@ -378,4 +378,21 @@ export class ChatbotSettingsComponent implements OnInit {
     if (!item?.url) return;
     window.open(`${item.url}?t=${Date.now()}`, '_blank');
   }
+
+  confirmEdit(item: IndexedItem): void {
+  this.openModal({
+    type: 'confirm',
+    title: 'Passer en édition',
+    message: 'Cette procédure va repasser en attente et sera retirée du chatbot.',
+    confirmButtonText: 'Passer en attente',
+    cancelButtonText: 'Annuler',
+    onConfirm: () => {
+      this.chatbotSettingsService.EditFromChatbot(item).subscribe(() => {
+        this.getTree();
+        this.getCompteursFichiers();
+        this.activeTab = 'verif';
+      });
+    }
+  });
+}
 }

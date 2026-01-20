@@ -20,6 +20,7 @@ export class SidebarTreeComponent {
   @Output() toggleFolder = new EventEmitter<IndexedItem>();
   @Output() toggleSortByDate = new EventEmitter<void>();
   @Output() openSearch = new EventEmitter<void>();
+  @Output() editItem = new EventEmitter<IndexedItem>();
 
   private depthCache = new Map<number, number>();
 
@@ -69,5 +70,9 @@ export class SidebarTreeComponent {
 
   ouvrirRecherche() {
     this.openSearch.emit();
+  }
+
+  demanderEdition(item: IndexedItem) {
+    this.editItem.emit(item);
   }
 }

@@ -255,9 +255,10 @@ h4 {
             .file-name {
                 font-weight: 500;
                 color: var(--color-blue-petrol);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+                min-width: 0;
             }
 
             .file-size {
@@ -517,7 +518,7 @@ h4 {
 
     .verif-layout {
         display: grid;
-        grid-template-columns: 1fr 1.2fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 18px;
         height: 70vh;
         min-height: 0;

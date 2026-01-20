@@ -99,6 +99,6 @@
     Chargement des fichiers...
 </div>
 
-<app-edit-procedure [open]="isEditOpen" [docName]="selection?.nom || ''"
-    [docSource]="selection?.urlSource || ''" [loading]="isSavingEdit" [html]="editText" (save)="validerModif($event)"
-    (cancel)="fermerEdit()"></app-edit-procedure>
+<app-edit-procedure [open]="isEditOpen" [docName]="selection?.nom || ''" [docSource]="selection?.urlSource || ''"
+    [loading]="isSavingEdit" [html]="editText" [folderName]="'attente'" [procedureName]="selection?.nom || ''"
+    (save)="validerModif($event)" (cancel)="fermerEdit()"></app-edit-procedure>

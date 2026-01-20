@@ -137,3 +137,11 @@
 .quill-host {
     height: 420px;
 }
+
+:host ::ng-deep .ql-editor img {
+    max-width: 180px;
+    height: auto;
+    display: inline-block;
+    vertical-align: middle;
+    margin: 6px 6px 6px 0;
+}

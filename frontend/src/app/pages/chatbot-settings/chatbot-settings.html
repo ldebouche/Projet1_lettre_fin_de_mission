@@ -11,7 +11,7 @@
             [getItemDepthFn]="getItemDepth.bind(this)" [hasChildrenFn]="hasChildren.bind(this)" [loading]="loading_tree"
             (createFolder)="createNewFolder($event)" (deleteItem)="confirmDelete($event)"
             (toggleFolder)="toggleFolder($event)" (toggleSortByDate)="toggleSortByDate()"
-            (openSearch)="openSearchModal()">
+            (openSearch)="openSearchModal()" (editItem)="confirmEdit($event)">
         </app-sidebar-tree>
 
         <main class="content-panel">

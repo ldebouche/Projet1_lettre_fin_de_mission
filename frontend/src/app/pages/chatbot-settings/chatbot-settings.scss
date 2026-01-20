@@ -163,6 +163,15 @@
     .item-action.add-subfolder:hover {
       background: rgba(114, 191, 204, 0.12);
     }
+
+    .item-action.edit-action {
+      font-size: 1.1rem;
+      color: var(--color-blue-petrol);
+    }
+
+    .item-action.edit-action:hover {
+      background: rgba(114, 191, 204, 0.12);
+    }
   }
 }
 

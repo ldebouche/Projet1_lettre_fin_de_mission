@@ -38,6 +38,11 @@
             </div>
 
             <div class="item-actions">
+                <button *ngIf="!item.isFolder" class="item-action edit-action" title="Modifier"
+                    (click)="$event.stopPropagation(); demanderEdition(item)">
+                    ✎
+                </button>
+
                 <button *ngIf="item.isFolder" class="item-action add-subfolder" title="Créer un sous-dossier"
                     (click)="$event.stopPropagation(); demanderCreationSousDossier(item.id)">
                     +

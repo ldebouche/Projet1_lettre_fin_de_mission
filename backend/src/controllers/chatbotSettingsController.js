@@ -1,4 +1,5 @@
-import { getFileTree, deleteItemFromIndexedItems, createFolderToIndexedItems, addFileToIndexedItems, creerPdfDepuisFichierPdfBuffer, creerPdfDepuisUrl, getProced, accepterProcedure, rejeterProcedure, getCompteurFichiers, getProcedureEditable, updateProcedureFromEdit } from '../services/chatbotSettingsService.js';
+import { getFileTree, deleteItemFromIndexedItems, createFolderToIndexedItems, addFileToIndexedItems, creerPdfDepuisFichierPdfBuffer, creerPdfDepuisUrl, getProced, accepterProcedure, rejeterProcedure, getCompteurFichiers, getProcedureEditable, updateProcedureFromEdit, uploadProcedureImage, mettreProcedureChatbotEnEdition } from '../services/chatbotSettingsService.js';
+import { convertToPdfBuffer } from '../utils/convertToPdf.js';
 
 export const getTreeController = async (req, res) => {
     try {
@@ -50,22 +51,36 @@ export const createProcedureFromFiles = async (req, res) => {
         const files = req.files || [];
 
         if (!files.length) {
-            return res.status(400).json({ succes: false, message: 'Aucun fichier reçu.' });
+            return res.status(400).json({ succes: false, message: "Aucun fichier reçu." });
         }
 
+        const allowed = [".pdf", ".docx", ".xlsx", ".pptx"];
         const results = [];
-        for (const f of files) {
-            if (!f.originalname.toLowerCase().endsWith('.pdf')) continue;
 
-            const nomProcedure = f.originalname.replace(/\.pdf$/i, "");
-            const r = await creerPdfDepuisFichierPdfBuffer(f.buffer, f.originalname, utilisateur, nomProcedure);
+        for (const f of files) {
+            const ext = (f.originalname || "").toLowerCase().slice(((f.originalname || "").lastIndexOf(".")) >>> 0);
+            if (!allowed.includes(ext)) continue;
+
+            f.originalname = Buffer.from(String(f.originalname), "latin1").toString("utf8");
+
+            const pdfBuffer = await convertToPdfBuffer(f.buffer, f.originalname);
+
+            const baseName = f.originalname.replace(/\.[^.]+$/i, "");
+            const nomProcedure = baseName;
+
+            const r = await creerPdfDepuisFichierPdfBuffer(
+                pdfBuffer,
+                `${baseName}.pdf`,
+                utilisateur,
+                nomProcedure
+            );
             results.push(r);
         }
 
         res.json({ succes: true, results });
     } catch (e) {
         console.error(e);
-        res.status(500).json({ succes: false, message: 'Erreur lors de la création des procédures depuis fichiers.' });
+        res.status(500).json({ succes: false, message: "Erreur lors de la création des procédures." });
     }
 };
 
@@ -159,3 +174,30 @@ export const updateProcedureText = async (req, res) => {
         res.status(500).json({ message: "Erreur interne du serveur." });
     }
 }
+
+export const uploadProcedureImageController = async (req, res) => {
+    try {
+        const { folderName, procedureName } = req.body;
+        const file = req.file;
+
+        if (!folderName || !procedureName) return res.status(400).json({ message: "Paramètres manquants." });
+        if (!file) return res.status(400).json({ message: "Aucun fichier reçu." });
+
+        const out = await uploadProcedureImage(folderName, procedureName, file);
+        res.json(out);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: "Erreur upload image." });
+    }
+};
+
+export const editFromChatbotController = async (req, res) => {
+    try {
+        const { item } = req.body;
+        const out = await mettreProcedureChatbotEnEdition(item);
+        res.json(out);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: "Erreur lors du passage en édition." });
+    }
+};
