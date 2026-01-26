@@ -9,8 +9,8 @@ export function getChatbotRoot() {
     return path.join(getDocumentsRoot(), "chatbot");
 }
 
-export function getAttenteRoot() {
-    return path.join(getDocumentsRoot(), "attente");
+export function getAttenteRoot(typeDoc = "") {
+    return path.join(getDocumentsRoot(), typeDoc, "attente");
 }
 
 export function getIndexerRoot() {

@@ -2,8 +2,13 @@
   <div class="container">
     <div class="links">
       <button (click)="handleReturn()" class="logout-button" *ngIf="currentUrl !== '/'">Retour</button>
+
+      <a [routerLink]="['/ana-secto-settings']" class="logout-button"
+        *ngIf="currentUrl !== '/ana-secto-settings' && hasRole">
+        Gérer les analyses sectorielles
+      </a>
     </div>
-    
+
     <!-- Logo + nom -->
     <div class="brand">
       <a routerLink="/accueil-intranet" class="logo-link">
@@ -15,12 +20,13 @@
 
     <!-- Desktop menu -->
     <div class="links">
-        
-        <a [routerLink]="['/chatbot-settings']" class="logout-button" *ngIf="currentUrl !== '/chatbot-settings' && hasRole">
-            Gérer le Chatbot
-        </a>
-        
-        <button (click)="logout()" class="logout-button">Déconnexion</button>
+
+      <a [routerLink]="['/chatbot-settings']" class="logout-button"
+        *ngIf="currentUrl !== '/chatbot-settings' && hasRole">
+        Gérer le Chatbot
+      </a>
+
+      <button (click)="logout()" class="logout-button">Déconnexion</button>
     </div>
   </div>
 </nav>

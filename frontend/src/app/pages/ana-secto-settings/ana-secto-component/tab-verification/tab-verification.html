@@ -1,0 +1,99 @@
+<div class="tab-content verif-tab">
+
+    <div class="verif-toolbar">
+        <div class="input-group verif-search">
+            <label>Rechercher</label>
+            <input class="modal-input" type="text" [(ngModel)]="recherche" placeholder="Nom, URL source..." />
+        </div>
+
+        <div class="verif-controls">
+            <app-bouton-filtre class="filtre" [label]="tri === 'date' ? 'Date' : 'Nom'" [direction]="ordre"
+                [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="onClickFiltre()">
+            </app-bouton-filtre>
+        </div>
+    </div>
+
+    <div class="verif-layout">
+
+        <!-- LISTE -->
+        <div class="verif-list">
+            <h4>En attente ({{ fichiersFiltres.length }})</h4>
+
+            <ul class="file-list-status">
+                <li *ngFor="let f of fichiersFiltres" class="status-item" [class.is-selected]="selection?.id === f.id"
+                    (click)="selectionner(f)">
+
+                    <div class="item-label">
+                        <img class="tree-icon" src="assets/icons/fichier.png" alt="Icône fichier" />
+                        <div class="verif-row-text">
+                            <div class="file-name">Code APE : {{ f.codeAPE }}</div>
+                            <div class="verif-sub">
+                                <span>{{ formatDate(f.dateCreation) }}</span>
+                                <span>•</span>
+                                <span>{{ f.tailleMo | number:'1.2-2' }} MB</span>
+                            </div>
+                            <div class="verif-source clickable" (click)="ouvrirPdf(f)">
+                                Source : {{ f.nomFichier }}
+                            </div>
+                        </div>
+                    </div>
+
+                </li>
+
+                <li *ngIf="fichiersFiltres.length === 0" class="status-item empty">
+                    Aucun fichier en attente.
+                </li>
+            </ul>
+        </div>
+
+        <!-- TEXTAREA + ACTIONS -->
+        <div class="verif-preview">
+            <div class="verif-preview-header" *ngIf="selection; else noSelection">
+                <div class="verif-preview-title">
+                    <div class="title">{{ selection.nomFichier }}</div>
+                    <div class="subtitle">{{ formatDate(selection.dateCreation) }}</div>
+                </div>
+
+                <div class="verif-actions">
+                    <button class="btn secondary" type="button" (click)="refuser()">Refuser</button>
+                    <button class="btn" type="button" [disabled]="isSaving" (click)="accepter()">Accepter</button>
+                </div>
+            </div>
+
+            <ng-template #noSelection>
+                <div class="verif-empty">
+                    Sélectionne un fichier.
+                </div>
+            </ng-template>
+
+            <div class="verif-preview-wrapper" *ngIf="selection">
+                <div class="upload-settings" style="padding:16px;">
+                    <div class="input-group">
+                        <label>Code APE</label>
+                        <input class="modal-input" [(ngModel)]="code_ape" (input)="clearError('codeAPE')"
+                            placeholder="ex: 4120A" />
+                        <div class="field-error" *ngIf="errors.codeAPE">{{ errors.codeAPE }}</div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Millésime</label>
+                        <input class="modal-input" [(ngModel)]="millesime" (input)="clearError('millesime')"
+                            placeholder="ex: 2025" />
+                        <div class="field-error" *ngIf="errors.millesime">{{ errors.millesime }}</div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Perspectives</label>
+                        <textarea class="modal-input" style="min-height: 320px; resize: vertical;"
+                            [(ngModel)]="texte" (input)="clearError('texte')"></textarea>
+                        <div class="field-error" *ngIf="errors.texte">{{ errors.texte }}</div>
+                    </div>
+
+                    <button class="btn secondary" type="button" [disabled]="!isModifiable || isSaving"
+                        (click)="saveOnly()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

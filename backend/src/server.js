@@ -11,6 +11,7 @@ import wordRoutes from './routes/wordRoute.js';
 import pdfRoutes from './routes/pdfRoutes.js';
 import dashboardRoutes from './routes/dashboardRoute.js';
 import chatbotSettingsRoutes from './routes/chatbotSettingsRoutes.js';
+import anaSectoSettingsRoutes from './routes/anaSectoRoutes.js';
 
 
 dotenv.config();
@@ -24,7 +25,7 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "100mb" }));
 app.use(cookieParser());
 
 app.use('/api/db', dbRoutes);
@@ -34,6 +35,7 @@ app.use('/api/pdf', pdfRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chatbot-settings', chatbotSettingsRoutes);
 app.use("/api/files", /*authMiddlewareCollaborateur,*/ express.static(path.join(process.cwd(), "documents")));
+app.use("/api/ana-secto-settings", anaSectoSettingsRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, "0.0.0.0", () => {

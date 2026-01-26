@@ -2,7 +2,7 @@ import fs from "fs";
 import pdf from "pdf-parse-fork";
 import path from "path";
 import { exec } from "child_process";
-import { text } from "stream/consumers";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export async function extractCumuls(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -156,35 +156,88 @@ export async function extractImmobSortie(filePath) {
   });
 }
 
+export async function extractAnaSectorielle(filePath) {
+  if (!fs.existsSync(filePath)) return null;
 
-export function extractAnaSectorielle(pdfPath) {
-  if (!fs.existsSync(filePath)) {
-    console.warn(`Fichier introuvable : ${filePath}`);
-    return null;
-  }
+  const { text } = await pdf(fs.readFileSync(filePath));
+  const t = (text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\u00A0/g, " ")
+    .replace(/[•➜]/g, "-");
 
-  return new Promise((resolve, reject) => {
-    const pythonPath = "C:\\Users\\admin.lcd\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
-    const scriptPath = path.join(process.cwd(), "utils", "extract_table.py");
-    const cmd = `"${pythonPath}" "${scriptPath}" "${pdfPath}"`;
+  const millesime = Number((filePath.match(/(19|20)\d{2}/) || [])[0] || null);
 
-    exec(cmd, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
-      if (error) return reject("Python error: " + stderr);
+  const rawLines = t.split("\n").map(l => l.replace(/\s+/g, " ").trim());
 
-      try {
-        const parsed = JSON.parse(stdout);
+  const codes = [...new Set([...t.matchAll(/\b(\d{2})\.(\d{2})([A-Z])\b/gi)]
+    .map(m => `${m[1]}${m[2]}${m[3]}`.toUpperCase())
+  )];
 
-        if (!parsed) {
-          return reject("Tableau 'Répartition selon le chiffre' non trouvé");
+  const isToc = l => /\.{5,}\s*\d+\s*$/.test(l);
+  const isFooter = l =>
+    /Analyses\s+sectorielles\s*-\s*CNOEC\s*\|/i.test(l) ||
+    /^\|\s*\d+\s*$/.test(l) ||
+    /\|\s*\d+\s*$/.test(l);
+
+  const titleRe = /^(\d+)\.(\d+)\.\s+(.*)$/;
+  const majorTitleRe = /^(\d+)\.\s+\S/;
+  const isPerspTitle = s => /\b(perspectiv|prévis)\w*\b/i.test(s);
+
+  const isHardStopTitle = l => /^structure\s+financi[eè]re\b/i.test(l);
+
+  const start = rawLines.findIndex(l => l && !isToc(l) && titleRe.test(l) && isPerspTitle(l.match(titleRe)[3]));
+  let commentaire = "";
+
+  if (start >= 0) {
+    const [, maj, sub] = rawLines[start].match(titleRe);
+
+    let end = rawLines.length;
+    let emptyRun = 0;
+
+    for (let i = start + 1; i < rawLines.length; i++) {
+      const l = rawLines[i];
+
+      if (!l) { emptyRun++; continue; }
+      else emptyRun = 0;
+
+      if (isToc(l) || isFooter(l)) continue;
+
+      if (emptyRun >= 2 && (titleRe.test(l) || majorTitleRe.test(l) || isHardStopTitle(l))) {
+        end = i;
+        break;
+      }
+
+      if (majorTitleRe.test(l) || isHardStopTitle(l)) {
+        end = i;
+        break;
+      }
+
+      if (titleRe.test(l)) {
+        const [, m2, s2, label] = l.match(titleRe);
+
+        if (m2 === maj && s2 !== sub && !isPerspTitle(label)) {
+          end = i;
+          break;
         }
 
-        parsed.rows = mergeBrokenLabels(parsed.rows);
-        resolve(parsed);
-      } catch (e) {
-        reject("Parsing error: " + e.message + "\n" + stdout);
+        if (m2 !== maj) {
+          end = i;
+          break;
+        }
       }
-    });
-  });
+    }
+
+    const block = rawLines
+      .slice(start + 1, end)
+      .filter(l => l && !isToc(l) && !isFooter(l));
+
+    commentaire = block.join("\n").trim();
+  }
+
+  return {
+    millesime,
+    items: (codes.length ? codes.sort() : ["UNKNOWN"]).map(code_ape => ({ code_ape, commentaire }))
+  };
 }
 
 export async function extractEmprunts(filePath) {
@@ -240,21 +293,6 @@ export async function extractEmprunts(filePath) {
   }
 
   return { emprunts };
-}
-
-function mergeBrokenLabels(rows) {
-  const fixed = [];
-  
-  for (const row of rows) {
-    if (row.length > 1) {
-      fixed.push(row);
-    } 
-    else if (row.length === 1 && fixed.length > 0) {
-      fixed[fixed.length - 1][0] += " " + row[0];
-    }
-  }
-
-  return fixed;
 }
 
 export async function extractEcheancier(filePath) {

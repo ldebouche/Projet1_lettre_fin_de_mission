@@ -1,0 +1,101 @@
+<div class="sidebar-header">
+    <div class="header-left">
+        <div class="title-line">Fichiers</div>
+        <div class="title-line">indexés</div>
+    </div>
+
+    <div class="header-right">
+        <div class="actions-top">
+            <!-- ❌ pas de bouton créer -->
+
+            <app-bouton-filtre class="filtre" [label]="getSortLabel()" [direction]="dateSortOrder"
+                [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="toggleSortByDate.emit()">
+            </app-bouton-filtre>
+        </div>
+
+        <div class="actions-bottom">
+            <button class="add-folder-btn recherche" title="Rechercher un fichier" (click)="ouvrirRecherche()">
+                <span class="btn-icon">🔎</span>
+                <span>Rechercher</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="tree-view" *ngIf="!loading">
+    <ng-container *ngFor="let item of indexedItems">
+        <div *ngIf="isItemVisibleFn(item)" class="tree-item" [ngClass]="classesItem(item)"
+            (click)="onClickRow(item, $event)">
+
+            <div class="item-label clickable">
+                <span class="folder-toggle-icon" *ngIf="item.isFolder && hasChildrenFn(item)"></span>
+                <img class="tree-icon" [src]="item.isFolder ? iconDossier : iconFichier"
+                    [alt]="item.isFolder ? 'Dossier' : 'Fichier'" />
+                <span>{{ item.nomFichier }}</span>
+            </div>
+
+            <div class="item-actions">
+                <button *ngIf="!item.isFolder" class="item-action edit-action" title="Modifier"
+                    (click)="$event.stopPropagation(); demanderEdition(item)">
+                    ✎
+                </button>
+
+                <button class="item-action delete-action" title="Supprimer"
+                    (click)="$event.stopPropagation(); demanderSuppression(item)">
+                    &times;
+                </button>
+            </div>
+
+        </div>
+    </ng-container>
+
+    <div *ngIf="indexedItems.length === 0" class="error-formulaire">
+        La base d’analyses sectorielles est vide.
+    </div>
+</div>
+
+<div *ngIf="loading" class="loader">
+    Chargement des fichiers...
+</div>
+
+<app-modal *ngIf="isInfoModalOpen && info" [isOpen]="isInfoModalOpen" [title]="'Informations analyse'"
+    (closeEvent)="closeInfoModal()">
+
+    <div modal-body>
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="k">Nom</div>
+                <div class="v">{{ info.nom }}</div>
+            </div>
+            <div class="info-row">
+                <div class="k">Millésime</div>
+                <div class="v">{{ info.millesime || '—' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="k">Code APE</div>
+                <div class="v">{{ info.codeApe || '—' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="k">Commentaire</div>
+                <div class="v">{{ info.commentaire || '—' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="k">Date d’ajout</div>
+                <div class="v">{{ info.dateAjout || '—' }}</div>
+            </div>
+            <div class="info-row">            
+                <div class="k">Date de mise à jour</div>
+                <div class="v">{{ info.dateModification || '—' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="k">Ajouté par</div>
+                <div class="v">{{ info.ajoutePar || '—' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div modal-footer class="modal-footer-layout">
+        <button class="btn secondary" (click)="closeInfoModal()">Fermer</button>
+        <button class="btn" (click)="ouvrirPdf()">Ouvrir le PDF</button>
+    </div>
+</app-modal>
