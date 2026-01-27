@@ -22,14 +22,14 @@ export const GetDossierInfos = async (req, res) => {
       dbService.GetSignataire(code_client, dateFinEx),
       dbService.GetAggregats(code_client, dateFinEx),
       dbService.GetInfoEvoCharges(code_client, dateFinEx),
-      dbService.GetAnaSectorielle(/*infoClients.code_ape*/'9602A')
+      dbService.GetAnaSectorielle(infoClients.code_ape)
     ]);
 
     const aggN = aggregats[0] || {};
     const aggN1 = aggregats[1] || {};
-    
+
     const siteSelectionne = selectSite(infoClients.site.trim());
-    
+
     res.json({
       // === Infos générales ===
       anneeN1Existe: !!aggN1.datefinex,
@@ -110,7 +110,7 @@ export const GetDossierInfos = async (req, res) => {
         "CC_%resNetVar": (aggN1.resNet
           ? ((aggN.resNet - aggN1.resNet) / aggN1.resNet) * 100
           : null),
-        
+
       },
 
       // === Evolution charges ===
@@ -129,13 +129,13 @@ export const GetDossierInfos = async (req, res) => {
         }
 
         const comptes = comptesMapping[item.EC_lib] || [];
-        
+
         return {
           EC_lib: item.EC_lib,
           EC_valN: valN,
           EC_valN1: valN1,
           EC_valVar: valVar,
-          "EC_%Var": pctVar,
+          "EC_pctVar": pctVar,
           EC_comment: comment,
           EC_numCompte: comptes
         };
@@ -148,7 +148,7 @@ export const GetDossierInfos = async (req, res) => {
         CP_Var: (aggN.CP_N || 0) - (aggN1.CP_N || 0),
         "CP_%Var": aggN1.CP_N
           ? ((aggN.CP_N - aggN1.CP_N) / aggN1.CP_N) * 100
-          : null,
+          : 'NS',
         "CP_caN": aggN.ca
           ? (aggN.CP_N / aggN.ca) * 100
           : null,
@@ -162,11 +162,11 @@ export const GetDossierInfos = async (req, res) => {
           ? (aggN1.CP_N / aggN1.marge) * 100
           : null,
         CP_heureVar: 0,
-        "CP_%heureVar": 0,
+        "CP_%heureVar": 'NS',
         CP_coutHorN: 0,
         CP_coutHorN1: 0,
-        "CP_VA/MS_N":aggN.valeurAjoutee /aggN.CP_N || 0,
-        "CP_VA/MS_N1":aggN1.valeurAjoutee /aggN1.CP_N || 0 
+        "CP_VA/MS_N": (aggN?.valeurAjoutee != null && aggN?.CP_N) ? aggN.valeurAjoutee / aggN.CP_N : 0,
+        "CP_VA/MS_N1": (aggN1?.valeurAjoutee != null && aggN1?.CP_N) ? aggN1.valeurAjoutee / aggN1.CP_N : 0
       },
 
       // === Impôt sur les sociétés ===
@@ -204,8 +204,8 @@ export const GetDossierInfos = async (req, res) => {
 
       // === Analyse sectorielle ===
       anaSectorielle: {
-        millesime: anaSectorielle[0].millesime || null,
-        commentaire: anaSectorielle[0].commentaire || null
+        millesime: anaSectorielle[0]?.millesime ? anaSectorielle[0].millesime : null,
+        commentaire: anaSectorielle[0]?.texte ? anaSectorielle[0].texte : null
       },
 
       tresorerie: {

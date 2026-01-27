@@ -20,7 +20,7 @@ export async function getCumuls(req, res) {
     });
 
     const result = await extractCumuls(filePath);
-    
+
     if (!result) {
       return res.status(200).json(null);
     }
@@ -49,8 +49,8 @@ export async function getComments(req, res) {
     const limit = pLimit(2);
 
     const comments = await extractComments(filePath, compte);
-    
-    if (!comments) {
+
+    if (!comments || comments.length === 0) {
       return res.status(200).json(null);
     }
 
@@ -96,6 +96,18 @@ export async function getPointsImportants(req, res) {
   }
 }
 
+function isImmobEmpty(immob) {
+  if (!immob) return true;
+
+  const lignesVides =
+    !Array.isArray(immob.lignes) || immob.lignes.length === 0;
+
+  const totalVide =
+    immob.totalGeneral === null || immob.totalGeneral === undefined;
+
+  return lignesVides && totalVide;
+}
+
 export async function getImmob(req, res) {
   try {
     const { code_client, datefinex } = req.query;
@@ -118,14 +130,18 @@ export async function getImmob(req, res) {
 
     const immobEntree = await extractImmobEntree(filePathEntree);
     const immobSortie = await extractImmobSortie(filePathSortie);
-    
-    if (immobEntree.comptes == "aucunes informations" && immobSortie.comptes == "aucunes informations") {
+
+    const entreeVide = isImmobEmpty(immobEntree);
+    const sortieVide = isImmobEmpty(immobSortie);
+
+    if (entreeVide && sortieVide) {
       return res.status(200).json(null);
     }
 
-    const immob = { immobEntree, immobSortie };
-
-    res.status(200).json(immob);
+    return res.status(200).json({
+      immobEntree: entreeVide ? null : immobEntree,
+      immobSortie: sortieVide ? null : immobSortie
+    });
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les immobilisations" });

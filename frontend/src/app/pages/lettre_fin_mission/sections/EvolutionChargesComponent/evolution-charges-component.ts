@@ -21,9 +21,9 @@ export class EvolutionChargesComponent {
   @Input() anneeN1Existe: boolean = true;
 
   getValue(val: any, isPercent: boolean = false, isVariation: boolean = false): string {
-    if (val == null || val === '') return '';
+    if (val == null || val === '') return 'NS';
 
-    if (isPercent && isVariation && (val < -100 || val > 100)) return 'NS'; 
+    if (isPercent && isVariation && (val < -100 || val > 100 || val == 0)) return 'NS'; 
 
     return isPercent 
       ? Number(val).toFixed(2)

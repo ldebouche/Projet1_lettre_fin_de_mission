@@ -30,10 +30,30 @@ function flattenObject(obj, parentKey = "", result = {}) {
   return result;
 }
 
+import util from "util";
+
+function logDocxError(err) {
+  console.error("Docxtemplater error:", err.message);
+
+  const e = err?.properties?.errors;
+  if (Array.isArray(e)) {
+    e.forEach((sub, i) => {
+      console.error(`\n--- Sub error #${i + 1} ---`);
+      console.error("name:", sub.name);
+      console.error("message:", sub.message);
+      console.error("properties:", util.inspect(sub.properties, { depth: 5 }));
+    });
+  } else {
+    console.error("properties:", util.inspect(err.properties, { depth: 5 }));
+  }
+}
+
 export function genererWord(variables, folderPath) {
   const templateName = variables.anneeN1Existe
-    ? "modele_complet1.docm"
-    : "modele_simple1.docm";
+    ? "modele_complet.docm"
+    : "modele_simple.docm";
+
+    console.log(templateName);
 
   const templatePath = path.join(process.cwd(), "templates", templateName);
   const content = fs.readFileSync(templatePath, "binary");
@@ -51,7 +71,12 @@ export function genererWord(variables, folderPath) {
   const flatVariables = flattenObject(variables);
   console.log("Variables utilisées :", flatVariables);
 
-  doc.render(flatVariables);
+  try {
+    doc.render(flatVariables);
+  } catch (err) {
+    logDocxError(err);
+    throw err; // pour remonter au controller
+  }
 
   let xml = doc.getZip().file("word/document.xml").asText();
 

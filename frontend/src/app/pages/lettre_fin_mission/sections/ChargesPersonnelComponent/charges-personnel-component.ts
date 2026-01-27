@@ -40,6 +40,7 @@ export class ChargesPersonnelComponent implements OnInit {
     this.group.get('heuresRemunN1')?.valueChanges.subscribe(() => this.updateComputedValues());
 
     this.updateComputedValues();
+    console.log(this.infoChargesPersonnel);
   }
 
   updateComputedValues(): void {
@@ -66,7 +67,8 @@ export class ChargesPersonnelComponent implements OnInit {
   getValue(key?: string, isPercent: boolean = false, isVariation: boolean = false): string {
     if (!key) return '';
     const val = this.infoChargesPersonnel[key];
-    if (val == null || val === '') return '';
+    if (val == null || val === '') return 'NS';
+    if (val === 'NS') return 'NS';
 
     if (isPercent && isVariation && (val < -100 || val > 100)) return 'NS'; 
 

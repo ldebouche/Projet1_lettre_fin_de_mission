@@ -40,34 +40,6 @@ export class FormatService {
     return texte.replace(/ - /g, '\n - ').trim();
   }
 
-  formatASData(AS: any[]) {
-    const result: any = {};
-    if (!AS) return result;
-    result["millesime"] = AS[0]?.millesime ? String(AS[0].millesime).replace(/\s+/g, '') : "";
-    AS.forEach((item) => {
-      const prefix =
-        item.libelle.includes("Marge") ? "marge" :
-        item.libelle.includes("Tranches") ? "t" :
-        item.libelle.includes("entreprises") ? "nbrEnt" :
-        item.libelle.includes("Effectif") ? "efMoy" :
-        item.libelle.includes("personne") ? "caP" :
-        item.libelle.includes("HT") ? "ca" : null;
-
-      if (!prefix) return;
-
-      Object.keys(item.tranches).forEach((key) => {
-        if (key.startsWith("tranche_")) {
-          const num = key.replace("tranche_", "");
-          result[`${prefix}${num}`] = item.tranches[key];
-        } else if (key.startsWith("globale")) {
-          result[`${prefix}G`] = item.tranches[key];
-        }
-      });
-    });
-
-    return result;
-  }
-
   formatPointsImportants(pointsImportants: any[]) {
     return pointsImportants.map((p: any) => {
       const commentaire = p.commentaire ? ` - ${p.commentaire}` : '';

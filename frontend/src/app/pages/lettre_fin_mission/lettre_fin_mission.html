@@ -7,28 +7,36 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="stack">
 
     <!-- ===== CHIFFRES CLÉS ===== -->
-    <section-chiffres-cles [group]="f.CC" [infoChiffresCles]="infoChiffresCles" [anneeN1Existe]="anneeN1Existe" [dataPerspective]="f.CC.get('comPerspective')" [dataCA]="dataCA" [anaSectorielle]="anaSectorielle"></section-chiffres-cles>
+    <section-chiffres-cles [group]="f.CC" [infoChiffresCles]="infoChiffresCles" [anneeN1Existe]="anneeN1Existe"
+      [dataPerspective]="f.CC.get('comPerspective')" [dataCA]="dataCA"
+      [anaSectorielle]="anaSectorielle"></section-chiffres-cles>
 
     <!-- ===== EVOLUTION CHARGES EXTERNES & AUTRES ACHATS ===== -->
-    <section-evolution-charges-component [group]="f.EC" [infoEvolutionCharges]="infoEvolutionCharges" [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
+    <section-evolution-charges-component [group]="f.EC" [infoEvolutionCharges]="infoEvolutionCharges"
+      [anneeN1Existe]="anneeN1Existe"></section-evolution-charges-component>
 
     <!-- ===== CHARGES DE PERSONNEL ===== -->
-    <section-charges-personnel-component [group]="f.CP" [infoChargesPersonnel]="infoChargesPersonnel" [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
-    
+    <section-charges-personnel-component [group]="f.CP" [infoChargesPersonnel]="infoChargesPersonnel"
+      [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
+
     <!-- ===== INVESTISSEMENTS ===== -->
-    <section-investissement-component [group]="f.I" [dotations]="dotations" [immobs]="immobs" *ngIf="I_classe2"></section-investissement-component>
+    <section-investissement-component [group]="f.I" [dotations]="dotations" [immobs]="immobs"
+      *ngIf="I_classe2 && ((dotations?.length ?? 0) > 0 || (immobs?.length ?? 0) > 0)"></section-investissement-component>
 
     <!-- ===== IMPÔT SUR LES SOCIÉTÉS (TABLEAU) ===== -->
-    <section-impot-societes-tab-component [group]="f.IS" [infoIS]="infoImpotSociete"></section-impot-societes-tab-component>
+    <section-impot-societes-tab-component [group]="f.IS"
+      [infoIS]="infoImpotSociete"></section-impot-societes-tab-component>
 
     <!-- ===== ACOMPTES IMPÔT SUR LES SOCIÉTÉS N+1 ===== -->
-    <section-acompte-impot-component [group]="f.AI"  [moisCloture]="moisClotureArray" *ngIf="imposable && resEx >= 0 && IS_tot > 3000"></section-acompte-impot-component>
+    <section-acompte-impot-component [group]="f.AI" [moisCloture]="moisClotureArray"
+      *ngIf="imposable && resEx >= 0 && IS_tot > 3000"></section-acompte-impot-component>
 
     <!-- ===== INFORMATION FISCALE ===== -->
-    <section-info-fiscale-component [formArray]="IF" [items]="informations_fiscales" ></section-info-fiscale-component>
+    <section-info-fiscale-component [formArray]="IF" [items]="informations_fiscales"></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx" *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
+    <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx"
+      *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
 
     <!-- ===== TRESORERIE ===== -->
     <section-tresorerie-component [group]="f.T"></section-tresorerie-component>
@@ -40,13 +48,15 @@
     <section-majdoc-unique-eval-component [group]="f.MD" *ngIf="MD_salaries"></section-majdoc-unique-eval-component>
 
     <!-- ===== FAITS MARQUANTS ===== -->
-    <section-faits-marquants-component [group]="f.FM" [data]="f.FM.get('commentaire')"></section-faits-marquants-component>
+    <section-faits-marquants-component [group]="f.FM"
+      [data]="f.FM.get('commentaire')"></section-faits-marquants-component>
 
     <!-- ===== LES PERSPECTIVES ===== -->
     <section-perspectives-component [group]="f.P" [data]="f.P.get('commentaire')"></section-perspectives-component>
 
     <!-- ===== POINTS IMPORTANTs ===== -->
-    <section-points-importants-component [group]="f.PI" [data]="f.PI.get('commentaire')"></section-points-importants-component>
+    <section-points-importants-component [group]="f.PI"
+      [data]="f.PI.get('commentaire')"></section-points-importants-component>
 
     <!-- ===== SIGNATAIRE ===== -->
     <section-signataire-component [group]="f.S"></section-signataire-component>
@@ -56,27 +66,26 @@
     </div>
   </form>
 
-  <app-modal
-    [isOpen]="pptGenerating"
-    [showCloseButton]="false"
-    [closeOnBackdropClick]="false">
-    <h2>Génération en cours...</h2>
-    <div class="spinner"></div>
+  <app-modal [isOpen]="pptGenerating" [showCloseButton]="false" [closeOnBackdropClick]="false"
+    title="Génération en cours...">
+
+    <div modal-body class="generating-body">
+      <div class="spinner"></div>
+    </div>
+
   </app-modal>
 
-  <app-modal
-    [isOpen]="generationDone"
-    title="Génération Terminée"
-    (closeEvent)="closeMessage()">
+
+  <app-modal [isOpen]="generationDone" title="Génération Terminée" (closeEvent)="closeMessage()">
     <div modal-body>
-        <p class="subtitle">Vos fichiers sont disponibles dans :</p>
-        <div class="path-box">
-          {{ generatedPath }}
-        </div>
+      <p class="subtitle">Vos fichiers sont disponibles dans :</p>
+      <div class="path-box">
+        {{ generatedPath }}
+      </div>
     </div>
 
     <div modal-footer class="modal-actions">
-        <button type="button" class="action-btn" (click)="closeMessage()">OK</button>
+      <button type="button" class="action-btn" (click)="closeMessage()">OK</button>
     </div>
   </app-modal>
 </div>

@@ -101,6 +101,8 @@ export class LettreFinMissionComponent implements OnInit {
         console.log(data);
         console.log(dotations);
         console.log(emprunts);
+        console.log(data.anaSectorielle);  
+        console.log(immobs);
         this.data = data;
         if (dotations) {        
           this.dotations = Object.values(dotations);
@@ -252,7 +254,7 @@ export class LettreFinMissionComponent implements OnInit {
           },
           EA: {
             resEx: Math.round(this.resEx),
-            dot: Math.round(this.dotations[1]),
+            dot: this.dotations[1] ? Math.round(this.dotations[1]) : 0,
             rembours: emprunts ? Math.round(emprunts.totalRemboursN1) : 0,
           },
           MD: {
@@ -319,7 +321,7 @@ export class LettreFinMissionComponent implements OnInit {
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
       ...this.infoAutofinancement,
-      AS: this.formatService.formatASData(this.anaSectorielle),
+      AS: this.anaSectorielle,
       SR: this.infoSeuilRenta,
       EC_tab: this.infoEvolutionCharges,
       RE: this.infoRatioExploitation,

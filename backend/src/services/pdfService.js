@@ -2,7 +2,6 @@ import fs from "fs";
 import pdf from "pdf-parse-fork";
 import path from "path";
 import { exec } from "child_process";
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export async function extractCumuls(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -17,6 +16,9 @@ export async function extractCumuls(filePath) {
     /Cumul tous comptes[\s\S]*?(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)\s+(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)\s+(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)/;
 
   const match = text.match(regex);
+  if (!match) {
+    return null;
+  }
 
   let cumul2025;
   let cumul2026;
@@ -27,7 +29,7 @@ export async function extractCumuls(filePath) {
     cumul2026 = parseFloat(match[2].replace(/\s/g, "").replace(",", "."));
     cumul2027 = parseFloat(match[3].replace(/\s/g, "").replace(",", "."));
   }
-  
+
   return { cumul2025, cumul2026, cumul2027 };
 }
 
@@ -40,16 +42,20 @@ export async function extractComments(filePath, numComptes) {
   const data = await pdf(buffer);
   const text = data.text;
 
-  const sectionD = text.match(/Cycle D[\s\S]*?(?=Cycle E|$)/);
+  if (text.trim().length < 50) return [];
+
+  const sectionDMatch = text.match(/(?:^|\n)\s*Cycle\s*D\b[\s\S]*?(?=(?:\n\s*Cycle\s*E\b)|$)/i);
+  if (!sectionDMatch) return [];
+
+  const sectionD = sectionDMatch[0];
 
   const regex = /(\d{6,8})\s*-\s*(.+?)\n([\s\S]*?)(?=\n\d{6,8}\s*-|\nChapitre|\nEdition|\Z)/g;
-  const matches = [...sectionD[0].matchAll(regex)];
-
-  const comptes = matches.map(m => ({
+  const comptes = [...sectionD.matchAll(regex)].map(m => ({
     compte: m[1],
     libelle: m[2],
     commentaire: m[3].replace(/[★☆•]+/g, '').trim()
   }));
+  if (!numComptes) return comptes;
 
   const result = [];
 
@@ -63,8 +69,8 @@ export async function extractComments(filePath, numComptes) {
       }
     } else {
       if (comptes[i].compte.startsWith(numComptes)) {
-          result.push(comptes[i]);
-        }
+        result.push(comptes[i]);
+      }
     }
   }
   return result;
@@ -262,7 +268,7 @@ export async function extractEmprunts(filePath) {
 
     const blocAvantK = bloc.split("K")[0];
     const blocApresK = bloc.split("K")[1];
-    
+
     const nombres = [...blocAvantK.matchAll(regexNombre)].map((x) => x[0]);
 
     let montant_emprunt = "0,00";
@@ -281,13 +287,13 @@ export async function extractEmprunts(filePath) {
     if (remboursMatch) {
       remboursN1 = remboursMatch[1];
     }
-    
+
     emprunts.push({
       T_designation: T_designation.replace(/\s+/g, " ").trim(),
       T_date_debut,
       T_date_fin,
-      T_montant_emprunt : montant_emprunt.replace(/\s/g, "").replace(",", "."),
-      T_montant_restant : montant_restant.replace(/\s/g, "").replace(",", "."),
+      T_montant_emprunt: montant_emprunt.replace(/\s/g, "").replace(",", "."),
+      T_montant_restant: montant_restant.replace(/\s/g, "").replace(",", "."),
       T_remboursN1: remboursN1.replace(/\s/g, "").replace(",", ".")
     });
   }
@@ -350,6 +356,6 @@ export async function extractEcheancier(filePath) {
 
     result.push({ annee, echeanciers, totalAnnee });
   }
-  
+
   return result;
 }

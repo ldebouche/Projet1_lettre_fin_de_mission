@@ -3,9 +3,9 @@
   <textarea 
       rows="4" 
       class="area"
-      formControlName="comPerspective" *ngIf="anaSectorielle">
+      formControlName="comPerspective" *ngIf="anaSectorielle?.millesime && anaSectorielle?.commentaire?.trim().length">
   </textarea>
-  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective" *ngIf="anaSectorielle"></bouton-textarea>
+  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective" *ngIf="anaSectorielle?.millesime && anaSectorielle?.commentaire?.trim().length"></bouton-textarea>
   <table class="table">
     <thead>
       <tr>

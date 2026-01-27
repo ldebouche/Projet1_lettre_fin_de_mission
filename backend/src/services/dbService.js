@@ -292,12 +292,12 @@ class dbService {
     return this.executeQuery(
       `SELECT 
           *
-      FROM analyse_sectorielle
-      WHERE code_ape = @code_ape
+      FROM ana_sectorielle_meta
+      WHERE codeAPE = @code_ape
         AND millesime = (
           SELECT MAX(millesime)
-          FROM analyse_sectorielle
-          WHERE code_ape = @code_ape
+          FROM ana_sectorielle_meta
+          WHERE codeAPE = @code_ape
         );`,
       { code_ape },
       false,
