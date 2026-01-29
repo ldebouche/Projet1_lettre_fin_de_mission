@@ -4,7 +4,7 @@
         <p>Chargement de l'arborescence...</p>
     </div>
 
-    <div *ngIf="!isLoading">
+    <div *ngIf="!isLoading && annees.length > 0">
         <div *ngFor="let annee of annees" class="year-block">
             <div class="year-header">
                 <span class="year-label">Exercice</span>
@@ -43,5 +43,9 @@
                 </section>
             </div>
         </div>
+    </div>
+
+    <div *ngIf="!isLoading && annees.length === 0" class="empty-msg">
+        Aucune donnée disponible
     </div>
 </div>

@@ -264,7 +264,7 @@ export class AnaSectorielleSettingsComponent implements OnInit {
     this.openModal({
       type: 'confirm',
       title: 'Passer en édition',
-      message: 'Cette procédure va repasser en attente et sera retirée de la base de connaissances.',
+      message: 'Ce fichier va repasser en attente et sera retiré de la base de connaissances.',
       confirmButtonText: 'Passer en attente',
       cancelButtonText: 'Annuler',
       onConfirm: () => {

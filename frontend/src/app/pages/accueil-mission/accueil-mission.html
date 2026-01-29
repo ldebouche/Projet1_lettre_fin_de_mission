@@ -40,3 +40,14 @@
   </section>
 
 </div>
+
+<app-modal [isOpen]="isHistoriqueModalOpen" [title]="'Historique des documents'" [isLarge]="true"
+    (closeEvent)="closeHistoriqueModal()">
+
+    <app-liste-historique modal-body [codeClient]="selectedCodeClient">
+    </app-liste-historique>
+
+    <div modal-footer class="modal-actions">
+        <button type="button" class="btn" (click)="closeHistoriqueModal()">Fermer</button>
+    </div>
+</app-modal>

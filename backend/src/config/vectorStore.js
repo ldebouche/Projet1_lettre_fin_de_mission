@@ -14,11 +14,17 @@ db.prepare(`
     )   
 `).run();
 
+const cols = db.prepare(`PRAGMA table_info(embeddings)`).all().map(c => c.name);
+if (!cols.includes("roles")) {
+    db.prepare(`ALTER TABLE embeddings ADD COLUMN roles TEXT NOT NULL DEFAULT '["general"]'`).run();
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_embeddings_roles ON embeddings(roles)`).run();
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_embeddings_file_path ON embeddings(file_path)`).run();
+}
 
 export function logDbStatus() {
     const total = db.prepare(`SELECT COUNT(*) as count FROM embeddings`).get();
     const files = db.prepare(`
-        SELECT file_name, COUNT(*) as chunks
+        SELECT file_name, COUNT(*) as chunks, roles
         FROM embeddings
         GROUP BY file_name
     `).all();

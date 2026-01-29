@@ -1,4 +1,4 @@
-import { getFileTree, deleteItemFromIndexedItems, createFolderToIndexedItems, addFileToIndexedItems, creerPdfDepuisFichierPdfBuffer, creerPdfDepuisUrl, getProced, accepterProcedure, rejeterProcedure, getCompteurFichiers, getProcedureEditable, updateProcedureFromEdit, uploadProcedureImage, mettreProcedureChatbotEnEdition } from '../services/chatbotSettingsService.js';
+import { getFileTree, deleteItemFromIndexedItems, createFolderToIndexedItems, addFileToIndexedItems, creerPdfDepuisFichierPdfBuffer, creerPdfDepuisUrl, getProced, accepterProcedure, rejeterProcedure, getCompteurFichiers, getProcedureEditable, updateProcedureFromEdit, uploadProcedureImage, mettreProcedureChatbotEnEdition, remettreProcedureEnAttenteDepuisIndexer } from '../services/chatbotSettingsService.js';
 import { convertToPdfBuffer } from '../utils/convertToPdf.js';
 
 export const getTreeController = async (req, res) => {
@@ -201,3 +201,13 @@ export const editFromChatbotController = async (req, res) => {
         res.status(500).json({ message: "Erreur lors du passage en édition." });
     }
 };
+
+export async function moveIndexerToAttente(req, res) {
+    try {
+        const { nom } = req.body;
+        const r = await remettreProcedureEnAttenteDepuisIndexer(nom);
+        res.json(r);
+    } catch (e) {
+        res.status(400).json({ error: e?.message || "Erreur" });
+    }
+}

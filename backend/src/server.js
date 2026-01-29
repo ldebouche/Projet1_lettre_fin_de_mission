@@ -3,7 +3,6 @@ import path from "path";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import { authMiddlewareCollaborateur } from "./middlewares/auth.js";
 
 import dbRoutes from './routes/dbRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
@@ -25,7 +24,7 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json({ limit: "100mb" }));
+app.use(express.json({ limit: "1000mb" }));
 app.use(cookieParser());
 
 app.use('/api/db', dbRoutes);
@@ -34,7 +33,7 @@ app.use('/api/word', wordRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chatbot-settings', chatbotSettingsRoutes);
-app.use("/api/files", /*authMiddlewareCollaborateur,*/ express.static(path.join(process.cwd(), "documents")));
+app.use("/api/files", express.static(path.join(process.cwd(), "documents")));
 app.use("/api/ana-secto-settings", anaSectoSettingsRoutes);
 
 const PORT = process.env.PORT || 4000;

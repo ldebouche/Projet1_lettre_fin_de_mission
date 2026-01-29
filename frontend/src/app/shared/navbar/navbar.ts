@@ -37,13 +37,26 @@ export class NavbarComponent implements OnInit {
   ngOnInit() {
     this.currentUrl = this.router.url;
     this.dataService.collaborateur$.subscribe((collab) => {
+      console.log(collab);
       this.collaborateur = collab;
-      this.collaborateur.groupes_microsoft.includes('COMITE INFORMATIQUE') ? this.hasRole = true : this.hasRole = false;
+      this.collaborateur.groupes_microsoft.includes('admin') ? this.hasRole = true : this.hasRole = false;
     });
   }
 
   handleReturn() {
-    this.location.back();
+    const routesMap: Record<string, string> = {
+      "/ana-secto-settings": "/",
+      "/chatbot-settings": "/",
+      "/dashboard": "/",
+      "/login-dossier": "/dashboard",
+      "/accueil-mission": "/login-dossier",
+      "/lettre-fin-mission": "/accueil-mission"
+    };
+
+    const target = routesMap[this.currentUrl];
+    if (target) {
+      this.router.navigate([target]);
+    }
   }
 
   logout() {

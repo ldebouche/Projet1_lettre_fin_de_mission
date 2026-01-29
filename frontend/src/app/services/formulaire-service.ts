@@ -82,7 +82,7 @@ export class FormulaireService {
 
       // ===== INFORMATION FISCALE =====
       IF: this.fb.array(
-        this.informations_fiscales.map(() => this.fb.control(false))
+        this.informations_fiscales.map(() => this.fb.control(true))
       ),
 
       // ===== PROJET D’AFFECTATION DU RÉSULTAT =====

@@ -1,6 +1,6 @@
 import fs from "fs";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import axios from "axios";
+import axios, { all } from "axios";
 import { db, logDbStatus } from "../config/vectorStore.js";
 import { extraireTexteDepuisPdfBuffer } from "./procedures/procedureOcrService.js";
 
@@ -20,14 +20,13 @@ async function embedCached(text) {
     return v;
 }
 
-export async function indexPdfFile(absolutePath, relativePath, fileName) {
+export async function indexPdfFile(absolutePath, relativePath, fileName, roles = ["general"]) {
     const text = await extractPdfText(absolutePath);
     const chunks = chunkText(text, 1200, 200);
-    console.log("INDEX:", fileName, "chars:", text.length, "chunks:", chunks.length);
 
     const insert = db.prepare(`
-        INSERT INTO embeddings (file_path, file_name, content, vector)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO embeddings (file_path, file_name, content, vector, roles)
+        VALUES (?, ?, ?, ?, ?)
     `);
 
     let chunkIndex = 0;
@@ -37,7 +36,8 @@ export async function indexPdfFile(absolutePath, relativePath, fileName) {
             relativePath,
             fileName,
             `[CHUNKIDX:${chunkIndex++}]\n${chunk}`,
-            JSON.stringify(vector)
+            JSON.stringify(vector),
+            JSON.stringify(Array.from(new Set((roles?.length ? roles : ["general"]).map(r => String(r).toLowerCase()))))
         );
     }
 }
@@ -142,6 +142,38 @@ async function embed(text) {
     return res.data.data[0].embedding;
 }
 
+function computeAllowedRoles(userRoles) {
+    console.log("RAW userRoles:", userRoles);
+
+    let roles = [];
+
+    if (Array.isArray(userRoles)) {
+        roles = userRoles;
+    } else if (typeof userRoles === "string") {
+        // support si jamais ça arrive sous forme "admin,comptable"
+        roles = userRoles.split(",").map(s => s.trim());
+    } else {
+        roles = [];
+    }
+
+    const allowed = new Set(["general"]);
+
+    for (const r of roles) {
+        const role = String(r || "").trim().toLowerCase();
+        if (role) allowed.add(role);
+    }
+
+    const result = Array.from(allowed);
+    console.log("ALLOWED:", result);
+    return result;
+}
+
+function buildRolesWhere(allowedRoles) {
+    const clauses = allowedRoles.map(() => `roles LIKE ?`);
+    const params = allowedRoles.map(r => `%\"${r}\"%`);
+    return { where: `(${clauses.join(" OR ")})`, params };
+}
+
 function cosineSimilarity(a, b) {
     const dot = a.reduce((sum, v, i) => sum + v * b[i], 0);
     const magA = Math.sqrt(a.reduce((s, v) => s + v * v, 0));
@@ -149,15 +181,20 @@ function cosineSimilarity(a, b) {
     return dot / (magA * magB);
 }
 
-export async function askChatbotRag(message) {
+export async function askChatbotRag(message, userRole) {
     logDbStatus();
 
+    const allowedRoles = computeAllowedRoles(userRole);
     const questionVector = await embedCached(message);
+
+    console.log(allowedRoles);
+    const { where, params } = buildRolesWhere(allowedRoles);
 
     const rows = db.prepare(`
         SELECT file_path, file_name, content, vector
         FROM embeddings
-    `).all();
+        WHERE ${where}
+    `).all(...params);
 
     const scored = rows.map(r => {
         const v = JSON.parse(r.vector);

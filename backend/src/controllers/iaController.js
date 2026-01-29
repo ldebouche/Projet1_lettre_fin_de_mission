@@ -15,7 +15,10 @@ export const generateComment = async (req, res) => {
 export const chatbotController = async (req, res) => {
   try {
     const { message } = req.body;
-    const result = await askChatbotRag(message);
+    
+    const userRoles = req.user?.roles || ["general"];
+
+    const result = await askChatbotRag(message, userRoles);
     res.json(result);
   } catch (e) {
     console.error("Erreur chatbot RAG :", e);

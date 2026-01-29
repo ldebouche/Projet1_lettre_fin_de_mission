@@ -72,4 +72,8 @@ export class ChatbotSettingsService {
   EditFromChatbot(item: any) {
     return this.http.post('/api/chatbot-settings/edit-from-chatbot', { item });
   }
+
+  MoveIndexerToAttente(nom: string) {
+    return this.http.post('/api/chatbot-settings/indexer-to-attente', { nom });
+  }
 }

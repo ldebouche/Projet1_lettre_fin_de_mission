@@ -110,28 +110,49 @@ export async function extractPointsImportants(filePath) {
 
 export async function extractImmobEntree(filePath) {
   if (!fs.existsSync(filePath)) {
-    console.warn(`Fichier introuvable : ${filePath}`);
     return { lignes: [], totalGeneral: "aucunes informations" };
   }
 
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
-  const text = data.text;
+
+  const text = (data.text || "")
+    .replace(/\u00A0/g, " ")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{2,}/g, "\n");
+
+  if (!text.trim()) return { lignes: [], totalGeneral: "aucunes informations" };
 
   const lignes = [];
+  const reDate = /\d{2}\/\d{2}\/\d{2}/;
+  const reMontant = /(\d{1,3}(?: \d{3})*,\d{2})/;
 
-  const regexLigne = /^\s*\d+\s+([A-Za-z0-9éèêàâçëïôùû'’\- ]+?)(\d{2}\/\d{2}\/\d{2}).*?([\d\s]+,\d{2})/gm;
+  for (const line of text.split("\n").map(l => l.trim()).filter(Boolean)) {
+    if (/^Cumul\b/i.test(line)) continue;
+    if (/^\d{6,}\s*/.test(line)) continue; // lignes compte: 20780000...
 
-  let match;
-  while ((match = regexLigne.exec(text)) !== null) {
-    const libelle = match[1].trim();
-    const date = match[2].trim();
-    const montant = match[3].trim();
+    const mNo = line.match(/^(\d+)\s*/);
+    if (!mNo) continue;
 
-    lignes.push({ libelle, date, montant });
+    const afterNo = line.slice(mNo[0].length);
+    const iDate = afterNo.search(reDate);
+    if (iDate < 0) continue;
+
+    const libelle = afterNo.slice(0, iDate).trim();
+    const date = afterNo.slice(iDate, iDate + 8);
+
+    const rest = afterNo
+      .slice(iDate + 8)
+      .replace(/(Achat|Apport|Reprise)(?=\d)/gi, "$1 "); // Achat450,00 -> Achat 450,00
+
+    const mMontant = rest.match(reMontant);
+    if (!mMontant) continue;
+
+    lignes.push({ libelle, date, montant: mMontant[1] });
   }
 
-  const totalGeneralMatch = text.match(/Total des entrées\s*([\d\s]+,\d{2})/);
+  const totalGeneralMatch = text.match(/Total des entrées\s*([\d ]+,\d{2})/i);
   const totalGeneral = totalGeneralMatch ? totalGeneralMatch[1].trim() : null;
 
   return { lignes, totalGeneral };

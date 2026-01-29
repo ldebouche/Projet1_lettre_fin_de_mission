@@ -7,7 +7,7 @@ export class FormatService {
       if (typeof val === 'boolean') return val;
       if (typeof val !== 'number' || isNaN(val)) return val;
 
-      if (key && (key.includes('%') || key.includes('VA/MS'))) {
+      if (key && (key.includes('%') || key.includes('VA/MS') || key.includes('pct'))) {
         if (val < -100 || val > 100) return 'NS';
         return Number(val.toFixed(2)).toLocaleString('fr-FR');
       }

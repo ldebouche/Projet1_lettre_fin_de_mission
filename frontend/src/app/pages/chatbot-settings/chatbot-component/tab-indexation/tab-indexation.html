@@ -9,6 +9,36 @@
                 </span>
             </div>
 
+            <div class="per-file-roles">
+                <div class="roles-dropdown" (click)="$event.stopPropagation()">
+                    <button type="button" class="roles-trigger" (click)="toggleRoles(file)">
+                        Rôles
+                        <span class="roles-summary">{{ getRolesLabel(file) }}</span>
+                        <span class="chev">▾</span>
+                    </button>
+
+                    <div class="roles-menu" *ngIf="file.rolesOpen">
+                        <label class="role-item">
+                            <input type="checkbox" [checked]="file.roles?.includes('general')"
+                                (change)="onRoleChange(file, 'general', $event)" />
+                            Général
+                        </label>
+
+                        <label class="role-item">
+                            <input type="checkbox" [checked]="file.roles?.includes('rh')"
+                                (change)="onRoleChange(file, 'rh', $event)" />
+                            RH
+                        </label>
+
+                        <label class="role-item">
+                            <input type="checkbox" [checked]="file.roles?.includes('comptable')"
+                                (change)="onRoleChange(file, 'comptable', $event)" />
+                            Comptable
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <div class="per-file-select">
                 <select [(ngModel)]="file.targetFolder" [compareWith]="compareFolders">
                     <option [ngValue]="null">Racine</option>

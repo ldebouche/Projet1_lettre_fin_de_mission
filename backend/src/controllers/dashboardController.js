@@ -6,7 +6,7 @@ export const getDossierHistorique = async (req, res) => {
 
     const basePath = 'C:\\outils-avenia'; 
 
-    const clientPath = path.join(basePath, 'CC0003', 'LFM');
+    const clientPath = path.join(basePath, code_client, 'LFM');
 
     try {
         const clientFiles = await getHistorique(clientPath);

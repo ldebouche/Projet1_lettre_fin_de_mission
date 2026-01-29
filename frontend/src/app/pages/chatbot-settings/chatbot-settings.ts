@@ -53,7 +53,6 @@ export class ChatbotSettingsComponent implements OnInit {
   iconFichier = 'assets/icons/fichier.png';
   iconExportation = 'assets/icons/exportation.png';
 
-  filesToUpload: File[] = [];
   indexedItems: IndexedItem[] = [];
 
   isModalOpen = false;

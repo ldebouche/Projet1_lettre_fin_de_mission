@@ -132,6 +132,19 @@ export async function createFolderToIndexedItems(folderName, parentId, indexedIt
     await fs.mkdir(folderPath);
 }
 
+const AVAILABLE_ROLES = new Set(["general", "rh", "comptable"]);
+
+function normalizeRoles(inputRoles) {
+    const roles = Array.isArray(inputRoles) ? inputRoles : [];
+    const clean = roles
+        .map(r => String(r).trim().toLowerCase())
+        .filter(r => AVAILABLE_ROLES.has(r));
+
+    // si aucun rôle coché : tu choisis la règle
+    // Ici: si vide => ["general"]
+    return clean.length ? Array.from(new Set(clean)) : ["general"];
+}
+
 export async function addFileToIndexedItems(items) {
     const indexerDir = getIndexerRoot();
     const chatbotRoot = getChatbotRoot();
@@ -156,7 +169,9 @@ export async function addFileToIndexedItems(items) {
         const pdfPath = path.join(destProcDir, `${finalProcName}.pdf`);
         const relativePath = path.relative(chatbotRoot, pdfPath).replace(/\\/g, "/");
 
-        await indexPdfFile(pdfPath, relativePath, path.basename(pdfPath));
+        const roles = normalizeRoles(it.roles);
+
+        await indexPdfFile(pdfPath, relativePath, path.basename(pdfPath), roles);
     }
 
     return { ok: true };
@@ -486,4 +501,22 @@ function extraireTexteProcedureDepuisHtml(pageHtml, pageUrl) {
     let contentHtml = String(article?.content || "").trim();
 
     return { titre, source: pageUrl, text: contentHtml };
+}
+
+export async function remettreProcedureEnAttenteDepuisIndexer(nomProcedure) {
+    if (!nomProcedure || !nomProcedure.trim()) throw new Error("Nom de procédure invalide");
+
+    const indexerDir = getIndexerRoot();
+    const attenteDir = getAttenteRoot();
+
+    await fs.mkdir(attenteDir, { recursive: true });
+
+    const srcDir = path.join(indexerDir, nomProcedure);
+    const st = await fs.stat(srcDir).catch(() => null);
+    if (!st?.isDirectory()) throw new Error(`Dossier indexer introuvable: ${srcDir}`);
+
+    const { folderPath: destDir } = await trouverNomDossierDisponible(attenteDir, nomProcedure);
+    await fs.rename(srcDir, destDir);
+
+    return { ok: true, nom: path.basename(destDir) };
 }

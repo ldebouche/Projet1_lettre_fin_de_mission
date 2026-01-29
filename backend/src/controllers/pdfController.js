@@ -205,7 +205,7 @@ export async function getEmprunts(req, res) {
       return res.status(200).json(null);
     }
 
-    res.status(200).json(emprunts);
+    res.status(200).json({ emprunts: emprunts, empruntsPath: filePath });
   } catch (err) {
     console.error("Erreur extraction PDF:", err);
     res.status(500).json({ error: "Impossible d'extraire les emprunts" });

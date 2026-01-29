@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ChatbotSettingsService } from '../../../../services/chatbot-settings-service';
 import { IndexedItem } from '../../chatbot-settings';
 
+type AllowedRole = 'general' | 'rh' | 'comptable';
+
 @Component({
   selector: 'app-tab-indexation',
   standalone: true,
@@ -21,7 +23,7 @@ export class TabIndexationComponent implements OnChanges, OnInit {
   @Input() compareFolders!: (a: any | null, b: any | null) => boolean;
 
   filesToIndex: any[] = [];
-  @Output() filesToUploadChange = new EventEmitter<File[]>();
+  @Output() filesToUploadChange = new EventEmitter<void>();
 
   @Output() indexed = new EventEmitter<void>();
 
@@ -31,6 +33,8 @@ export class TabIndexationComponent implements OnChanges, OnInit {
   @Output() processingEnd = new EventEmitter<{ title: string; message: string }>();
 
   targetFolder: any = null;
+
+  private readonly allowedRoles: AllowedRole[] = ['general', 'rh', 'comptable'];
 
   constructor(private chatbotSettingsService: ChatbotSettingsService) { }
 
@@ -57,18 +61,68 @@ export class TabIndexationComponent implements OnChanges, OnInit {
           pdfUrl: p.pdfUrl,
           dateCreation: p.dateCreation,
           tailleMo: Number((p.tailleOctets ?? 0) / 1024 / 1024),
-          targetFolder: null
+          targetFolder: null,
+          roles: [],
+          rolesOpen: false
         }));
       }
     });
   }
 
-  removeFile(file: File): void {
-    const next = (this.filesToIndex || []).filter(f => f !== file);
-    this.filesToIndex = next;
-    this.filesToUploadChange.emit(next);
+  toggleRoles(file: any): void {
+    file.rolesOpen = !file.rolesOpen;
   }
 
+  getRolesLabel(file: any): string {
+    const roles: string[] = Array.isArray(file?.roles) ? file.roles : [];
+    if (!roles.length) return 'Aucun';
+    // Affichage sympa
+    return roles
+      .map(r => (r === 'general' ? 'Général' : r === 'rh' ? 'RH' : 'Comptable'))
+      .join(', ');
+  }
+
+  onRoleChange(file: any, role: AllowedRole, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+
+    const current: string[] = Array.isArray(file.roles) ? [...file.roles] : [];
+    const set = new Set(current.filter(r => this.allowedRoles.includes(r as any)));
+
+    if (checked) set.add(role);
+    else set.delete(role);
+
+    file.roles = Array.from(set);
+  }
+
+  removeFile(file: any): void {
+    const nom = file?.nom;
+    if (!nom) return;
+
+    this.processingStart.emit({
+      title: 'Retour en attente',
+      message: 'La procédure est en cours de déplacement vers la file d’attente…'
+    });
+
+    this.chatbotSettingsService.MoveIndexerToAttente(nom).subscribe({
+      next: () => {
+        this.loadIndexer();
+
+        this.filesToUploadChange.emit();
+
+        this.processingEnd.emit({
+          title: 'Terminé',
+          message: 'La procédure est revenue en attente.'
+        });
+      },
+      error: (e) => {
+        console.error(e);
+        this.processingEnd.emit({
+          title: 'Erreur',
+          message: 'Impossible de repasser cette procédure en attente.'
+        });
+      }
+    });
+  }
   startIndexing(): void {
     if (!this.filesToIndex.length) return;
 
@@ -80,7 +134,8 @@ export class TabIndexationComponent implements OnChanges, OnInit {
     const payload = {
       items: this.filesToIndex.map(item => ({
         nom: item.nom,
-        targetFolder: item.targetFolder ? JSON.stringify(item.targetFolder) : null
+        targetFolder: item.targetFolder ? JSON.stringify(item.targetFolder) : null,
+        roles: Array.isArray(item.roles) ? item.roles : []
       }))
     };
 
@@ -88,8 +143,6 @@ export class TabIndexationComponent implements OnChanges, OnInit {
       .AddFile(payload)
       .subscribe({
         next: () => {
-          this.filesToIndex = [];
-          this.filesToUploadChange.emit([]);
           this.indexed.emit();
 
           this.processingEnd.emit({

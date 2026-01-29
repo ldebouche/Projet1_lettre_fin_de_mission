@@ -65,6 +65,7 @@ export class LettreFinMissionComponent implements OnInit {
   anaSectorielle: any;
   pointsImportants: any;
   emprunts: any;
+  empruntsPath: any;
 
   data: any;
 
@@ -95,9 +96,10 @@ export class LettreFinMissionComponent implements OnInit {
       dotations: this.pdfService.getDotations(this.codeClient, this.dateFinEx),
       immobs: this.pdfService.getImmob(this.codeClient, this.dateFinEx),
       pointsImportants: this.pdfService.getPointsImportants(this.codeClient, this.dateFinEx),
-      emprunts: this.pdfService.getEmprunts(this.codeClient, this.dateFinEx)
+      empruntsData: this.pdfService.getEmprunts(this.codeClient, this.dateFinEx)
     }).subscribe({
-      next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
+      next: ({ data, dotations, immobs, pointsImportants, empruntsData }: any) => {
+        const { emprunts, empruntsPath } = empruntsData || {};
         console.log(data);
         console.log(dotations);
         console.log(emprunts);
@@ -121,8 +123,8 @@ export class LettreFinMissionComponent implements OnInit {
         }
 
         if (emprunts) {
-        
           this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
+          this.empruntsPath = empruntsPath;
         }
         
         this.infoChargesPersonnel = data.chargesPersonnel;
@@ -325,6 +327,7 @@ export class LettreFinMissionComponent implements OnInit {
       SR: this.infoSeuilRenta,
       EC_tab: this.infoEvolutionCharges,
       RE: this.infoRatioExploitation,
+      empruntsPath: this.empruntsPath,
     };
 
     const formattedPayload = this.formatService.formatPayload(payload);
@@ -373,6 +376,6 @@ export class LettreFinMissionComponent implements OnInit {
 
   closeMessage() {
     this.generationDone = false;
-    this.router.navigate(['/accueil']);
+    this.router.navigate(['/dashboard']);
   }
 }

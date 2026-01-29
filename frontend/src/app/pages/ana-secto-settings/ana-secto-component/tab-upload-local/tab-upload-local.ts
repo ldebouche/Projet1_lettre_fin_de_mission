@@ -61,14 +61,14 @@ export class AnaTabUploadLocalComponent {
 
     this.processingStart.emit({
       title: 'Création en cours',
-      message: 'Les procédures sont en cours de création. Merci de patienter…'
+      message: 'Les analyses sectorielles sont en cours de création. Merci de patienter…'
     });
 
     this.anaSectoService.CreateAnaSectoFromFiles(this.filesToUpload).subscribe({
       next: () => {
         this.processingEnd.emit({
           title: 'Création terminée',
-          message: 'Les procédures ont été créées avec succès.'
+          message: 'Les analyses sectorielles ont été créées avec succès.'
         });
         this.filesToUpload = [];
         this.created.emit();

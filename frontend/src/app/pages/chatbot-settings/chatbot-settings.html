@@ -48,7 +48,7 @@
                 </app-tab-verification>
 
                 <app-tab-indexation *ngIf="activeTab === 'index'" [iconFichier]="iconFichier"
-                    [indexedItems]="indexedItems" (filesToUploadChange)="filesToUpload = $event"
+                    [indexedItems]="indexedItems" (filesToUploadChange)="onVerificationUpdated()"
                     [getIndentationForSelect]="getIndentationForSelect.bind(this)"
                     [compareFolders]="compareFolders.bind(this)" (indexed)="getTree()"
                     [actualiserIndexation]="actualiserIndexation"
