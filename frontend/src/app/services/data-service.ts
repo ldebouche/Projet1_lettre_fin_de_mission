@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
-  private nomEntreprise?: string;
   private readonly collaborateurSubject = new BehaviorSubject<any>(this.readCollaborateurFromStorage());
   collaborateur$ = this.collaborateurSubject.asObservable();
 
@@ -47,14 +46,25 @@ export class DataService {
   }
 
   setNomEntreprise(nom: string) {
-    this.nomEntreprise = nom;
+    localStorage.setItem('nomEntreprise', nom);
   }
 
   getNomEntreprise(): string | null {
-    return this.nomEntreprise || null;
+    return localStorage.getItem('nomEntreprise') || null;
   }
 
   clearData() {
-    this.nomEntreprise = undefined;
+    localStorage.removeItem('nomEntreprise');
+    localStorage.removeItem('codeClient');
+    localStorage.removeItem('dateDebutEx');
+    localStorage.removeItem('dateFinEx');
+  }
+
+  setModeLFM(mode: string) {
+    localStorage.setItem('modeLFM', mode);
+  }
+
+  getModeLFM(): string | null {
+    return localStorage.getItem('modeLFM') || null;
   }
 }

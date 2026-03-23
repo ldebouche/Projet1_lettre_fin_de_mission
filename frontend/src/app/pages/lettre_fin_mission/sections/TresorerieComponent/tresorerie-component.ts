@@ -19,8 +19,6 @@ export class TresorerieComponent implements OnInit {
   tresorerieNCalculee: number = 0;
   tresorerieNTheorique: number = 0;
   
-  emprunts: any[] = [];
-  
   ngOnInit() {
     this.tresorerieNTheorique = this.group.get('tresoN')?.value || 0;
 
@@ -30,9 +28,6 @@ export class TresorerieComponent implements OnInit {
     this.group.valueChanges.subscribe(values => {
       this.calculerTreso(values);
     });
-
-    const raw = this.group.get('emprunts')?.value;
-    this.emprunts = raw?.global.emprunts || [];
   }
 
   private calculerTreso(values: any) {
@@ -54,7 +49,7 @@ export class TresorerieComponent implements OnInit {
       (values.V_autresDettes || 0);
 
     if (this.tresorerieNCalculee !== this.tresorerieNTheorique) {
-      this.messageErreur = `⚠️ Le solde de la trésorerie calculé (${this.getValue(this.tresorerieNCalculee)} €) est différent du solde de la trésorerie théorique (${this.getValue(this.tresorerieNTheorique)} €).`;
+      this.messageErreur = `⚠️ Le solde de la trésorerie calculé (${this.getValue(this.tresorerieNCalculee)} €) est différent du solde de la trésorerie théorique (${this.getValue(this.tresorerieNTheorique)} €).\nL'écart est de ${this.getValue(this.tresorerieNCalculee - this.tresorerieNTheorique)} €.`;
     } else {
       this.messageErreur = null;
     }

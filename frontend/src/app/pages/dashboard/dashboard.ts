@@ -8,6 +8,7 @@ import { DataService } from '../../services/data-service';
 import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
 import { ModalComponent } from '../../shared/modal/modal';
 import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
+import { RondNotifComponent } from '../../shared/rond-notif/rond-notif';
 
 type SortableField = 'code_client' | '_sortableName' | 'collaborateur' | 'date_sortie';
 
@@ -16,7 +17,7 @@ interface Dossier {
   collaborateur?: string;
   _sortableName: string;
   date_sortie?: string | Date | null;
-  [key: string]: any; 
+  [key: string]: any;
 }
 
 @Component({
@@ -27,7 +28,8 @@ interface Dossier {
     FormsModule,
     ListeHistoriqueComponent,
     ModalComponent,
-    BoutonFiltreComponent
+    BoutonFiltreComponent,
+    RondNotifComponent
   ],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
@@ -36,14 +38,14 @@ export class DashboardComponent implements OnInit {
   collaborateur: any | null = null;
 
   activeTab: 'mesDossiers' | 'equipe' = 'mesDossiers';
-  
+
   isLoading = true;
-  mesDossiers: Dossier[] = []; 
+  mesDossiers: Dossier[] = [];
   dossiersEquipe: Dossier[] = [];
   errorMessage: string | null = null;
 
   nomEntreprise: string = "";
-  userRole: string = "";
+  userRole: string[] = [];
 
   filterClient: string = '';
   showExitedClients: boolean = false;
@@ -67,18 +69,60 @@ export class DashboardComponent implements OnInit {
   isHistoriqueModalOpen = false;
   selectedCodeClient: string | null = null;
 
+  dossiersEnAttente: any[] = [];
+  isModalAttenteOpen = false;
+  selectedDossierAttente: any | null = null;
+
   constructor(
     private router: Router,
     private db: DbService,
     private dataService: DataService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.collaborateur = JSON.parse(localStorage.getItem('collaborateur') || 'null');
     this.loadData();
+
+    //données test 
+    this.dossiersEnAttente = [
+      {
+        code_client: 'CLT-4587',
+        raison_sociale: 'Les Garçons Coiffeurs',
+        forme_societe: 'SAS',
+        civilite: null,
+        nom: null,
+        prenom: null,
+        date_creation: '2024-11-12',
+        statut: 'EN_ATTENTE'
+      },
+      {
+        code_client: 'CLT-4621',
+        raison_sociale: 'Boulangerie du Centre',
+        forme_societe: 'SARL',
+        civilite: null,
+        nom: null,
+        prenom: null,
+        date_creation: '2024-12-03',
+        statut: 'EN_ATTENTE'
+      },
+      {
+        code_client: 'CLT-4709',
+        raison_sociale: null,
+        forme_societe: null,
+        civilite: 'M.',
+        nom: 'Durand',
+        prenom: 'Lucas',
+        date_creation: '2025-01-08',
+        statut: 'EN_ATTENTE'
+      }
+    ];
   }
 
   private prepareData(data: any[]): Dossier[] {
+    if (!Array.isArray(data)) {
+      console.error('prepareData received non-array:', data);
+      return [];
+    }
     return data.map(d => {
       const formattedName = this.formatNomEntreprise(d);
       const dateSortie = d.date_sortie_cabinet !== "1900-01-01T00:00:00.000Z" ? new Date(d.date_sortie_cabinet) : null;
@@ -94,21 +138,22 @@ export class DashboardComponent implements OnInit {
     this.isLoading = true;
 
     if (!this.collaborateur) {
-      console.error("Aucun collaborateur trouvé en localStorage.");
       this.isLoading = false;
       return;
     }
 
     if (this.collaborateur.statut === 'N1') {
-      this.userRole = 'chef';
+      this.userRole = ['chef'];
     } else {
-      this.userRole = 'collaborateur';
+      this.userRole = ['collaborateur'];
     }
 
-    this.db.GetListeDossiers(this.collaborateur.id_sellsy, this.collaborateur.statut).subscribe({
+    this.userRole.push(...this.collaborateur.groupes_microsoft);
+
+    this.db.GetListeDossiers(this.collaborateur.id_sellsy, this.userRole).subscribe({
       next: (data: any) => {
+        console.log("Dossiers reçus :", data);
         this._allMesDossiers = this.prepareData(data.dossiers);
-        console.log("Dossiers chargés pour l'utilisateur :", this._allMesDossiers);
         this._allDossiersEquipe = this.prepareData(data.dossiersEquipe);
         this.applyFilterAndSort()
         this.isLoading = false;
@@ -118,7 +163,7 @@ export class DashboardComponent implements OnInit {
         this.errorMessage = "Erreur lors du chargement des dossiers.";
       }
     });
-    
+
   }
 
   selectTab(tab: 'mesDossiers' | 'equipe') {
@@ -130,7 +175,8 @@ export class DashboardComponent implements OnInit {
   }
 
   getTotalPages(): number {
-    return Math.ceil(this.totalFilteredItems / this.itemsPerPage);
+    const perPage = Math.max(1, this.itemsPerPage);
+    return Math.max(1, Math.ceil(this.totalFilteredItems / perPage));
   }
 
   nextPage() {
@@ -153,24 +199,24 @@ export class DashboardComponent implements OnInit {
 
   setSort(field: SortableField) {
     if (this.sortField === field) {
-        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
-        this.sortField = field;
-        this.sortDirection = (field === 'code_client') ? 'asc' : 'desc';
+      this.sortField = field;
+      this.sortDirection = (field === 'code_client') ? 'asc' : 'desc';
     }
     this.applyFilterAndSort();
   }
-  
+
   applyFilterAndSort() {
     let sourceData = this.activeTab === 'mesDossiers' ? [...this._allMesDossiers] : [...this._allDossiersEquipe];
 
     if (this.filterClient) {
-        const filterTerm = this.filterClient.toLowerCase();
-        sourceData = sourceData.filter(d => 
-            (d.code_client && d.code_client.toLowerCase().includes(filterTerm)) ||
-            (d._sortableName && d._sortableName.toLowerCase().includes(filterTerm)) ||
-            (this.activeTab === 'equipe' && d.collaborateur && d.collaborateur.toLowerCase().includes(filterTerm))
-        );
+      const filterTerm = this.filterClient.toLowerCase();
+      sourceData = sourceData.filter(d =>
+        (d.code_client && d.code_client.toLowerCase().includes(filterTerm)) ||
+        (d._sortableName && d._sortableName.toLowerCase().includes(filterTerm)) ||
+        (this.activeTab === 'equipe' && d.collaborateur && d.collaborateur.toLowerCase().includes(filterTerm))
+      );
     }
 
     if (!this.showExitedClients) {
@@ -178,23 +224,23 @@ export class DashboardComponent implements OnInit {
     }
 
     sourceData.sort((a, b) => {
-        const isAsc = this.sortDirection === 'asc';
-        
-        let aValue: any = a[this.sortField as keyof Dossier] || '';
-        let bValue: any = b[this.sortField as keyof Dossier] || '';
-        
-        if (this.sortField === 'collaborateur') {
-            aValue = (a as any).collaborateur || '';
-            bValue = (b as any).collaborateur || '';
-        }
-        if (typeof aValue === 'string') {
-            aValue = aValue.toLowerCase();
-            bValue = bValue.toLowerCase();
-        }
+      const isAsc = this.sortDirection === 'asc';
 
-        if (aValue < bValue) return isAsc ? -1 : 1;
-        if (aValue > bValue) return isAsc ? 1 : -1;
-        return 0;
+      let aValue: any = a[this.sortField as keyof Dossier] || '';
+      let bValue: any = b[this.sortField as keyof Dossier] || '';
+
+      if (this.sortField === 'collaborateur') {
+        aValue = (a as any).collaborateur || '';
+        bValue = (b as any).collaborateur || '';
+      }
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) return isAsc ? -1 : 1;
+      if (aValue > bValue) return isAsc ? 1 : -1;
+      return 0;
     });
 
     this.totalFilteredItems = sourceData.length;
@@ -204,14 +250,10 @@ export class DashboardComponent implements OnInit {
     const paginatedData = sourceData.slice(start, end);
 
     if (this.activeTab === 'mesDossiers') {
-        this.mesDossiers = paginatedData;
+      this.mesDossiers = paginatedData;
     } else {
-        this.dossiersEquipe = paginatedData;
+      this.dossiersEquipe = paginatedData;
     }
-  }
-
-  addProspect() {
-    console.log("Action: Ajout d'un nouveau prospect");
   }
 
   getCollabNom(): string {
@@ -247,5 +289,24 @@ export class DashboardComponent implements OnInit {
   closeHistoriqueModal() {
     this.isHistoriqueModalOpen = false;
     this.selectedCodeClient = null;
+  }
+
+  openModalAttente() {
+    this.isModalAttenteOpen = true;
+    this.dossiersEnAttente ? this.selectedDossierAttente = this.dossiersEnAttente[0] : null;
+  }
+
+  closeModalAttente() {
+    this.isModalAttenteOpen = false;
+  }
+
+  selectDossierAttente(d: any) {
+    this.selectedDossierAttente = d;
+  }
+
+  openLoginLab() {
+    if (!this.selectedDossierAttente) return;
+
+    this.router.navigate(['/login-lab']);
   }
 }

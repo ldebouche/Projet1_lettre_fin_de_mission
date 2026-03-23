@@ -4,33 +4,33 @@ import path from "path";
 import { exec } from "child_process";
 
 export async function extractCumuls(filePath) {
-  if (!fs.existsSync(filePath)) {
-    console.warn(`Fichier introuvable : ${filePath}`);
-    return null;
-  }
+  if (!fs.existsSync(filePath)) return null;
+
   const buffer = fs.readFileSync(filePath);
-  const data = await pdf(buffer);
-  const text = data.text;
+  const { text } = await pdf(buffer);
 
-  const regex =
-    /Cumul tous comptes[\s\S]*?(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)\s+(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)\s+(?:\d[\d\s,.]+E?\s+){1}(\d[\d\s,.]+)/;
+  const part = text.split(/Cumul tous comptes/i)[1];
+  if (!part) return null;
 
-  const match = text.match(regex);
-  if (!match) {
-    return null;
+  const regex = /E\s*([\d\s\u00A0]+,\d+)/g;
+  const values = [];
+
+  let match;
+  while ((match = regex.exec(part)) !== null) {
+    values.push(
+      parseFloat(
+        match[1].replace(/[\s\u00A0]/g, "").replace(",", ".")
+      )
+    );
   }
 
-  let cumul2025;
-  let cumul2026;
-  let cumul2027;
+  if (values.length < 3) return null;
 
-  if (match) {
-    cumul2025 = parseFloat(match[1].replace(/\s/g, "").replace(",", "."));
-    cumul2026 = parseFloat(match[2].replace(/\s/g, "").replace(",", "."));
-    cumul2027 = parseFloat(match[3].replace(/\s/g, "").replace(",", "."));
-  }
-
-  return { cumul2025, cumul2026, cumul2027 };
+  return {
+    cumul2025: values[0],
+    cumul2026: values[1],
+    cumul2027: values[2],
+  };
 }
 
 export async function extractComments(filePath, numComptes) {
@@ -278,14 +278,14 @@ export async function extractEmprunts(filePath) {
   const text = data.text;
 
   const regexEmprunt =
-    /(?<numero>\d{8})\s*(?<T_designation>.+?)Entreprise[\s\S]*?(?<T_date_debut>\d{2}\/\d{2}\/\d{2})\s*(?<T_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=(?:\n|\r)\d{8}|Cumul|$)/g;
+    /(?<numero>\d{8})\s*(?<E_designation>.+?)Entreprise[\s\S]*?(?<E_date_debut>\d{2}\/\d{2}\/\d{2})\s*(?<E_date_fin>\d{2}\/\d{2}\/\d{2})(?<bloc>[\s\S]+?)(?=(?:\n|\r)\d{8}|Cumul|$)/g;
 
 
   const emprunts = [];
   const regexNombre = /\d{1,3}(?: ?\d{3})*,\d{1,2}/g;
   const regexRemboursN1 = /I[^\d]*(\d{1,3}(?: ?\d{3})*,\d{1,2})/;
   for (const match of text.matchAll(regexEmprunt)) {
-    const { T_designation, T_date_debut, T_date_fin, bloc } = match.groups;
+    const { E_designation, E_date_debut, E_date_fin, bloc } = match.groups;
 
     const blocAvantK = bloc.split("K")[0];
     const blocApresK = bloc.split("K")[1];
@@ -310,12 +310,12 @@ export async function extractEmprunts(filePath) {
     }
 
     emprunts.push({
-      T_designation: T_designation.replace(/\s+/g, " ").trim(),
-      T_date_debut,
-      T_date_fin,
-      T_montant_emprunt: montant_emprunt.replace(/\s/g, "").replace(",", "."),
-      T_montant_restant: montant_restant.replace(/\s/g, "").replace(",", "."),
-      T_remboursN1: remboursN1.replace(/\s/g, "").replace(",", ".")
+      E_designation: E_designation.replace(/\s+/g, " ").trim(),
+      E_date_debut,
+      E_date_fin,
+      E_montant_emprunt: montant_emprunt.replace(/\s/g, "").replace(",", "."),
+      E_montant_restant: montant_restant.replace(/\s/g, "").replace(",", "."),
+      E_remboursN1: remboursN1.replace(/\s/g, "").replace(",", ".")
     });
   }
 

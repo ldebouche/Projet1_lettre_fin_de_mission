@@ -33,7 +33,17 @@ class dbService {
   }
 
   async GetListeDossiers(id_sellsy, statut) {
-    if (statut === 'N1') {
+    console.log("GetListeDossiers - id_sellsy:", id_sellsy, "statut:", statut);
+    if (statut.includes('informatique')) {
+      const dossiers = await this.executeQuery(
+        `SELECT * FROM clients;`,
+        {},
+        false,
+      );
+
+      return { dossiers, dossiersEquipe: [] };
+    }
+    if (statut.includes('N1')) {
       const dossiers = await this.executeQuery(
         `SELECT *
           FROM clients
@@ -110,7 +120,7 @@ class dbService {
   async GetInfoClients(code_client) {
     return this.executeQuery(
       `SELECT
-        c.ape AS code_ape,
+        REPLACE(TRIM(c.ape), '.', '') AS code_ape,
         c.soumis_is AS imposable,
         c.mois_cloture AS mois_cloture,
         CASE WHEN c.raison_sociale = ''
@@ -125,7 +135,7 @@ class dbService {
         TRIM(c.cpos_corresp) AS codePostalClient,
         TRIM(c.ville_siege) AS villeClient,
         TRIM(c.site) AS lieuCreation,
-        CONCAT(LEFT(collab.nom, 1), LEFT(collab.prenom, 1), ' ', TRIM(c.code_client)) AS initialesChefGroupe,
+        CONCAT(TRIM(collab.code), ' ', TRIM(c.code_client)) AS initialesChefGroupe,
         CASE WHEN c.forme_societe LIKE 'ass%' AND regime_fiscal = 'a' THEN CAST(0 AS bit) ELSE CAST(1 AS bit) END AS tabAutofinancement,
         c.site AS site
       FROM clients AS c

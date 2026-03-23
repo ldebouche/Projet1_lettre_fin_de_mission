@@ -130,6 +130,11 @@ export class FormulaireService {
         emprunts: []
       }),
 
+      // ===== SYNTHESE DES EMPRUNTS =====
+      E: this.fb.group({
+        emprunts: []
+      }),
+
       // ===== ESTIMATION D’AUTOFINANCEMENT =====
       EA: this.fb.group({
         enabled: [false],
@@ -143,6 +148,12 @@ export class FormulaireService {
       // ===== MAJ DU DOCUMENT UNIQUE =====
       MD: this.fb.group({
         enabled: [false]
+      }),
+
+      // ===== RISQUE DE CESSATION DE PAIEMENT =====
+      RC: this.fb.group({
+        enabled: [false],
+        commentaire: ['']
       }),
 
       // ===== FAITS MARQUANTS =====

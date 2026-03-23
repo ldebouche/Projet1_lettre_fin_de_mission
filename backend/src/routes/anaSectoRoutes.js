@@ -2,7 +2,6 @@ import express from 'express';
 import multer from 'multer';
 import { getTreeController, deleteItem, createFolder, addFile, createAnaSectoFromFiles, getAnaSecto, updateAnaSecto, accepterAnaSecto, rejeterAnaSecto, getCompteurFichiersController, getProcedureText, updateProcedureText, uploadProcedureImageController, editFromTree } from '../controllers/anaSectoController.js';
 import { authMiddlewareCollaborateur } from '../middlewares/auth.js';
-import { authDemo } from '../middlewares/authDemo.js';
 
 const router = express.Router();
 const upload = multer({
@@ -20,7 +19,7 @@ router.post('/createFolder', createFolder);
 
 router.post('/addFile', upload.array('files', 1000), addFile);
 
-router.post('/createAnaSectoFromFiles', authDemo, upload.array('files', 1000), createAnaSectoFromFiles);
+router.post('/createAnaSectoFromFiles', authMiddlewareCollaborateur, upload.array('files', 1000), createAnaSectoFromFiles);
 
 router.get('/getAnaSecto', getAnaSecto);
 

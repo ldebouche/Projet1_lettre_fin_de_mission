@@ -2,8 +2,9 @@ import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
 
-const JOBS_DIR = "C:\\Users\\admin.lcd\\projet_lfm\\jobs_ppt";
-const BackendPath = "C:\\Users\\admin.lcd\\projet_lfm\\Projet1_lettre_fin_de_mission\\backend\\src\\templates";
+const DATA_DIR = "C:\\code_outils-avenia\\DATA\\PROD";
+const JOBS_DIR = path.join(DATA_DIR, "jobs_ppt");
+const BackendPath = "C:\\code_outils-avenia\\PROD\\code\\backend\\src\\templates";
 const dataPath = path.join(BackendPath, "data.json");
 const vbsPath = path.join(BackendPath, "launchPPT.vbs");
 
@@ -11,43 +12,47 @@ let isRunning = false;
 
 function log(...args) {
     const line = `[${new Date().toISOString()}] ` + args.join(" ") + "\n";
-    fs.appendFileSync("C:\\Users\\admin.lcd\\projet_lfm\\log_agent\\lfm-ppt-agent.log", line);
+    fs.appendFileSync(path.join(DATA_DIR, "log_agent", "lfm-ppt-agent.log"), line);
     console.log(...args);
 }
 
 function processJob(fullPath, jobFile) {
     isRunning = true;
-
     log("Traitement du job :", fullPath);
 
-    const raw = fs.readFileSync(fullPath, "utf8");
-    const job = JSON.parse(raw);
+    try {
+        const raw = fs.readFileSync(fullPath, "utf8");
+        const job = JSON.parse(raw);
 
-    const filePath = path.join(
-        job.folderPath,
-        `lfm_${job.variables.code_client}_${job.variables.anneeN}.pptm`
-    );
+        const filePath = path.join(
+            job.folderPath,
+            `lfm_${job.variables.code_client}_${job.variables.anneeN}.pptm`
+        );
 
-    fs.writeFileSync(dataPath, JSON.stringify(job.variables), "utf8");
+        fs.writeFileSync(dataPath, JSON.stringify(job.variables), "utf8");
 
-    const cmd = `cscript //nologo "${vbsPath}" "${filePath}"`;
-    log("Commande VBS :", cmd);
+        const cmd = `cscript //nologo "${vbsPath}" "${filePath}"`;
+        log("Commande VBS :", cmd);
 
-    exec(cmd, (error, stdout, stderr) => {
-        if (error) {
-            log("Erreur VBS:", error);
-            fs.renameSync(fullPath, fullPath + ".error");
-            isRunning = false;
-            return;
-        }
+        exec(cmd, (error, stdout, stderr) => {
+            if (error) {
+                log("Erreur VBS:", error);
+                try { fs.renameSync(fullPath, fullPath + ".error"); } catch(e) { log("Erreur renommage fichier:", e); }
+            } else {
+                if (stderr) log("VBS stderr:", stderr);
+                log("PPT généré avec succès:", stdout);
+                try { fs.renameSync(fullPath, fullPath + ".done"); } catch(e) { log("Erreur renommage fichier:", e); }
+            }
+            isRunning = false; 
+        });
 
-        if (stderr) log("VBS stderr:", stderr);
-        log("PPT généré avec succès:", stdout);
-
-        fs.renameSync(fullPath, fullPath + ".done");
-
-        isRunning = false;
-    });
+    } catch (err) {
+        log("Erreur critique lors de la préparation du job (ex: JSON invalide):", err);
+        
+        try { fs.renameSync(fullPath, fullPath + ".error"); } catch(e) { log("Erreur renommage fichier corrompu:", e); }
+        
+        isRunning = false; 
+    }
 }
 
 function scanJobs() {

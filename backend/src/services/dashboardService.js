@@ -38,3 +38,14 @@ export async function getHistorique(cheminBase) {
         return {};
     }
 }
+
+export async  function verifHistorique(cheminBase, millesime) {
+    try {
+        cheminBase = path.join(cheminBase, millesime, 'DEPOT');
+        const dossiersAnnees = await fs.readdir(cheminBase, { withFileTypes: true });
+
+        return dossiersAnnees.length == 5;
+    } catch {
+        return false;
+    }
+}

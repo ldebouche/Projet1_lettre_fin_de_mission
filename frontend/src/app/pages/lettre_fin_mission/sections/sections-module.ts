@@ -18,6 +18,8 @@ import { FaitsMarquantsComponent } from './FaitsMarquantsComponent/faits-marquan
 import { PerspectivesComponent } from './PerspectivesComponent/perspectives-component';
 import { PointsImportantsComponent } from './PointsImportantsComponent/points-importants-component';
 import { SignataireComponent } from './SignataireComponent/signataire-component';
+import { RisqueDeCessationComponent } from './RisqueDeCessationComponent/risque-de-cessation-component';
+import { EmpruntsComponent } from './EmpruntsComponent/emprunts-component';
 
 @NgModule({
   imports: [
@@ -37,7 +39,9 @@ import { SignataireComponent } from './SignataireComponent/signataire-component'
     FaitsMarquantsComponent,
     PerspectivesComponent,
     PointsImportantsComponent,
-    SignataireComponent
+    SignataireComponent,
+    RisqueDeCessationComponent,
+    EmpruntsComponent
   ],
   exports: [
     ChiffresClesComponent,
@@ -54,7 +58,9 @@ import { SignataireComponent } from './SignataireComponent/signataire-component'
     FaitsMarquantsComponent,
     PerspectivesComponent,
     PointsImportantsComponent,
-    SignataireComponent
+    SignataireComponent,
+    RisqueDeCessationComponent,
+    EmpruntsComponent
   ]
 })
 export class SectionsModule {}

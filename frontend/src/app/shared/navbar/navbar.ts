@@ -7,6 +7,7 @@ import { CommonModule, Location } from '@angular/common';
 import { MsalService } from '@azure/msal-angular';
 
 import { DataService } from '../../services/data-service';
+import { RolesService } from '../../services/roles-service';
 
 @Component({
   selector: 'app-navbar',
@@ -23,24 +24,37 @@ export class NavbarComponent implements OnInit {
   collaborateur: any;
   hasRole: boolean = false;
 
+  adminMenuOpen = false;
+
   constructor(
     private router: Router,
     private location: Location,
     private msalService: MsalService,
-    private dataService: DataService
+    private dataService: DataService,
+    private rolesService: RolesService
   ) {
-    this.router.events.subscribe(() => {
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
       this.currentUrl = this.router.url;
+      this.adminMenuOpen = false;
     });
   }
 
   ngOnInit() {
     this.currentUrl = this.router.url;
+
     this.dataService.collaborateur$.subscribe((collab) => {
-      console.log(collab);
       this.collaborateur = collab;
-      this.collaborateur.groupes_microsoft.includes('admin') ? this.hasRole = true : this.hasRole = false;
+
+      this.hasRole = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique"]);
     });
+  }
+
+  toggleAdminMenu() {
+    this.adminMenuOpen = !this.adminMenuOpen;
+  }
+
+  closeAdminMenu() {
+    this.adminMenuOpen = false;
   }
 
   handleReturn() {
@@ -54,9 +68,7 @@ export class NavbarComponent implements OnInit {
     };
 
     const target = routesMap[this.currentUrl];
-    if (target) {
-      this.router.navigate([target]);
-    }
+    if (target) this.router.navigate([target]);
   }
 
   logout() {
@@ -65,7 +77,7 @@ export class NavbarComponent implements OnInit {
 
     this.msalService.instance.logoutRedirect({
       account: this.msalService.instance.getActiveAccount(),
-      postLogoutRedirectUri: "https://outils-avenia.fr/"
+      postLogoutRedirectUri: window.location.origin + "/"
     });
   }
 }

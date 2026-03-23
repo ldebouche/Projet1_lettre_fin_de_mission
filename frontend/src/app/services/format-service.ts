@@ -101,10 +101,10 @@ export class FormatService {
     const autres = initSynthese();
 
     for (const e of data.emprunts) {
-      const debut = parseDate(e.T_date_debut);
-      const fin = parseDate(e.T_date_fin);
-      const montant = parseFloat(e.T_montant_emprunt);
-      const rembN1 = parseFloat(e.T_remboursN1);
+      const debut = parseDate(e.E_date_debut);
+      const fin = parseDate(e.E_date_fin);
+      const montant = parseFloat(e.E_montant_emprunt);
+      const rembN1 = parseFloat(e.E_remboursN1);
       let cible;
       if (inRange(debut)) cible = commences;
       else if (inRange(fin)) cible = termines;
@@ -119,6 +119,10 @@ export class FormatService {
     data.totalRemboursN1 = Math.round(commences.totalRemboursN1 + termines.totalRemboursN1 + autres.totalRemboursN1);
     data.nbEmprunts = commences.nbEmprunts + termines.nbEmprunts + autres.nbEmprunts;
 
+    console.log('commences', commences);
+    console.log('termines', termines);
+    console.log('autres', autres);
+    console.log('data', data);
     return {
       global: data,
       commencesDansExercice: commences,

@@ -1,32 +1,56 @@
-<nav class="navbar">
+<nav class="navbar" [class.is-open]="adminMenuOpen">
   <div class="container">
-    <div class="links">
-      <button (click)="handleReturn()" class="logout-button" *ngIf="currentUrl !== '/'">Retour</button>
+    <div class="left">
+      <button (click)="handleReturn()" class="nav-btn" *ngIf="currentUrl !== '/'">
+        Retour
+      </button>
+    </div>
 
-      <a [routerLink]="['/ana-secto-settings']" class="logout-button"
-        *ngIf="currentUrl !== '/ana-secto-settings' && hasRole">
-        Gérer les analyses sectorielles
+    <div class="center">
+      <a routerLink="/accueil-intranet" class="logo-link" aria-label="Accueil">
+        <div class="logo-wrap" [class.is-open]="adminMenuOpen"></div>
       </a>
     </div>
 
-    <!-- Logo + nom -->
-    <div class="brand">
-      <a routerLink="/accueil-intranet" class="logo-link">
-        <img src="assets/navbar_avenia_image.svg" alt="Logo" class="logo" />
-      </a>
+    <div class="right">
+      <button (click)="logout()" class="nav-btn">Déconnexion</button>
+
+      <button *ngIf="hasRole" class="hamburger" (click)="toggleAdminMenu()" [attr.aria-expanded]="adminMenuOpen"
+        aria-label="Menu admin">
+        <span *ngIf="!adminMenuOpen">☰</span>
+        <span *ngIf="adminMenuOpen">✕</span>
+      </button>
     </div>
+  </div>
 
+  <div class="backdrop" [class.open]="adminMenuOpen" (click)="closeAdminMenu()" aria-hidden="true"></div>
 
+  <div class="admin-dropdown" [class.open]="adminMenuOpen" [attr.aria-hidden]="!adminMenuOpen">
+    <div class="dropdown-inner">
 
-    <!-- Desktop menu -->
-    <div class="links">
+      <div class="col">
+        <div class="col-title">Gestion d’outils</div>
 
-      <a [routerLink]="['/chatbot-settings']" class="logout-button"
-        *ngIf="currentUrl !== '/chatbot-settings' && hasRole">
-        Gérer le Chatbot
-      </a>
+        <a class="dd-link" [routerLink]="['/chatbot-settings']" routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }" (click)="closeAdminMenu()">
+          Gestion Chatbot
+        </a>
 
-      <button (click)="logout()" class="logout-button">Déconnexion</button>
+        <a class="dd-link" [routerLink]="['/ana-secto-settings']" routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }" (click)="closeAdminMenu()">
+          Gestion Analyses Sectorielles
+        </a>
+      </div>
+
+      <div class="col">
+        <div class="col-title">Comptes rendus</div>
+
+        <a class="dd-link" [routerLink]="['/pilotage-equipe']" routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }" (click)="closeAdminMenu()">
+          Pilotage équipe
+        </a>
+      </div>
+
     </div>
   </div>
 </nav>

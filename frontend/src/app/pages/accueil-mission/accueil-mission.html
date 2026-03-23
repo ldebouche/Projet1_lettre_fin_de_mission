@@ -51,3 +51,15 @@
         <button type="button" class="btn" (click)="closeHistoriqueModal()">Fermer</button>
     </div>
 </app-modal>
+
+<app-modal [isOpen]="isMissingHistoriqueModalOpen" [title]="'Erreur lors de l\'ouverture du dossier'" [isLarge]="false"
+    (closeEvent)="closeMissingHistoriqueModal()">
+
+    <div modal-body>
+      Documents manquants pour ce dossier. Veuillez effectuer la tache groupée "LFM : Prepa lettre de fin de mission" sur Agiris.
+    </div>
+
+    <div modal-footer class="modal-actions">
+        <button type="button" class="btn" (click)="closeMissingHistoriqueModal()">Fermer</button>
+    </div>
+</app-modal>

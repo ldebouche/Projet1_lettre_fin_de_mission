@@ -2,7 +2,6 @@ import express from 'express';
 import multer from 'multer';
 import { getTreeController, deleteItem, createFolder, addFile, createProcedureFromFiles, createProcedureFromUrl, getProcedure, accepterProcedureController, rejeterProcedureController, getCompteurFichiersController, getProcedureText, updateProcedureText, uploadProcedureImageController, editFromChatbotController, moveIndexerToAttente } from '../controllers/chatbotSettingsController.js';
 import { authMiddlewareCollaborateur } from '../middlewares/auth.js';
-import { authDemo } from '../middlewares/authDemo.js';
 import { get } from 'http';
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -15,9 +14,9 @@ router.post('/createFolder', createFolder);
 
 router.post('/addFile', upload.array('files', 1000), addFile);
 
-router.post('/createProcedureFromFiles', authDemo, upload.array('files', 1000), createProcedureFromFiles);
+router.post('/createProcedureFromFiles', authMiddlewareCollaborateur, upload.array('files', 1000), createProcedureFromFiles);
 
-router.post('/createProcedureFromUrl', authDemo, createProcedureFromUrl);
+router.post('/createProcedureFromUrl', authMiddlewareCollaborateur, createProcedureFromUrl);
 
 router.get('/getProcedures', getProcedure);
 

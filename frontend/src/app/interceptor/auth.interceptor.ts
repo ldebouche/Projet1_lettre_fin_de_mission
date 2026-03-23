@@ -8,15 +8,7 @@ import { mergeMap } from 'rxjs/operators';
 export class AuthInterceptor implements HttpInterceptor {
     constructor(private msal: MsalService) { }
 
-    intercept(req: HttpRequest<any>, next: HttpHandler) {
-        const demoProfile = localStorage.getItem("demo_profile"); // "admin" ou "user"
-        if (demoProfile) {
-            return next.handle(req.clone({
-                setHeaders: { Authorization: `Demo ${demoProfile}` }
-            }));
-        }
-
-        
+    intercept(req: HttpRequest<any>, next: HttpHandler) {        
         const activeAccount = this.msal.instance.getActiveAccount() ?? undefined;
 
         if (!activeAccount) {

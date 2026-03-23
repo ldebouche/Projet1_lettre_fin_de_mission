@@ -3,17 +3,17 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-modal',
-  standalone: true, // On le passe en standalone pour simplifier les imports
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './modal.html',
-  styleUrl: './modal.scss'
+  styleUrls: ['./modal.scss']
 })
 export class ModalComponent {
   @Input() isOpen = false;
   @Input() title = '';
   @Input() isLarge = false;
-  @Input() showCloseButton = true; // Option pour masquer le bouton "X"
-  @Input() closeOnBackdropClick = true; // Permet de fermer en cliquant sur le fond
+  @Input() showCloseButton = true;
+  @Input() closeOnBackdropClick = true;
 
   @Output() closeEvent = new EventEmitter<void>();
 

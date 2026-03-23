@@ -19,6 +19,7 @@ const app = express();
 app.use(cors({
   origin: [
     "https://outils-avenia.fr",
+    "https://dev.outils-avenia.fr",
     "http://localhost:4200",
     "http://10.25.10.143:4200"
   ],

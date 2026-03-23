@@ -35,9 +35,11 @@ export class ProjetAffectResultatComponent {
   }
 
   calculerAffections(values: any, res: any) {
-    const total = ((values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0)).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    if (total != res) {
-      this.messageErreur = `⚠️ La somme des affectations (${total} €) est différente du résultat de l’exercice (${res} €).`;
+    const sum = (values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0);
+    const total = sum.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    if (sum != Math.round(this.resEx)) {
+      const ecart = sum - Math.round(this.resEx);
+      this.messageErreur = `⚠️ La somme des affectations (${total} €) est différente du résultat de l’exercice (${res} €).\nL'écart est de ${this.getValue(ecart)} €.`;
     } else {
       this.messageErreur = null;
     }

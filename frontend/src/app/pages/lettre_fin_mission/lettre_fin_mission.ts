@@ -59,7 +59,7 @@ export class LettreFinMissionComponent implements OnInit {
 
   dataCA = {};
   dataMarge = {};
-  
+
   dotations = [];
   immobs: any;
   anaSectorielle: any;
@@ -68,6 +68,7 @@ export class LettreFinMissionComponent implements OnInit {
   empruntsPath: any;
 
   data: any;
+  modeLFM: string | null = null;
 
   constructor(
     private pdfService: PdfService,
@@ -86,10 +87,11 @@ export class LettreFinMissionComponent implements OnInit {
     this.dateFinEx = this.dataService.getDateFinEx();
   }
 
-  
+
 
   ngOnInit(): void {
     this.form = this.formService.buildForm();
+    this.modeLFM = this.dataService.getModeLFM();
 
     forkJoin({
       data: this.db.GetDossierInfos(),
@@ -103,10 +105,10 @@ export class LettreFinMissionComponent implements OnInit {
         console.log(data);
         console.log(dotations);
         console.log(emprunts);
-        console.log(data.anaSectorielle);  
+        console.log(data.anaSectorielle);
         console.log(immobs);
         this.data = data;
-        if (dotations) {        
+        if (dotations) {
           this.dotations = Object.values(dotations);
         }
 
@@ -122,11 +124,11 @@ export class LettreFinMissionComponent implements OnInit {
           this.anaSectorielle = data.anaSectorielle;
         }
 
-        if (emprunts) {
+        if (emprunts.emprunts.length) {
           this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
           this.empruntsPath = empruntsPath;
         }
-        
+
         this.infoChargesPersonnel = data.chargesPersonnel;
         this.infoImpotSociete = data.impotSociete;
         this.infoClient = data.client;
@@ -147,7 +149,7 @@ export class LettreFinMissionComponent implements OnInit {
         this.imposable = data.imposable;
         this.forme_societe = data.client.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
-        
+
         this.dataCA = {
           caN: data.chiffreCles.CC_caN,
           caN1: data.chiffreCles.CC_caN1,
@@ -164,7 +166,7 @@ export class LettreFinMissionComponent implements OnInit {
           margeVar: data.chiffreCles.CC_margeVar,
           "%margeVar": data.chiffreCles["CC_%margeVar"],
         };
-        
+
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
@@ -182,7 +184,7 @@ export class LettreFinMissionComponent implements OnInit {
         }
         const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.impotSociete.IS_tot);
         const acomptes = data.impotSociete.IS_acomptes;
-        
+
         this.chargesService.loadEvoChargesWithComments(data.evolutionCharges, this.codeClient, this.dateFinEx).subscribe({
           next: (res) => {
             this.infoEvolutionCharges = this.chargesService.formatEvoCharges(res, this.form.value);
@@ -193,13 +195,13 @@ export class LettreFinMissionComponent implements OnInit {
             this.loading = false;
           }
         });
-        
+
         this.form.patchValue({
           CC: {
             comPerspective
           },
           I: {
-            masquerSection: data.I_classe2 ? false : true,
+            masquerSection: data.I_classe2 ? true : false,
             prevAmoN: this.dotations[0] ? Math.round(this.dotations[0]) : null,
             prevAmoN1: this.dotations[1] ? Math.round(this.dotations[1]) : null,
             prevAmoN2: this.dotations[2] ? Math.round(this.dotations[2]) : null
@@ -211,15 +213,15 @@ export class LettreFinMissionComponent implements OnInit {
           },
           AI: {
             masquerSection: data.imposable && this.resEx > 0 && this.IS_tot > 3000 ? false : true,
-            acompte1: Math.round(data.acompte_total/4),
-            acompte2: Math.round(data.acompte_total/4),
-            acompte3: Math.round(data.acompte_total/4),
-            acompte4: Math.round(data.acompte_total/4),
+            acompte1: Math.round(data.acompte_total / 4),
+            acompte2: Math.round(data.acompte_total / 4),
+            acompte3: Math.round(data.acompte_total / 4),
+            acompte4: Math.round(data.acompte_total / 4),
             date1: this.moisClotureArray[0],
             date2: this.moisClotureArray[1],
             date3: this.moisClotureArray[2],
-            date4: this.moisClotureArray[3], 
-            date5: this.moisClotureArray[4]           
+            date4: this.moisClotureArray[3],
+            date5: this.moisClotureArray[4]
           },
           PA: {
             resEx: Math.round(this.resEx),
@@ -252,6 +254,9 @@ export class LettreFinMissionComponent implements OnInit {
             tresoN: Math.round(data.tresorerie.tresoN),
             frng: Math.round(data.autofinancement.AF_capa + data.tresorerie.RF_apport + data.tresorerie.RF_emprunts + data.tresorerie.RF_invest + data.tresorerie.RF_autre + data.tresorerie.EF_invest + data.tresorerie.EF_emprunts + data.tresorerie.EF_retraits + data.tresorerie.EF_divi),
             bfr: Math.round(data.tresorerie.V_stock + data.tresorerie.V_creances + data.tresorerie.V_dettes + data.tresorerie.V_autresCreances + data.tresorerie.V_autresDettes),
+            emprunts: this.emprunts
+          },
+          E: {
             emprunts: this.emprunts
           },
           EA: {
@@ -311,7 +316,7 @@ export class LettreFinMissionComponent implements OnInit {
       acc[key] = infoArray[idx];
       return acc;
     }, {} as Record<string, boolean>);
-    
+
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
@@ -340,9 +345,9 @@ export class LettreFinMissionComponent implements OnInit {
     }
 
     const code_client = this.infoClient.code_client
-    
+
     const folderPath = `C:\\outils-avenia\\${code_client}\\LFM\\${formattedPayload.anneeN}\\RESTITUTION`;
-    this.wordService.generateWord(formattedPayload, folderPath).subscribe({
+    this.wordService.generateWord(formattedPayload, folderPath, this.modeLFM).subscribe({
       next: (res) => {
         const jobId = res.jobId;
 

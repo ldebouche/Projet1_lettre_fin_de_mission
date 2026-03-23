@@ -41,11 +41,17 @@
     <!-- ===== TRESORERIE ===== -->
     <section-tresorerie-component [group]="f.T"></section-tresorerie-component>
 
+    <!-- ===== SYNTHESE DES EMPRUNTS ===== -->
+    <section-emprunts-component [group]="f.E" *ngIf="emprunts"></section-emprunts-component>
+    
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
     <section-estim-autofinancement-component [group]="f.EA"></section-estim-autofinancement-component>
 
     <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
     <section-majdoc-unique-eval-component [group]="f.MD" *ngIf="MD_salaries"></section-majdoc-unique-eval-component>
+
+    <!-- ===== RISQUES DE CESSATION DE PAIEMENT ===== -->
+    <section-risque-de-cessation-component [group]="f.RC"></section-risque-de-cessation-component>
 
     <!-- ===== FAITS MARQUANTS ===== -->
     <section-faits-marquants-component [group]="f.FM"

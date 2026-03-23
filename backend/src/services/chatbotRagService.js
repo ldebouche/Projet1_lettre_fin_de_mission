@@ -9,14 +9,32 @@ const MISTRAL_BASE_URL = process.env.MISTRAL_BASE_URL;
 const MISTRAL_MODEL = process.env.MISTRAL_MODEL;
 
 const embeddingCache = new Map();
+const MAX_CACHE = 1500;
+
+function cacheGet(k) {
+    const v = embeddingCache.get(k);
+    if (!v) return null;
+    embeddingCache.delete(k);
+    embeddingCache.set(k, v);
+    return v;
+}
+
+function cacheSet(k, v) {
+    if (embeddingCache.has(k)) embeddingCache.delete(k);
+    embeddingCache.set(k, v);
+    if (embeddingCache.size > MAX_CACHE) {
+        const firstKey = embeddingCache.keys().next().value;
+        embeddingCache.delete(firstKey);
+    }
+}
 
 async function embedCached(text) {
     const key = text.trim().toLowerCase();
-    const cached = embeddingCache.get(key);
+    const cached = cacheGet(key);
     if (cached) return cached;
 
     const v = await embed(text);
-    embeddingCache.set(key, v);
+    cacheSet(key, v);
     return v;
 }
 
@@ -143,8 +161,6 @@ async function embed(text) {
 }
 
 function computeAllowedRoles(userRoles) {
-    console.log("RAW userRoles:", userRoles);
-
     let roles = [];
 
     if (Array.isArray(userRoles)) {
@@ -164,13 +180,26 @@ function computeAllowedRoles(userRoles) {
     }
 
     const result = Array.from(allowed);
-    console.log("ALLOWED:", result);
     return result;
 }
 
 function buildRolesWhere(allowedRoles) {
     const clauses = allowedRoles.map(() => `roles LIKE ?`);
     const params = allowedRoles.map(r => `%\"${r}\"%`);
+    return { where: `(${clauses.join(" OR ")})`, params };
+}
+
+function buildKeywordWhere(message) {
+    const words = String(message)
+        .toLowerCase()
+        .split(/\W+/)
+        .filter(w => w.length >= 4)
+        .slice(0, 8);
+
+    if (!words.length) return { where: "1=1", params: [] };
+
+    const clauses = words.map(() => `content LIKE ?`);
+    const params = words.map(w => `%${w}%`);
     return { where: `(${clauses.join(" OR ")})`, params };
 }
 
@@ -187,15 +216,15 @@ export async function askChatbotRag(message, userRole) {
     const allowedRoles = computeAllowedRoles(userRole);
     const questionVector = await embedCached(message);
 
-    console.log(allowedRoles);
-    const { where, params } = buildRolesWhere(allowedRoles);
+    const kw = buildKeywordWhere(message);
+    const roles = buildRolesWhere(allowedRoles);
 
     const rows = db.prepare(`
         SELECT file_path, file_name, content, vector
         FROM embeddings
-        WHERE ${where}
-    `).all(...params);
-
+        WHERE ${roles.where} AND ${kw.where}
+    `).all(...roles.params, ...kw.params);
+    
     const scored = rows.map(r => {
         const v = JSON.parse(r.vector);
         return {

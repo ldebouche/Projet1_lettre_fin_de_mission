@@ -28,7 +28,6 @@ export class ListeHistoriqueComponent implements OnChanges {
 
   loadHistory() {
     this.isLoading = true;
-    console.log(this.codeClient);
     this.dashboardService.getDossiersHistorique(this.codeClient).subscribe({
       next: (data: any) => {
         this.historiqueData = data.clientFiles;

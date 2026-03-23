@@ -4,7 +4,7 @@ Dim pptApp, modelePath, outputPath
 Dim fso, tempFile, f
 
 ' === Chemin du modèle PPTM ===
-modelePath = "C:\Users\admin.lcd\projet_lfm\Projet1_lettre_fin_de_mission\backend\src\templates\modele_complet.pptm"
+modelePath = "C:\code_outils-avenia\PROD\code\backend\src\templates\modele_complet.pptm"
 
 ' === Récupère le chemin du fichier de sortie ===
 If WScript.Arguments.Count > 0 Then
@@ -33,7 +33,4 @@ pptApp.Presentations.Open modelePath
 ' === Exécute la macro principale ===
 pptApp.Run "modele_complet.pptm!LancerRemplissage"
 
-' === Ferme PowerPoint ===
-On Error Resume Next
-pptApp.Quit
 Set pptApp = Nothing
