@@ -3,14 +3,19 @@ Option Explicit
 Dim pptApp, modelePath, outputPath
 Dim fso, tempFile, f
 
-' === Chemin du modèle PPTM ===
-modelePath = "C:\code_outils-avenia\PROD\code\backend\src\templates\modele_complet.pptm"
-
 ' === Récupère le chemin du fichier de sortie ===
 If WScript.Arguments.Count > 0 Then
     outputPath = CStr(WScript.Arguments(0))
 Else
     WScript.Quit
+End If
+
+' === Chemin du modèle PPTM (arg2 prioritaire, sinon dossier du script) ===
+If WScript.Arguments.Count > 1 Then
+    modelePath = CStr(WScript.Arguments(1))
+Else
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    modelePath = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "modele_complet.pptm")
 End If
 
 ' === Fichier temporaire contenant le chemin de sortie ===

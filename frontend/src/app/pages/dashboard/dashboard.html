@@ -36,6 +36,10 @@
             Mes Dossiers
         </button>
 
+        <button *ngIf="isLabUser" [class.active]="activeTab === 'lab'" (click)="selectTab('lab')">
+            Vue LAB
+        </button>
+
         <button *ngIf="userRole.includes('chef')" [class.active]="activeTab === 'equipe'" (click)="selectTab('equipe')">
             Mon Équipe
         </button>
@@ -46,7 +50,7 @@
     </div>
 
     <div class="tab-content" *ngIf="!isLoading">
-        <div *ngIf="activeTab === 'mesDossiers' && !isLoading" class="table-container">
+        <div *ngIf="(activeTab === 'mesDossiers' || activeTab === 'lab') && !isLoading" class="table-container">
             <div *ngIf="mesDossiers.length === 0 && filterClient" class="empty-state">
                 Aucun dossier ne correspond à votre filtre.
             </div>
@@ -55,7 +59,7 @@
                 Vous n'avez aucun dossier assigné pour le moment.
             </div>
 
-            <table *ngIf="mesDossiers.length > 0" class="mes-dossiers-table">
+            <table *ngIf="mesDossiers.length > 0 && activeTab === 'mesDossiers'" class="mes-dossiers-table">
                 <thead>
                     <tr>
                         <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
@@ -68,6 +72,7 @@
                             <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
                                 [class.desc]="sortDirection === 'desc'"></i>
                         </th>
+                        <th *ngIf="isLabUser">Risque LAB</th>
                         <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
                             Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
                                 [class.desc]="sortDirection === 'desc'"></i>
@@ -83,6 +88,17 @@
                         </td>
                         <td>
                             <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
+                        </td>
+                        <td *ngIf="isLabUser">
+                            <div class="cell-content">
+                                <span class="lab-risque-cell" [ngClass]="getRisqueClass(dossier.code_client)"
+                                    [ngStyle]="{
+                                        color: getRisqueClass(dossier.code_client) === 'risque-faible' ? '#2e7d32' :
+                                               getRisqueClass(dossier.code_client) === 'risque-moyen' ? '#ef6c00' :
+                                               getRisqueClass(dossier.code_client) === 'risque-eleve' ? '#c62828' : '#757575',
+                                        fontWeight: '600'
+                                    }">{{ getRisqueLabel(dossier.code_client) }}</span>
+                            </div>
                         </td>
                         <td>
                             <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
@@ -103,6 +119,77 @@
                             </div>
                         </td>
                             -->
+                    </tr>
+                </tbody>
+            </table>
+
+            <table *ngIf="mesDossiers.length > 0 && activeTab === 'lab'" class="mes-dossiers-table lab-vue-table">
+                <thead>
+                    <tr>
+                        <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
+                            Code Client
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
+                            Nom du Dossier
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th>Niveau de risque</th>
+                        <th>Statut KYC</th>
+                        <th>Prochaine revue</th>
+                        <th>Événements ouverts</th>
+                        <th>Diligences en retard</th>
+                        <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
+                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let dossier of mesDossiers" class="equipe-table">
+                        <td>
+                            <div class="cell-content">{{ dossier.code_client }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <span class="lab-risque-cell" [ngClass]="getRisqueClass(dossier.code_client)"
+                                    [ngStyle]="{
+                                        color: getRisqueClass(dossier.code_client) === 'risque-faible' ? '#2e7d32' :
+                                               getRisqueClass(dossier.code_client) === 'risque-moyen' ? '#ef6c00' :
+                                               getRisqueClass(dossier.code_client) === 'risque-eleve' ? '#c62828' : '#757575',
+                                        fontWeight: '600'
+                                    }">{{ getRisqueLabel(dossier.code_client) }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.statut_kyc || '—' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.date_prochaine_revue | date:'dd/MM/yyyy' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.nb_evenements_ouverts ?? '—' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.nb_diligences_retard ?? '—' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
+                                    class="action-button">
+                                    Ouvrir
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>

@@ -13,7 +13,7 @@ import pdfRoutes from './routes/pdfRoutes.js';
 import dashboardRoutes from './routes/dashboardRoute.js';
 import chatbotSettingsRoutes from './routes/chatbotSettingsRoutes.js';
 import anaSectoSettingsRoutes from './routes/anaSectoRoutes.js';
-
+import labRoutes from './routes/labRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -1,8 +1,9 @@
 import { genererWord } from "../services/wordService.js";
 import path from "path";
 import fs from "fs";
+import { getJobsDir } from "../config/paths.js";
 
-const JOBS_DIR = path.resolve(process.env.DATA_DIR, "jobs_ppt");
+const JOBS_DIR = getJobsDir();
 
 export const generatedocuments = (req, res) => {
   try {

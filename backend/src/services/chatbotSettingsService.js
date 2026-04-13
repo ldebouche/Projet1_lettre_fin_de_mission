@@ -13,6 +13,7 @@ import {
 } from "../utils/procedureUtils.js";
 
 import {
+    getDocumentsRoot,
     getChatbotRoot,
     getAttenteRoot,
     getIndexerRoot,
@@ -21,6 +22,7 @@ import {
     trouverPremierPdfDansDossier,
     safeFileName,
 } from "./procedures/procedureFilesService.js";
+import { getChromeLaunchOptions } from "../config/paths.js";
 
 import { extraireTexteDepuisPdfBuffer, saveOcrImages } from "./procedures/procedureOcrService.js";
 import { corrigerHtmlAvecMistral, reconstruireProcedureAvecMistral } from "./procedures/procedureIaService.js";
@@ -29,7 +31,6 @@ import { genererPdfBrandedDepuisQuill } from "./procedures/procedureRenderServic
 let idCounter = 1;
 const MAX_CHARS = 12000;
 
-const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function scanDirectory(directoryPath, parentId = null, currentRelativePath = "") {
@@ -214,7 +215,7 @@ export async function creerPdfDepuisFichierPdfBuffer(fileBuffer, originalName, u
 export async function creerPdfDepuisUrl(url, utilisateur, nomProcedure) {
     const navigateur = await puppeteer.launch({
         headless: true,
-        executablePath: CHROME_PATH,
+        ...getChromeLaunchOptions(),
     });
 
     try {
@@ -326,7 +327,7 @@ async function creerProcedureEnAttente({ titre, source, texte, utilisateur, nomP
 }
 
 export async function getProced(folderName) {
-    const root = path.join(process.cwd(), "documents", folderName);
+    const root = path.join(getDocumentsRoot(), folderName);
     const entries = await fs.readdir(root, { withFileTypes: true });
 
     const procedures = [];
@@ -367,7 +368,7 @@ export async function getProced(folderName) {
 }
 
 export async function getProcedureEditable(folderName, nomSansExt) {
-    const root = path.join(process.cwd(), "documents", folderName);
+    const root = path.join(getDocumentsRoot(), folderName);
     const { jsonPath } = await resolveProcedureFiles(root, nomSansExt);
 
     const meta = JSON.parse(await fs.readFile(jsonPath, "utf-8"));
@@ -388,7 +389,7 @@ export async function getProcedureEditable(folderName, nomSansExt) {
 export async function updateProcedureFromEdit(folderName, nomSansExt, editedHtml) {
     if (!editedHtml || !editedHtml.trim()) throw new Error("Texte édité vide.");
 
-    const root = path.join(process.cwd(), "documents", folderName);
+    const root = path.join(getDocumentsRoot(), folderName);
     const { pdfPath, jsonPath, procDir } = await resolveProcedureFiles(root, nomSansExt);
 
     const meta = JSON.parse(await fs.readFile(jsonPath, "utf-8"));
@@ -463,7 +464,7 @@ export async function getCompteurFichiers() {
 }
 
 export async function uploadProcedureImage(folderName, procedureName, file) {
-    const procDir = path.join(process.cwd(), "documents", folderName, procedureName);
+    const procDir = path.join(getDocumentsRoot(), folderName, procedureName);
     const assetsDir = path.join(procDir, "assets");
     await fs.mkdir(assetsDir, { recursive: true });
 

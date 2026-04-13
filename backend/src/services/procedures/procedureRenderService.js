@@ -4,8 +4,7 @@ import puppeteer from "puppeteer";
 import { pathToFileURL } from "url";
 import { JSDOM } from "jsdom";
 import { escapeHtml, quillHtmlToPdfHtml } from "../../utils/procedureUtils.js";
-
-const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+import { PATHS, getChromeLaunchOptions } from "../../config/paths.js";
 
 function versFileUrl(cheminAbsolu) {
     return pathToFileURL(cheminAbsolu).toString();
@@ -144,7 +143,7 @@ hr{
 export async function genererPdfBrandedDepuisQuill({ pdfPath, htmlQuill, source, creePar, assetsDir }) {
     const navigateur = await puppeteer.launch({
         headless: true,
-        executablePath: CHROME_PATH,
+        ...getChromeLaunchOptions(),
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -159,7 +158,7 @@ export async function genererPdfBrandedDepuisQuill({ pdfPath, htmlQuill, source,
         const page = await navigateur.newPage();
         await page.setViewport({ width: 1280, height: 800 });
 
-        const fontsDir = path.join(process.cwd(), "frontend", "src", "assets", "fonts");
+        const fontsDir = PATHS.fontsRoot;
         const leagueSpartanBoldUrl = versFileUrl(
             path.join(fontsDir, "league-spartan", "LeagueSpartan-Bold.ttf")
         );

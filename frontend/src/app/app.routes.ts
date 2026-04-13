@@ -11,6 +11,7 @@ import { AnaSectorielleSettingsComponent } from './pages/ana-secto-settings/ana-
 import { LoginLabComponent } from './pages/login-lab/login-lab';
 import { LabDashboardDossierComponent } from './pages/lab-dashboard-dossier/lab-dashboard-dossier';
 import { PilotageEquipeComponent } from './pages/pilotage-equipe/pilotage-equipe';
+import { LabDossierComponent } from './pages/lab/lab-dossier/lab-dossier';
 
 export const routes: Routes = [
   { path: '', component: AccueilIntranet, canActivate: [MsalGuard] },
@@ -24,5 +25,6 @@ export const routes: Routes = [
   { path: 'login-lab', component: LoginLabComponent, canActivate: [MsalGuard] },
   { path: 'lab-dashboard-dossier', component: LabDashboardDossierComponent, canActivate: [MsalGuard] },
   { path: 'pilotage-equipe', component: PilotageEquipeComponent, canActivate: [MsalGuard] },
+  { path: 'lab/dossier', component: LabDossierComponent, canActivate: [MsalGuard] },
   { path: '**', redirectTo: '/' }
 ];

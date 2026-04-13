@@ -3,10 +3,11 @@ import path from "path";
 import os from "os";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { PATHS } from "../config/paths.js";
 
 const execFileAsync = promisify(execFile);
 
-const LIBREOFFICE_PATH = "C:\\Program Files\\LibreOffice\\program\\soffice.exe";
+const LIBREOFFICE_PATH = PATHS.libreOfficeExecutablePath;
 
 function isPdf(name = "") {
     return name.toLowerCase().endsWith(".pdf");

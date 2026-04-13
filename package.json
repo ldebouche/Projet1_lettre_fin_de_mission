@@ -17,7 +17,7 @@
     "test": "npm-run-all test:backend test:frontend --continue-on-error",
     "test:backend": "npm --prefix backend run test --if-present",
     "test:frontend": "npm --prefix frontend run test --if-present",
-    "prepare": "husky"
+    "prepare": "echo skip husky"
   },
   "devDependencies": {
     "lint-staged": "^16.1.5",

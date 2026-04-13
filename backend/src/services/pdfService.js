@@ -2,6 +2,7 @@ import fs from "fs";
 import pdf from "pdf-parse-fork";
 import path from "path";
 import { exec } from "child_process";
+import { PATHS } from "../config/paths.js";
 
 export async function extractCumuls(filePath) {
   if (!fs.existsSync(filePath)) return null;
@@ -166,8 +167,8 @@ export async function extractImmobSortie(filePath) {
   }
 
   return new Promise((resolve, reject) => {
-    const pythonPath = "C:\\Users\\admin.lcd\\AppData\\Local\\Programs\\Python\\Python313\\python.exe";
-    const scriptPath = path.join(process.cwd(), "utils", "extract_immobSortie.py");
+    const pythonPath = PATHS.pythonExecutablePath;
+    const scriptPath = path.join(PATHS.utilsRoot, "extract_immobSortie.py");
     const cmd = `"${pythonPath}" "${scriptPath}" "${filePath}"`;
 
     exec(cmd, { maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {

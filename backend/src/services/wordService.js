@@ -3,6 +3,7 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import path from "path";
 import { exec } from "child_process";
+import { PATHS } from "../config/paths.js";
 
 function flattenObject(obj, parentKey = "", result = {}) {
   let hasInfoFiscale = false;
@@ -55,7 +56,7 @@ export function genererWord(variables, folderPath) {
 
     console.log(templateName);
 
-  const templatePath = path.join(process.cwd(), "templates", templateName);
+  const templatePath = path.join(PATHS.templatesRoot, templateName);
   const content = fs.readFileSync(templatePath, "binary");
   const zip = new PizZip(content);
 

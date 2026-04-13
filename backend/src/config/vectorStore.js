@@ -1,7 +1,10 @@
+import fs from "fs";
 import Database from "better-sqlite3";
 import path from "path";
+import { PATHS } from "./paths.js";
 
-const dbPath = path.join(process.cwd(), "data", "vector_store.db");
+const dbPath = path.join(PATHS.dataRoot, "vector_store.db");
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 export const db = new Database(dbPath);
 
 db.prepare(`

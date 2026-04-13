@@ -35,4 +35,14 @@ export class DbService {
   GetMontantCharges(comptes: any) {
     return this.http.get(`/api/db/getMontantCharges`, { params: { comptes: comptes.join(',') } })
   };
+
+  GetDossiersRisqueLab(codesClients: string[]) {
+    return this.http.post<{ data: any }>(`/api/lab/dossiers-risque`, { codes: codesClients });
+  }
+
+  GetResumeLab(code_client: string) {
+    return this.http.get<{ data: any }>(`/api/lab/resume`, {
+      params: { code_client: String(code_client).trim() }
+    });
+  }
 }

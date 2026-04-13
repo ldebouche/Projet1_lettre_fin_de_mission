@@ -51,6 +51,20 @@
         </a>
       </div>
 
+      <div class="col">
+        <div class="col-title">Conformité LAB</div>
+      
+        <a 
+          *ngIf="hasRoleLab"
+          class="dd-link" 
+          [routerLink]="['/lab/dashboard']" 
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }" 
+          (click)="closeAdminMenu()">
+          Dashboard LAB
+        </a>
+      </div>
+
     </div>
   </div>
 </nav>

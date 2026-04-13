@@ -20,18 +20,47 @@
 
       <header class="card-header">
         <h2 class="card-title">{{ carte.title }}</h2>
-        <p class="card-desc">{{ carte.description }}</p>
+        <ng-container *ngIf="carte.kind === 'lab'; else descDefault">
+          <div class="card-desc lab-card-body">
+            <ng-container *ngIf="labResumeLoading">
+              Chargement du résumé LAB…
+            </ng-container>
+            <ng-container *ngIf="!labResumeLoading && labResumeError">
+              Résumé LAB indisponible.
+            </ng-container>
+            <ng-container *ngIf="!labResumeLoading && !labResumeError && labResume === null">
+              Non initialisé
+            </ng-container>
+            <ng-container *ngIf="!labResumeLoading && !labResumeError && labResume">
+              <div class="lab-resume-line">
+                <span class="lab-risque-label">Risque</span>
+                <span class="lab-risque-pill" [ngClass]="getLabRisqueClass()">{{ getLabRisqueLabel() }}</span>
+              </div>
+              <div class="lab-resume-line">
+                Événements ouverts : <strong>{{ labResume.nb_evenements_ouverts ?? 0 }}</strong>
+              </div>
+              <div class="lab-resume-line">
+                Diligences en retard : <strong>{{ labResume.nb_diligences_retard ?? 0 }}</strong>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+        <ng-template #descDefault>
+          <p class="card-desc">{{ carte.description }}</p>
+        </ng-template>
       </header>
 
       <div class="card-actions" [class.visible]="hoverIndex === i">
         <ul>
-          <li
-            *ngFor="let action of carte.actions; index as j"
-            [style.transition-delay]="hoverIndex === i ? (j * 50) + 'ms' : '0ms'"
-            (click)="onAction(action, $event)"
-          >
-            {{ action.label }}
-          </li>
+          <ng-container *ngFor="let action of carte.actions; index as j">
+            <li
+              *ngIf="isActionVisible(action)"
+              [style.transition-delay]="hoverIndex === i ? (j * 50) + 'ms' : '0ms'"
+              (click)="onAction(action, $event)"
+            >
+              {{ action.label }}
+            </li>
+          </ng-container>
         </ul>
       </div>
 

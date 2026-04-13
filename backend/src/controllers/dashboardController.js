@@ -1,12 +1,11 @@
 import path from 'path';
 import { getHistorique, verifHistorique } from '../services/dashboardService.js';
+import { PATHS } from "../config/paths.js";
 
 export const getDossierHistorique = async (req, res) => {
     const { code_client } = req.query;
 
-    const basePath = 'C:\\outils-avenia'; 
-
-    const clientPath = path.join(basePath, code_client, 'LFM');
+    const clientPath = path.join(PATHS.clientFilesRoot, code_client, 'LFM');
 
     try {
         const clientFiles = await getHistorique(clientPath);
@@ -23,9 +22,7 @@ export const getDossierHistorique = async (req, res) => {
 export const checkHistorique = async (req, res) => {
     const { code_client, millesime } = req.query;
 
-    const basePath = 'C:\\outils-avenia'; 
-
-    const clientPath = path.join(basePath, code_client, 'LFM');
+    const clientPath = path.join(PATHS.clientFilesRoot, code_client, 'LFM');
 
     try {
         const result = await verifHistorique(clientPath, millesime);

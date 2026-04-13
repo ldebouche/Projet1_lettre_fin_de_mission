@@ -3,6 +3,7 @@ import path from "path";
 import { getAttenteRoot } from "./procedures/procedureFilesService.js";
 import { extractAnaSectorielle } from "./pdfService.js";
 import { poolPromise, sql } from "../config/db.js";
+import { PATHS } from "../config/paths.js";
 
 function toTrim(row) {
   return Object.fromEntries(
@@ -40,7 +41,7 @@ function pdfUrlFromRelative(relativePath) {
 }
 
 function anaRoot() {
-  return path.join(process.cwd(), "documents", "anaSectorielles");
+  return path.join(PATHS.documentsRoot, "anaSectorielles");
 }
 
 function safePosix(p) {
@@ -503,7 +504,7 @@ export async function getCompteurFichiers() {
 }
 
 export async function createFolderToIndexedItems(folderName, parentId, indexedItems) {
-  const root = path.join(process.cwd(), "documents", "anaSectorielles", "indexée");
+  const root = path.join(PATHS.documentsRoot, "anaSectorielles", "indexée");
 
   const name = String(folderName || "").trim();
   if (!name) throw new Error("folderName manquant");

@@ -116,6 +116,56 @@
   opacity: 0.7;
 }
 
+/* ---- Carte Conformité LAB ---- */
+
+.lab-card-body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--color-dark);
+}
+
+.lab-resume-line {
+  margin-top: 8px;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
+}
+
+.lab-risque-label {
+  margin-right: 8px;
+  opacity: 0.85;
+}
+
+.lab-risque-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.lab-risque-pill.risque-faible {
+  background: rgba(46, 125, 50, 0.15);
+  color: #2e7d32;
+}
+
+.lab-risque-pill.risque-moyen {
+  background: rgba(239, 108, 0, 0.15);
+  color: #ef6c00;
+}
+
+.lab-risque-pill.risque-eleve {
+  background: rgba(198, 40, 40, 0.15);
+  color: #c62828;
+}
+
+.lab-risque-pill.risque-non-evalue {
+  background: rgba(117, 117, 117, 0.15);
+  color: #757575;
+}
+
 /* ---- ACTIONS (déploiement vers le bas) ---- */
 
 .card-actions {

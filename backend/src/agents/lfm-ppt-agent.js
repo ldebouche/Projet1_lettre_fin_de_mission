@@ -1,18 +1,19 @@
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
+import { PATHS, getAgentLogFile, getJobsDir } from "../config/paths.js";
 
-const DATA_DIR = "C:\\code_outils-avenia\\DATA\\PROD";
-const JOBS_DIR = path.join(DATA_DIR, "jobs_ppt");
-const BackendPath = "C:\\code_outils-avenia\\PROD\\code\\backend\\src\\templates";
-const dataPath = path.join(BackendPath, "data.json");
-const vbsPath = path.join(BackendPath, "launchPPT.vbs");
+const JOBS_DIR = getJobsDir();
+const dataPath = path.join(PATHS.templatesRoot, "data.json");
+const vbsPath = path.join(PATHS.templatesRoot, "launchPPT.vbs");
+const templatePath = path.join(PATHS.templatesRoot, "modele_complet.pptm");
 
 let isRunning = false;
 
 function log(...args) {
     const line = `[${new Date().toISOString()}] ` + args.join(" ") + "\n";
-    fs.appendFileSync(path.join(DATA_DIR, "log_agent", "lfm-ppt-agent.log"), line);
+    fs.mkdirSync(path.dirname(getAgentLogFile()), { recursive: true });
+    fs.appendFileSync(getAgentLogFile(), line);
     console.log(...args);
 }
 
@@ -31,7 +32,7 @@ function processJob(fullPath, jobFile) {
 
         fs.writeFileSync(dataPath, JSON.stringify(job.variables), "utf8");
 
-        const cmd = `cscript //nologo "${vbsPath}" "${filePath}"`;
+        const cmd = `cscript //nologo "${vbsPath}" "${filePath}" "${templatePath}"`;
         log("Commande VBS :", cmd);
 
         exec(cmd, (error, stdout, stderr) => {

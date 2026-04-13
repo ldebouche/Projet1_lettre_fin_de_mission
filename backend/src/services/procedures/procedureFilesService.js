@@ -1,8 +1,9 @@
 import fs from "fs/promises";
 import path from "path";
+import { PATHS } from "../../config/paths.js";
 
 export function getDocumentsRoot() {
-    return path.join(process.cwd(), "documents");
+    return PATHS.documentsRoot;
 }
 
 export function getChatbotRoot() {

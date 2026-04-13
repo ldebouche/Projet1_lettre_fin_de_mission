@@ -23,6 +23,7 @@ export class NavbarComponent implements OnInit {
   currentUrl: string = '';
   collaborateur: any;
   hasRole: boolean = false;
+  hasRoleLab: boolean = false;
 
   adminMenuOpen = false;
 
@@ -46,6 +47,7 @@ export class NavbarComponent implements OnInit {
       this.collaborateur = collab;
 
       this.hasRole = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique"]);
+      this.hasRoleLab = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique", "lab"]);
     });
   }
 
@@ -64,7 +66,8 @@ export class NavbarComponent implements OnInit {
       "/dashboard": "/",
       "/login-dossier": "/dashboard",
       "/accueil-mission": "/login-dossier",
-      "/lettre-fin-mission": "/accueil-mission"
+      "/lettre-fin-mission": "/accueil-mission",
+      "/lab/dossier": "/accueil-mission"
     };
 
     const target = routesMap[this.currentUrl];
