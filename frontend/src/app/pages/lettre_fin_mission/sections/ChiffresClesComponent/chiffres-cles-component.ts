@@ -51,11 +51,11 @@ export class ChiffresClesComponent {
     }
     return keys;
   }
-  get progressionChiffre(): FormGroup {
-    return this.group.get('progressionChiffre') as FormGroup;
+  get progressionChiffre(): FormGroup | null {
+    return this.group?.get('progressionChiffre') as FormGroup | null;
   }
 
-  get tauxMarge(): FormGroup {
-    return this.group.get('tauxMarge') as FormGroup;
+  get tauxMarge(): FormGroup | null {
+    return this.group?.get('tauxMarge') as FormGroup | null;
   }
 }

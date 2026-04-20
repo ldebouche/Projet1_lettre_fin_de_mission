@@ -1,5 +1,10 @@
-<fieldset class="block" [formGroup]="group">
-    <legend><span class="titre">SYNTHESE DES EMPRUNTS</span></legend>
+<fieldset class="block" [formGroup]="group" *ngIf="group">
+    <legend>
+        <label class="clickable">
+            <input type="checkbox" formControlName="enabled" />
+            <span class="titre">SYNTHESE DES EMPRUNTS</span>
+        </label>
+    </legend>
     <table class="table" *ngIf="emprunts.length > 0">
         <thead>
             <tr>
@@ -13,7 +18,10 @@
         <tbody>
             <ng-container *ngFor="let emp of emprunts">
                 <tr>
-                    <td class="first-row">{{ emp.E_designation }}</td>
+                    <td class="first-row">
+                        <input type="text" [value]="emp.E_designation"
+                            (input)="onDesignationInput(emp, $any($event.target).value)" />
+                    </td>
                     <td>{{ emp.E_date_debut }}</td>
                     <td>{{ emp.E_date_fin }}</td>
                     <td>{{ getValue(emp.E_montant_emprunt) }}</td>

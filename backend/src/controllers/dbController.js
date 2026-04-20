@@ -36,6 +36,7 @@ export const GetDossierInfos = async (req, res) => {
       I_classe2: aggN.I_classe2,
       MD_salaries: aggN.MD_salaries,
       imposable: infoClients.imposable,
+      cotisationTravIndep: aggN.cotisationTravIndep,
       mois_cloture: infoClients.mois_cloture,
       resEx: (aggN.totalProduits || 0) - (aggN.totalCharges || 0),
       tabAutofinancement: infoClients.tabAutofinancement,
@@ -65,6 +66,8 @@ export const GetDossierInfos = async (req, res) => {
         initialesChefGroupe: infoClients.initialesChefGroupe,
         site: siteSelectionne,
         forme_societe: infoClients.forme_societe,
+        isAssoc: infoClients.forme_societe.startsWith('ASSOC') ? true : false,
+        isSciIr: infoClients.forme_societe.startsWith('SCI') && infoClients.categorie_revenu === 'RFONC' ? true : false
       },
 
       // === Chiffres clés ===

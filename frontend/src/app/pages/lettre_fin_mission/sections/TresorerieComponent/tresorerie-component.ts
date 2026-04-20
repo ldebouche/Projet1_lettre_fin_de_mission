@@ -20,6 +20,8 @@ export class TresorerieComponent implements OnInit {
   tresorerieNTheorique: number = 0;
   
   ngOnInit() {
+    if (!this.group) return;
+    
     this.tresorerieNTheorique = this.group.get('tresoN')?.value || 0;
 
     const initial = this.group.value;
@@ -31,6 +33,7 @@ export class TresorerieComponent implements OnInit {
   }
 
   private calculerTreso(values: any) {
+    console.log('Calcul de la trésorerie avec les valeurs :', values);
     this.tresorerieNCalculee =
       (values.tresoN1 || 0) +
       (values.CAF || 0) +

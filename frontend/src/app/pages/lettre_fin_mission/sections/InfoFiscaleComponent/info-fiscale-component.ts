@@ -41,10 +41,21 @@ export class InfoFiscaleComponent implements OnInit {
         this.info6 = data.info6;
         this.info7 = data.info7;
         this.info8 = data.info8;
-        
+        this.setHiddenItemsFalse();
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
+      }
+    });
+  }
+
+  setHiddenItemsFalse() {
+    this.items.forEach((item, idx) => {
+      if (!this.shouldDisplay(item)) {
+        const control = this.formArray.at(idx);
+        if (control && control.value !== false) {
+          control.setValue(false, { emitEvent: false });
+        }
       }
     });
   }

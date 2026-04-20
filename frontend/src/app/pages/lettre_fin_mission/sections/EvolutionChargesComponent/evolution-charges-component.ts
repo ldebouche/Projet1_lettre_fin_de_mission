@@ -30,8 +30,8 @@ export class EvolutionChargesComponent {
       : Math.round(Number(val)).toLocaleString('fr-FR'); 
   }
 
-  get variation(): FormGroup {
-    return this.group.get('variation') as FormGroup;
+  get variation(): FormGroup | null {
+    return this.group?.get('variation') as FormGroup | null;
   }
 
   trackByIndex(index: number, _: any): number {

@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import fs from 'fs';
 
@@ -50,7 +50,7 @@ export async function generateAIComment(type, contexte) {
     const { anneeN, anneeN1, millesimeSecteur, maTranche, CA, MARGE, produitsFinanciers } = contexte;
 
     if (CA.caN === 0 && produitsFinanciers) {
-      return "L’absence de chiffre d’affaires et la présence exclusive de produits financiers indiquent que la société exerce une activité de type holding non animatrice. Elle ne réalise pas d’activité opérationnelle propre, mais tire ses revenus de placements financiers, de dividendes ou d’intérêts perçus sur ses participations.";
+      return "Lâ€™absence de chiffre dâ€™affaires et la prÃ©sence exclusive de produits financiers indiquent que la sociÃ©tÃ© exerce une activitÃ© de type holding non animatrice. Elle ne rÃ©alise pas dâ€™activitÃ© opÃ©rationnelle propre, mais tire ses revenus de placements financiers, de dividendes ou dâ€™intÃ©rÃªts perÃ§us sur ses participations.";
     }
     console.log(anneeN1);
     if (millesimeSecteur && maTranche && CA.caSecteur && MARGE.margeSecteur) {
@@ -96,10 +96,10 @@ export async function generateAIComment(type, contexte) {
   }
 
   if (type === "investissement") {
-    let { total_entrees, entrees, total_sorties, sorties } = contexte;
+    let { situation, data_description, total_entrees, entrees, total_sorties, sorties } = contexte;
     
     if (!total_entrees && !entrees && !total_sorties && !sorties) {
-      return "L’absence d'immobilisations d'entrées et de sorties ne permet pas de générer de commentaire.";
+      return "Lâ€™absence d'immobilisations d'entrÃ©es et de sorties ne permet pas de gÃ©nÃ©rer de commentaire.";
     }
 
     template = prompts.generateComment.investissement;
@@ -116,7 +116,12 @@ export async function generateAIComment(type, contexte) {
         .join("; ");
     }
 
-    prompt = fillTemplate(template, { total_entrees, entrees, total_sorties, sorties });
+    // Si situation est déjà fourni (nouveau format), l'utiliser à la place
+    if (situation && data_description) {
+      prompt = fillTemplate(template, { situation, data_description });
+    } else {
+      prompt = fillTemplate(template, { total_entrees, entrees, total_sorties, sorties });
+    }
   }
 
   if (type === "reformuler") {
@@ -138,13 +143,13 @@ export async function callMistral(message, conversation = []) {
           {
             role: 'system',
             content: `
-  Tu es un expert-comptable qui rédige des commentaires cohérents et professionnels pour un client professionnel. 
+  Tu es un expert-comptable qui rÃ©dige des commentaires cohÃ©rents et professionnels pour un client professionnel. 
 
   Contraintes strictes :
   - Chaque paragraphe doit contenir 3 ou 4 phrases (sauf pour la reformulation).
-  - Fais des commentaires sur les données fournies.
-  - Tu n’ajoutes AUCUNE donnée ni calcul supplémentaire.
-  - Tu n’utilises AUCUNE mise en forme (pas de Markdown, pas de gras, pas de listes).
+  - Fais des commentaires sur les donnÃ©es fournies.
+  - Tu nâ€™ajoutes AUCUNE donnÃ©e ni calcul supplÃ©mentaire.
+  - Tu nâ€™utilises AUCUNE mise en forme (pas de Markdown, pas de gras, pas de listes).
   `       },
           { role: 'user', content: JSON.stringify(message) }
         ],
@@ -184,11 +189,11 @@ export async function callMistral(message, conversation = []) {
               Tu es un assistant strictement professionnel.
 
               Contraintes IMPORTANTES :
-              - Tu réponds uniquement en texte brut.
+              - Tu rÃ©ponds uniquement en texte brut.
               - Tu n'utilises *aucune mise en forme* : pas de gras, pas d'italique, pas de markdown.
               - Tu n'utilises pas d'emojis.
               - Tu n'utilises pas de listes ou tirets.
-              - Tu fais des phrases complètes simples et propres.
+              - Tu fais des phrases complÃ¨tes simples et propres.
               - Pas de ton familier. Tu restes professionnel.
             `
           },
@@ -207,3 +212,5 @@ export async function callMistral(message, conversation = []) {
 
 
 export { prompts };
+
+
