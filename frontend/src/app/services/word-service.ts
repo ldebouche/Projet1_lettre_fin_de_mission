@@ -64,8 +64,8 @@ export class WordService {
     }
   }
 
-  generateWord(variables: any, folderPath: string): Observable<any> {
-    return this.http.post(`/api/word/generateWord`, { variables, folderPath });
+  generateWord(variables: any, folderPath: string, modeLFM: string | null): Observable<any> {
+    return this.http.post(`/api/word/generateWord`, { variables, folderPath, modeLFM });
   }
 
   getJobStatus(jobId: string) {

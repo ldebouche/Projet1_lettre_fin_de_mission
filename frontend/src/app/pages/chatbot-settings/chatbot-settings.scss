@@ -1,0 +1,49 @@
+.per-file-roles {
+  margin-left: 12px;
+}
+
+.roles-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.roles-trigger {
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.roles-summary {
+  opacity: 0.75;
+  font-size: 12px;
+}
+
+.roles-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 180px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+
+.role-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 4px;
+  cursor: pointer;
+
+  input {
+    cursor: pointer;
+  }
+}

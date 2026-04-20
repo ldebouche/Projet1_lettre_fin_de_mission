@@ -4,6 +4,7 @@ import { NavbarComponent } from './shared/navbar/navbar';
 import { CommonModule } from '@angular/common';
 import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { EventMessage, EventType } from '@azure/msal-browser';
+import { ChatbotComponent } from './shared/chatbot/chatbot';
 
 
 @Component({
@@ -12,6 +13,7 @@ import { EventMessage, EventType } from '@azure/msal-browser';
   imports: [
     RouterOutlet, 
     NavbarComponent,
+    ChatbotComponent,
     CommonModule
   ],
   template: `
@@ -19,6 +21,7 @@ import { EventMessage, EventType } from '@azure/msal-browser';
     <main class="p-6">
       <router-outlet></router-outlet>
     </main>
+    <app-chatbot></app-chatbot>
   `
 })
 export class AppComponent implements OnInit {
@@ -28,6 +31,15 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.msalService.instance.handleRedirectPromise()
+      .then(() => {
+        const accounts = this.msalService.instance.getAllAccounts();
+        if (accounts.length > 0) {
+          this.msalService.instance.setActiveAccount(accounts[0]);
+        }
+      })
+      .catch(console.error);
+      
     this.msalBroadcast.msalSubject$
       .subscribe((message: EventMessage) => {
         if (message.eventType === EventType.LOGOUT_SUCCESS) {

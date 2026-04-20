@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { DbService } from '../../services/db-service';
+import { DataService } from '../../services/data-service';
 
 @Component({
   selector: 'app-accueil-intranet',
@@ -18,13 +19,14 @@ export class AccueilIntranet implements OnInit {
 
   constructor(
     private router: Router,
-    private db: DbService
+    private db: DbService,
+    private dataService: DataService
   ) {}
 
   ngOnInit(): void {
     this.db.VerifCollaborateur().subscribe({
       next: (res) => {
-        localStorage.setItem('collaborateur', JSON.stringify(res.collaborateur));
+        this.dataService.setCollaborateur(res.collaborateur);
         this.collaborateur = res.collaborateur;
       },
       error: (err) => {

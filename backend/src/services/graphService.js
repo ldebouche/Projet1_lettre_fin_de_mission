@@ -43,5 +43,11 @@ export async function getUserGroupsByOid(userOid) {
 
     return res.data.value
         .filter(g => g["@odata.type"] === "#microsoft.graph.group")
-        .map(g => g.displayName);
+        .map(g => g.displayName)
+        .filter(
+            name =>
+                typeof name === "string" &&
+                name.toLowerCase().startsWith("gr-users-chatbot")
+        )
+        .map(name => name.replace("GR-Users-ChatBot-", "").toLowerCase());
 }

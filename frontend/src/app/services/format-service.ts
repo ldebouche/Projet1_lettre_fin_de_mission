@@ -7,7 +7,7 @@ export class FormatService {
       if (typeof val === 'boolean') return val;
       if (typeof val !== 'number' || isNaN(val)) return val;
 
-      if (key && (key.includes('%') || key.includes('VA/MS'))) {
+      if (key && (key.includes('%') || key.includes('VA/MS') || key.includes('pct'))) {
         if (val < -100 || val > 100) return 'NS';
         return Number(val.toFixed(2)).toLocaleString('fr-FR');
       }
@@ -38,34 +38,6 @@ export class FormatService {
     if (typeof texte !== 'string') return '';
 
     return texte.replace(/ - /g, '\n - ').trim();
-  }
-
-  formatASData(AS: any[]) {
-    const result: any = {};
-    if (!AS) return result;
-    result["millesime"] = AS[0]?.millesime ? String(AS[0].millesime).replace(/\s+/g, '') : "";
-    AS.forEach((item) => {
-      const prefix =
-        item.libelle.includes("Marge") ? "marge" :
-        item.libelle.includes("Tranches") ? "t" :
-        item.libelle.includes("entreprises") ? "nbrEnt" :
-        item.libelle.includes("Effectif") ? "efMoy" :
-        item.libelle.includes("personne") ? "caP" :
-        item.libelle.includes("HT") ? "ca" : null;
-
-      if (!prefix) return;
-
-      Object.keys(item.tranches).forEach((key) => {
-        if (key.startsWith("tranche_")) {
-          const num = key.replace("tranche_", "");
-          result[`${prefix}${num}`] = item.tranches[key];
-        } else if (key.startsWith("globale")) {
-          result[`${prefix}G`] = item.tranches[key];
-        }
-      });
-    });
-
-    return result;
   }
 
   formatPointsImportants(pointsImportants: any[]) {
@@ -129,10 +101,10 @@ export class FormatService {
     const autres = initSynthese();
 
     for (const e of data.emprunts) {
-      const debut = parseDate(e.T_date_debut);
-      const fin = parseDate(e.T_date_fin);
-      const montant = parseFloat(e.T_montant_emprunt);
-      const rembN1 = parseFloat(e.T_remboursN1);
+      const debut = parseDate(e.E_date_debut);
+      const fin = parseDate(e.E_date_fin);
+      const montant = parseFloat(e.E_montant_emprunt);
+      const rembN1 = parseFloat(e.E_remboursN1);
       let cible;
       if (inRange(debut)) cible = commences;
       else if (inRange(fin)) cible = termines;
@@ -147,6 +119,10 @@ export class FormatService {
     data.totalRemboursN1 = Math.round(commences.totalRemboursN1 + termines.totalRemboursN1 + autres.totalRemboursN1);
     data.nbEmprunts = commences.nbEmprunts + termines.nbEmprunts + autres.nbEmprunts;
 
+    console.log('commences', commences);
+    console.log('termines', termines);
+    console.log('autres', autres);
+    console.log('data', data);
     return {
       global: data,
       commencesDansExercice: commences,

@@ -20,6 +20,8 @@ export class ImpotSocietesTabComponent implements OnInit {
   choixMontant: string = '';
 
   ngOnInit() {
+    if (!this.group) return;
+    
     this.choixMontant = this.group.get('choixMontant')?.value;
 
     this.group.get('acomptes')?.valueChanges.subscribe(() => this.updateComputedValues());
@@ -40,10 +42,13 @@ export class ImpotSocietesTabComponent implements OnInit {
   }
 
   updateComputedValues(): void {
-    const acomptes = this.group.get('acomptes')?.value || 0;
+    const acomptes = Number(this.group.get('acomptes')?.value ?? 0) || 0;
     const IS_tot = Number(this.infoIS?.IS_tot) || 0;
     const IS_credit = Number(this.infoIS?.IS_credit) || 0;
     
-    this.infoIS.IS_montant = IS_tot - IS_credit - acomptes;
+    this.infoIS.IS_acomptes = acomptes;
+
+    const montant = IS_tot - IS_credit - acomptes;
+    this.infoIS.IS_montant = montant;
   }
 }

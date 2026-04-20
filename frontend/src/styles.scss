@@ -7,29 +7,188 @@
 @use 'styles/button';
 @use 'styles/actions';
 @use 'styles/error';
+@use 'styles/settings-shared';
+@import "quill/dist/quill.snow.css";
+
+/* =========================
+   League Spartan (titres)
+   Fichiers: LeagueSpartan-*.ttf
+   ========================= */
+@font-face {
+    font-family: 'League Spartan';
+    src: url('/frontend/src/assets/fonts/League_Spartan/') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
 
 @font-face {
-    font-family: 'Inter';
-    src: url('/assets/fonts/inter/Inter-Regular.woff2') format('woff2');
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-ExtraLight.ttf') format('truetype');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-Regular.ttf') format('truetype');
     font-weight: 400;
+    font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Inter';
-    src: url('/assets/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-SemiBold.ttf') format('truetype');
     font-weight: 600;
+    font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Inter';
-    src: url('/assets/fonts/inter/Inter-Bold.woff2') format('woff2');
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-Bold.ttf') format('truetype');
     font-weight: 700;
+    font-style: normal;
     font-display: swap;
+}
+
+@font-face {
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-ExtraBold.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'League Spartan';
+    src: url('/assets/fonts/league-spartan/LeagueSpartan-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* =========================
+   Quire Sans (sous-titres)
+   Fichiers: QuireSans*.ttf
+   ========================= */
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansLight.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansLightItalic.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSans.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansItalic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansSemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansSemiBoldItalic.ttf') format('truetype');
+    font-weight: 600;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansBold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansBoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Quire Sans';
+    src: url('/assets/fonts/quire-sans/QuireSansBlack.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* =========================
+   Application globale
+   ========================= */
+:root {
+    --font-title: 'League Spartan', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    --font-subtitle: 'Quire Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    --font-body: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
 }
 
 html,
 body {
     margin: 0;
+    padding: 0;
+    font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-title) !important;
+    font-weight: 700;
+}
+
+h4,
+h5,
+h6,
+.subtitle {
+    font-family: var(--font-subtitle) !important;
+    font-weight: 300;
 }

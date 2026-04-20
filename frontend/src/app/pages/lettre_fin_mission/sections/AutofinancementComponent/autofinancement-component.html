@@ -1,0 +1,54 @@
+<fieldset class="block" [formGroup]="group" *ngIf="group">
+    <legend>
+        <label class="clickable">
+            <input type="checkbox" formControlName="enabled" />
+            <span class="titre">TABLEAU D'AUTOFINANCEMENT</span>
+        </label>
+    </legend>
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>N</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="indent">Résultat net comptable</td>
+                <td><input type="number" class="inputNumber" formControlName="resEx" /></td>
+            </tr>
+            <tr>
+                <td class="indent">+ Dotations aux amortissements et provisions</td>
+                <td><input type="number" class="inputNumber" formControlName="dota" /></td>
+            </tr>
+            <tr>
+                <td class="indent">- Reprises sur amortissements et provisions</td>
+                <td><input type="number" class="inputNumber" formControlName="reprises" /></td>
+            </tr>
+            <tr>
+                <td class="indent">- ou - valeurs sur cessions d'actifs</td>
+                <td><input type="number" class="inputNumber" formControlName="cessions" /></td>
+            </tr>
+            <tr>
+                <td class="indent">+ Subventions d'investissement virées au résultat</td>
+                <td><input type="number" class="inputNumber" formControlName="subv" /></td>
+            </tr>
+            <tr class="row-capaAutof">
+                <td class="first-row">= Capacité d'autofinancement</td>
+                <td>{{ group.get('capaAutof')?.value | number:'1.0-0':'fr-FR' }} €</td>
+            </tr>
+            <tr>
+                <td class="indent">- Remboursements emprunts</td>
+                <td><input type="number" class="inputNumber" formControlName="rembours" /></td>
+            </tr>
+            <tr>
+                <td class="indent">- Dividendes</td>
+                <td><input type="number" class="inputNumber" formControlName="divi" /></td>
+            </tr>
+            <tr class="row-capaAutof">
+                <td class="first-row">= Capacité d'autofinancement net</td>
+                <td>{{ group.get('capaAutofNet')?.value | number:'1.0-0':'fr-FR' }} €</td>
+            </tr>
+        </tbody>
+    </table>
+</fieldset>

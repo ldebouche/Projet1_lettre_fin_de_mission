@@ -27,15 +27,16 @@ export const GetDossierInfos = async (req, res) => {
 
     const aggN = aggregats[0] || {};
     const aggN1 = aggregats[1] || {};
-    
+
     const siteSelectionne = selectSite(infoClients.site.trim());
-    
+
     res.json({
       // === Infos générales ===
       anneeN1Existe: !!aggN1.datefinex,
       I_classe2: aggN.I_classe2,
       MD_salaries: aggN.MD_salaries,
       imposable: infoClients.imposable,
+      cotisationTravIndep: aggN.cotisationTravIndep,
       mois_cloture: infoClients.mois_cloture,
       resEx: (aggN.totalProduits || 0) - (aggN.totalCharges || 0),
       tabAutofinancement: infoClients.tabAutofinancement,
@@ -65,6 +66,8 @@ export const GetDossierInfos = async (req, res) => {
         initialesChefGroupe: infoClients.initialesChefGroupe,
         site: siteSelectionne,
         forme_societe: infoClients.forme_societe,
+        isAssoc: infoClients.forme_societe.startsWith('ASSOC') ? true : false,
+        isSciIr: infoClients.forme_societe.startsWith('SCI') && infoClients.categorie_revenu === 'RFONC' ? true : false
       },
 
       // === Chiffres clés ===
@@ -110,7 +113,7 @@ export const GetDossierInfos = async (req, res) => {
         "CC_%resNetVar": (aggN1.resNet
           ? ((aggN.resNet - aggN1.resNet) / aggN1.resNet) * 100
           : null),
-        
+
       },
 
       // === Evolution charges ===
@@ -129,13 +132,13 @@ export const GetDossierInfos = async (req, res) => {
         }
 
         const comptes = comptesMapping[item.EC_lib] || [];
-        
+
         return {
           EC_lib: item.EC_lib,
           EC_valN: valN,
           EC_valN1: valN1,
           EC_valVar: valVar,
-          "EC_%Var": pctVar,
+          "EC_pctVar": pctVar,
           EC_comment: comment,
           EC_numCompte: comptes
         };
@@ -148,7 +151,7 @@ export const GetDossierInfos = async (req, res) => {
         CP_Var: (aggN.CP_N || 0) - (aggN1.CP_N || 0),
         "CP_%Var": aggN1.CP_N
           ? ((aggN.CP_N - aggN1.CP_N) / aggN1.CP_N) * 100
-          : null,
+          : 'NS',
         "CP_caN": aggN.ca
           ? (aggN.CP_N / aggN.ca) * 100
           : null,
@@ -162,11 +165,11 @@ export const GetDossierInfos = async (req, res) => {
           ? (aggN1.CP_N / aggN1.marge) * 100
           : null,
         CP_heureVar: 0,
-        "CP_%heureVar": 0,
+        "CP_%heureVar": 'NS',
         CP_coutHorN: 0,
         CP_coutHorN1: 0,
-        "CP_VA/MS_N":aggN.valeurAjoutee /aggN.CP_N || 0,
-        "CP_VA/MS_N1":aggN1.valeurAjoutee /aggN1.CP_N || 0 
+        "CP_VA/MS_N": (aggN?.valeurAjoutee != null && aggN?.CP_N) ? aggN.valeurAjoutee / aggN.CP_N : 0,
+        "CP_VA/MS_N1": (aggN1?.valeurAjoutee != null && aggN1?.CP_N) ? aggN1.valeurAjoutee / aggN1.CP_N : 0
       },
 
       // === Impôt sur les sociétés ===
@@ -204,19 +207,8 @@ export const GetDossierInfos = async (req, res) => {
 
       // === Analyse sectorielle ===
       anaSectorielle: {
-        valeurs: anaSectorielle.filter(r => r.type_donnee === 'valeur').map(r => ({
-          libelle: r.libelle || null,
-          millesime: r.millesime || null,
-          tranches: {
-            tranche_1: r.tranche_1 || null,
-            tranche_2: r.tranche_2 || null,
-            tranche_3: r.tranche_3 || null,
-            tranche_4: r.tranche_4 || null,
-            tranche_5: r.tranche_5 || null,
-            globale: r.tranche_globale || null
-          } 
-        })),
-        commentaire: anaSectorielle.filter(r => r.type_donnee === 'commentaire').map(r => r.perspectives) || null
+        millesime: anaSectorielle[0]?.millesime ? anaSectorielle[0].millesime : null,
+        commentaire: anaSectorielle[0]?.texte ? anaSectorielle[0].texte : null
       },
 
       tresorerie: {

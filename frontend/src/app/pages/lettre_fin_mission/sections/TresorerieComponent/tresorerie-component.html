@@ -1,5 +1,10 @@
-<fieldset class="block" [formGroup]="group">
-  <legend><span class="titre">TRESORERIE</span></legend>
+<fieldset class="block" [formGroup]="group" *ngIf="group">
+  <legend>
+    <label class="clickable">
+      <input type="checkbox" formControlName="enabled" />
+      <span class="titre">TRESORERIE</span>
+    </label>
+  </legend>
   <table class="table">
     <thead>
       <tr>
@@ -10,7 +15,7 @@
     <tbody>
       <tr>
         <td class="indent">+ Solde trésorerie N-1</td>
-        <td>{{ group.get('tresoN')?.value | number:'1.0-0':'fr-FR' }}</td>
+        <td>{{ group.get('tresoN1')?.value | number:'1.0-0':'fr-FR' }}</td>
       </tr>
       <tr>
         <td class="indent">+ CAF</td>
@@ -92,29 +97,6 @@
   </table>
 
   <div *ngIf="messageErreur" class="error-formulaire">
-        {{ messageErreur }}
-    </div>
-    
-  <table class="table" *ngIf="emprunts.length > 0">
-    <thead>
-      <tr>
-        <th rowspan="2">Libellé</th>
-        <th>Date début</th>
-        <th>Date fin</th>
-        <th>Montant emprunté</th>
-        <th>Montant à payer</th>
-      </tr>
-    </thead>
-    <tbody>
-      <ng-container *ngFor="let emp of emprunts">
-        <tr>
-          <td class="first-row">{{ emp.T_designation }}</td>
-          <td>{{ emp.T_date_debut }}</td>
-          <td>{{ emp.T_date_fin }}</td>
-          <td>{{ getValue(emp.T_montant_emprunt) }}</td>
-          <td>{{ getValue(emp.T_montant_restant) }}</td>
-        </tr>
-      </ng-container>
-    </tbody>
-  </table>
+    {{ messageErreur }}
+  </div>
 </fieldset>

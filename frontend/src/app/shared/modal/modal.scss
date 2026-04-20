@@ -13,15 +13,19 @@
     padding: 2.2rem;
     border-radius: 18px;
     width: min(520px, 90%);
-    &.large {
-        width: min(850px, 95%);
-        text-align: left;
-    }
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
     text-align: center;
     font-family: var(--font-body);
     color: #4f6577;
     animation: slide-down 0.3s ease-out;
+
+    &.large {
+        width: min(850px, 95%);
+        text-align: left;
+    }
 }
 
 .modal-header {
@@ -29,6 +33,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -50,10 +55,14 @@
 .modal-body {
     font-size: 1.05rem;
     color: #6e7b86;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 6px;
 }
 
 .modal-footer {
     margin-top: 1.6rem;
+    flex-shrink: 0;
 }
 
 @keyframes slide-down {

@@ -149,13 +149,38 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
         break;
 
       case 'investissement':
+        // Préparer les données en vérifiant si les immobilisations sont vides
+        const entrees = this.data.immobEntree?.lignes || [];
+        const sorties = this.data.immobSortie?.lignes || [];
+        const hasEntrees = entrees.length > 0;
+        const hasSorties = sorties.length > 0;
+
+        // Déterminer la situation et la description
+        let situation = '';
+        let data_description = '';
+        if (hasEntrees && hasSorties) {
+          situation = 'entrees_et_sorties';
+          data_description = `Immobilisations entrées (total) : ${this.data.immobEntree.totalGeneral} EUR\nDétails entrées : ${JSON.stringify(entrees, null, 2)}\n\nImmobilisations sorties (total) : ${this.data.immobSortie.totalGeneral} EUR\nDétails sorties : ${JSON.stringify(sorties, null, 2)}`;
+        } else if (hasEntrees) {
+          situation = 'entrees_seules';
+          data_description = `Immobilisations entrées (total) : ${this.data.immobEntree.totalGeneral} EUR\nDétails entrées : ${JSON.stringify(entrees, null, 2)}`;
+        } else if (hasSorties) {
+          situation = 'sorties_seules';
+          data_description = `Immobilisations sorties (total) : ${this.data.immobSortie.totalGeneral} EUR\nDétails sorties : ${JSON.stringify(sorties, null, 2)}`;
+        } else {
+          situation = 'aucune_donnee';
+          data_description = 'Aucune immobilisation d\'entrée ou de sortie';
+        }
+
         this.callAI(
           'investissement',
           {
-            total_entrees: this.data.immobEntree.totalGeneral,
-            entrees: this.data.immobEntree.lignes,
-            total_sorties: this.data.immobSortie.totalGeneral,
-            sorties: this.data.immobSortie.lignes,
+            situation,
+            data_description,
+            total_entrees: hasEntrees ? this.data.immobEntree.totalGeneral : 0,
+            entrees: hasEntrees ? entrees : [],
+            total_sorties: hasSorties ? this.data.immobSortie.totalGeneral : 0,
+            sorties: hasSorties ? sorties : [],
           }
         );
         break;

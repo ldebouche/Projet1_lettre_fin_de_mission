@@ -1,10 +1,25 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
-  private codeClient?: string;
-  private dateDebutEx?: string;
-  private nomEntreprise?: string;
+  private readonly collaborateurSubject = new BehaviorSubject<any>(this.readCollaborateurFromStorage());
+  collaborateur$ = this.collaborateurSubject.asObservable();
+
+  setCollaborateur(collab: any) {
+    localStorage.setItem('collaborateur', JSON.stringify(collab));
+    this.collaborateurSubject.next(collab);
+  }
+
+  clearCollaborateur() {
+    localStorage.removeItem('collaborateur');
+    this.collaborateurSubject.next(null);
+  }
+
+  private readCollaborateurFromStorage() {
+    const raw = localStorage.getItem('collaborateur');
+    return raw ? JSON.parse(raw) : null;
+  }
 
   setCodeClient(code: string) {
     localStorage.setItem('codeClient', code);
@@ -31,16 +46,25 @@ export class DataService {
   }
 
   setNomEntreprise(nom: string) {
-    this.nomEntreprise = nom;
+    localStorage.setItem('nomEntreprise', nom);
   }
 
   getNomEntreprise(): string | null {
-    return this.nomEntreprise || null;
+    return localStorage.getItem('nomEntreprise') || null;
   }
 
   clearData() {
-    this.codeClient = undefined;
-    this.dateDebutEx = undefined;
-    this.nomEntreprise = undefined;
+    localStorage.removeItem('nomEntreprise');
+    localStorage.removeItem('codeClient');
+    localStorage.removeItem('dateDebutEx');
+    localStorage.removeItem('dateFinEx');
+  }
+
+  setModeLFM(mode: string) {
+    localStorage.setItem('modeLFM', mode);
+  }
+
+  getModeLFM(): string | null {
+    return localStorage.getItem('modeLFM') || null;
   }
 }

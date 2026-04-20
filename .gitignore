@@ -19,13 +19,14 @@ bazel-out/
 # ------------------------------
 # Angular cache
 # ------------------------------
-.angular/cache/
+**/.angular/cache/
 
 # ------------------------------
 # Backend TypeScript build
 # ------------------------------
 *.js.map
 backend/dist/
+backend/src/data/*.db
 
 # ------------------------------
 # Logs
@@ -84,5 +85,11 @@ Thumbs.db
 # ------------------------------
 *.txt
 *.pdf
+
+# ------------------------------
+# Documents chatbot
+# ------------------------------
+documents_chatbot/
+documents/
 
 *.tsbuildinfo

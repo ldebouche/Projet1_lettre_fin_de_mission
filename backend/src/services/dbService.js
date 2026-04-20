@@ -33,7 +33,17 @@ class dbService {
   }
 
   async GetListeDossiers(id_sellsy, statut) {
-    if (statut === 'N1') {
+    console.log("GetListeDossiers - id_sellsy:", id_sellsy, "statut:", statut);
+    if (statut.includes('informatique')) {
+      const dossiers = await this.executeQuery(
+        `SELECT * FROM clients;`,
+        {},
+        false,
+      );
+
+      return { dossiers, dossiersEquipe: [] };
+    }
+    if (statut.includes('N1')) {
       const dossiers = await this.executeQuery(
         `SELECT *
           FROM clients
@@ -77,7 +87,7 @@ class dbService {
           @dateFinEx,
           (
             SELECT MAX(datefinex)
-            FROM FEC
+            FROM dbo.vue_fec
             WHERE code_client = @code_client
               AND datefinex < @dateFinEx
           )
@@ -91,7 +101,7 @@ class dbService {
   async GetDossier(code_client, dateFinEx) {
     const dossier = await this.executeQuery(
       `SELECT code_client 
-      FROM FEC 
+      FROM dbo.vue_fec 
       WHERE code_client = @code_client 
         AND datefinex = @dateFinEx;`,
       { code_client, dateFinEx },
@@ -110,7 +120,7 @@ class dbService {
   async GetInfoClients(code_client) {
     return this.executeQuery(
       `SELECT
-        c.ape AS code_ape,
+        REPLACE(TRIM(c.ape), '.', '') AS code_ape,
         c.soumis_is AS imposable,
         c.mois_cloture AS mois_cloture,
         CASE WHEN c.raison_sociale = ''
@@ -125,7 +135,7 @@ class dbService {
         TRIM(c.cpos_corresp) AS codePostalClient,
         TRIM(c.ville_siege) AS villeClient,
         TRIM(c.site) AS lieuCreation,
-        CONCAT(LEFT(collab.nom, 1), LEFT(collab.prenom, 1), ' ', TRIM(c.code_client)) AS initialesChefGroupe,
+        CONCAT(TRIM(collab.code), ' ', TRIM(c.code_client)) AS initialesChefGroupe,
         CASE WHEN c.forme_societe LIKE 'ass%' AND regime_fiscal = 'a' THEN CAST(0 AS bit) ELSE CAST(1 AS bit) END AS tabAutofinancement,
         c.site AS site
       FROM clients AS c
@@ -177,7 +187,7 @@ class dbService {
             THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS info8
 
       FROM clients c
-      INNER JOIN FEC f ON c.code_client = f.code_client
+      INNER JOIN dbo.vue_fec f ON c.code_client = f.code_client
       WHERE c.code_client = @code_client AND f.datefinex = @dateFinEx
       GROUP BY c.ape, c.forme_societe, c.categorie_revenu;`,
       { code_client, dateFinEx },
@@ -186,7 +196,13 @@ class dbService {
 
   async GetInfoEvoCharges(code_client, dateFinEx) {
     return this.executeQuery(
-      `SELECT 
+      `WITH prev AS (
+        SELECT MAX(datefinex) AS datefinex_n1
+        FROM dbo.vue_fec
+        WHERE code_client = @code_client
+          AND datefinex < @dateFinEx
+      )
+      SELECT 
           CASE
               WHEN f.CompteNum LIKE '606%' THEN 'Fournitures consommables'
               WHEN f.CompteNum LIKE '611%' THEN 'Sous-traitance'
@@ -206,23 +222,13 @@ class dbService {
                 OR f.CompteNum LIKE '628%' OR f.CompteNum LIKE '629%' THEN 'Autres services extérieurs'
           END AS EC_lib,
 
-          SUM(CASE WHEN YEAR(f.datefinex) = YEAR(@dateFinEx) 
-                  THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN,
+          SUM(CASE WHEN f.datefinex = @dateFinEx THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN,
+          SUM(CASE WHEN f.datefinex = p.datefinex_n1 THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN1
 
-          SUM(CASE WHEN YEAR(f.datefinex) = YEAR(@dateFinEx) - 1
-                  THEN f.Debit - f.Credit ELSE 0 END) AS EC_valN1
-
-      FROM FEC f
+      FROM dbo.vue_fec f
+      CROSS JOIN prev p
       WHERE f.code_client = @code_client
-        AND f.datefinex IN (
-            @dateFinEx,
-            (
-              SELECT MAX(datefinex)
-              FROM FEC
-              WHERE code_client = @code_client
-                AND datefinex < @dateFinEx
-            )
-        )
+        AND f.datefinex IN (@dateFinEx, p.datefinex_n1)
         AND (
             f.CompteNum LIKE '606%' OR f.CompteNum LIKE '611%' OR f.CompteNum LIKE '612%'
             OR f.CompteNum LIKE '613%' OR f.CompteNum LIKE '614%' OR f.CompteNum LIKE '615%'
@@ -295,29 +301,25 @@ class dbService {
   async GetAnaSectorielle(code_ape) {
     return this.executeQuery(
       `SELECT 
-          *,
-          CASE 
-              WHEN libelle = 'Commentaire' THEN 'commentaire'
-              ELSE 'valeur'
-          END AS type_donnee
-      FROM analyse_sectorielle
-      WHERE code_ape = @code_ape
+          *
+      FROM ana_sectorielle_meta
+      WHERE codeAPE = @code_ape
         AND millesime = (
           SELECT MAX(millesime)
-          FROM analyse_sectorielle
-          WHERE code_ape = @code_ape
+          FROM ana_sectorielle_meta
+          WHERE codeAPE = @code_ape
         );`,
       { code_ape },
       false,
     );
   }
-
+  
   async GetMontantCharges(code_client, dateFinEx, comptes) {
     return this.executeQuery(
       `SELECT 
         f.CompteNum,
         SUM(f.Debit - f.Credit) AS montant
-      FROM FEC f
+      FROM dbo.vue_fec f
       WHERE f.code_client = @code_client
         AND f.datefinex = @dateFinEx
         AND f.CompteNum IN (
@@ -348,6 +350,16 @@ export function selectSite(ville) {
       cp: '25500',
       ville: 'MORTEAU',
     },
+    Montbéliard: {
+      adresse: '16 RUE WOLFGANG MOZART',
+      cp: '25217',
+      ville: 'MONTBELIARD',
+    },
+    Héricourt: {
+      adresse: '18 RUE DU MARECHAL DE LATTRE DE TASSIGNY',
+      cp: '70400',
+      ville: 'HERICOURT',
+    }
   };
   return site[ville];
 }

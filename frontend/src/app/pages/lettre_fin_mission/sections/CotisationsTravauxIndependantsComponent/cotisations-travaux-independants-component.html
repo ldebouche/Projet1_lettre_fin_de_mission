@@ -1,0 +1,103 @@
+<fieldset class="block" [formGroup]="group" *ngIf="group">
+    <legend>
+        <label *ngIf="!cotisationTravIndep" class="clickable">
+            <input type="checkbox" formControlName="masquerSection" />
+            <span class="titre">COTISATIONS DES TRAVAILLEURS INDEPENDANTS</span>
+        </label>
+        <span *ngIf="cotisationTravIndep" class="titre">COTISATIONS DES TRAVAILLEURS INDEPENDANTS <span style="color: red;">*</span></span>
+    </legend>
+
+    <label class="btn file-upload-btn" *ngIf="!selectedFile">
+        📁 Sélectionner un fichier
+        <input type="file" accept="application/pdf" (change)="onFileSelected($event)" hidden />
+    </label>
+
+    <div *ngIf="errorMessage" class="error-formulaire">
+        Mauvais fichier ou fichier vide.
+    </div>
+
+    <div *ngIf="selectedFile && !errorMessage">
+        <div class="selected-file">
+            <span class="file-icon">📎</span>
+            <span class="file-name clickable" (click)="openSelectedFile()" title="Ouvrir le PDF">
+                {{ selectedFile.name }}
+            </span>
+            <button class="remove-btn" (click)="removeSelectedFile()" [disabled]="cotisationTravIndep">❌ Supprimer</button>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th colspan="4">Echéancier prévisionnel de Cotisations Sociales - Année {{ tabComplet.annee }}</th>
+                </tr>
+                <tr>
+                    <th>Caisse</th>
+                    <th>Période</th>
+                    <th>Date</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let echeanciers of tabComplet.echeanciers">
+                    <tr class="caisse">
+                        <td colspan="4">{{ echeanciers.caisse }}</td>
+                    </tr>
+                    <tr *ngFor="let ligne of echeanciers.lignes">
+                        <td></td>
+                        <td>{{ ligne.periode }}</td>
+                        <td>{{ ligne.date }}</td>
+                        <td>{{ ligne.montant }}</td>
+                    </tr>
+                    <tr class="total">
+                        <td colspan="3" class="first-row">Total</td>
+                        <td>{{ echeanciers.total }}</td>
+                    </tr>
+                </ng-container>
+            </tbody>
+            <tfoot>
+                <tr class="totalAnnee">
+                    <td colspan="3" class="first-row">Total année {{ tabComplet.annee }}</td>
+                    <td>{{ tabComplet.totalAnnee }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th colspan="4">Echéancier prévisionnel de Cotisations Sociales - Année {{ tabPartiel.annee }}</th>
+                </tr>
+                <tr>
+                    <th>Caisse</th>
+                    <th>Période</th>
+                    <th>Date</th>
+                    <th>Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let echeanciers of tabPartiel.echeanciers">
+                    <tr class="caisse">
+                        <td colspan="4">{{ echeanciers.caisse }}</td>
+                    </tr>
+                    <tr *ngFor="let ligne of echeanciers.lignes">
+                        <td></td>
+                        <td>{{ ligne.periode }}</td>
+                        <td>{{ ligne.date }}</td>
+                        <td>{{ ligne.montant }}</td>
+                    </tr>
+                    <tr class="total">
+                        <td colspan="3" class="first-row">Total</td>
+                        <td>{{ echeanciers.total }}</td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+
+        <textarea 
+            rows="4" 
+            class="area"
+            formControlName="commentaire"
+            placeholder="Ajouter un commentaire...">
+        </textarea>
+    </div>
+</fieldset>

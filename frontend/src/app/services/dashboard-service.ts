@@ -11,4 +11,8 @@ export class DashboardService {
   getDossiersHistorique(code_client: any) {
     return this.http.get(`/api/dashboard/historique`, { params: { code_client } });
   }
+
+  checkHistorique(code_client: any, millesime: string) {
+    return this.http.get(`/api/dashboard/check-historique`, { params: { code_client, millesime } });
+  }
 }
