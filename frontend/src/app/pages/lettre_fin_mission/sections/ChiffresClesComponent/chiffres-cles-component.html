@@ -1,11 +1,11 @@
-<fieldset class="block" [formGroup]="group">
+<fieldset class="block" [formGroup]="group" *ngIf="group">
   <legend><span class="titre">CHIFFRES CLES</span></legend>
   <textarea 
       rows="4" 
       class="area"
-      formControlName="comPerspective" *ngIf="anaSectorielle">
+      formControlName="comPerspective" *ngIf="anaSectorielle?.millesime && anaSectorielle?.commentaire?.trim().length">
   </textarea>
-  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective" *ngIf="anaSectorielle"></bouton-textarea>
+  <bouton-textarea class="reformuler" formControlName="comPerspective" buttonLabel="Reformuler" categorie="reformuler" [data]="dataPerspective" *ngIf="anaSectorielle?.millesime && anaSectorielle?.commentaire?.trim().length"></bouton-textarea>
   <table class="table">
     <thead>
       <tr>
@@ -41,39 +41,4 @@
       </tr>
     </tbody>
   </table>
-  <table class="table" *ngIf="anaSectorielle">
-    <thead>
-      <tr>
-        <th colspan="7">Données sectorielles {{ anaSectorielle[0].millesime }}</th>
-      </tr>
-      <tr>
-        <th rowspan="2">Répartition selon le chiffre d’affaires en % du CA</th>
-        <th>Global</th>
-        <th>Tranche 1</th>
-        <th>Tranche 2</th>
-        <th>Tranche 3</th>
-        <th>Tranche 4</th>
-        <th>Tranche 5</th>
-      </tr>
-      <tr>
-        <th>{{ anaSectorielle[0].tranches.global }}</th>
-        <th>{{ anaSectorielle[0].tranches.tranche_1 }}</th>
-        <th>{{ anaSectorielle[0].tranches.tranche_2 }}</th>
-        <th>{{ anaSectorielle[0].tranches.tranche_3 }}</th>
-        <th>{{ anaSectorielle[0].tranches.tranche_4 }}</th>
-        <th>{{ anaSectorielle[0].tranches.tranche_5 }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let ana of anaSectorielle">
-        <ng-container *ngIf="ana.libelle !== 'Tranches'">
-          <td class="first-row">{{ ana.libelle }}</td>
-          <td *ngFor="let key of getTrancheKeys(ana.tranches)">
-            {{ ana.tranches[key] }}
-          </td>
-        </ng-container>
-      </tr>
-    </tbody>
-  </table>
-  <bouton-textarea formControlName="commentaire" categorie="CA_marge" [data]="dataCA" [anaSectorielle]="anaSectorielle" *ngIf="anneeN1Existe || anaSectorielle"></bouton-textarea>
 </fieldset>

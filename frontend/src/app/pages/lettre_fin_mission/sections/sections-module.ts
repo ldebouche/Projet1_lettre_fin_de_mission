@@ -6,18 +6,22 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ChiffresClesComponent } from './ChiffresClesComponent/chiffres-cles-component';
 import { EvolutionChargesComponent } from './EvolutionChargesComponent/evolution-charges-component';
 import { ChargesPersonnelComponent } from './ChargesPersonnelComponent/charges-personnel-component';
+import { CotisationsTravauxIndependantsComponent } from './CotisationsTravauxIndependantsComponent/cotisations-travaux-independants-component';
 import { InvestissementComponent } from './InvestissementComponent/investissement-component';
 import { ImpotSocietesTabComponent } from './ImpotSocietesTabComponent/impot-societes-tab-component';
 import { AcompteImpotComponent } from './AcompteImpotComponent/acompte-impot-component';
 import { InfoFiscaleComponent } from './InfoFiscaleComponent/info-fiscale-component';
 import { ProjetAffectResultatComponent } from './ProjetAffectResultatComponent/projet-affect-resultat-component';
 import { TresorerieComponent } from './TresorerieComponent/tresorerie-component';
+import { AutofinancementComponent } from './AutofinancementComponent/autofinancement-component';
 import { EstimAutofinancementComponent } from './EstimAutofinancementComponent/estim-autofinancement-component';
 import { MAJDocUniqueEvalComponent } from './MAJDocUniqueEvalComponent/majdoc-unique-eval-component';
 import { FaitsMarquantsComponent } from './FaitsMarquantsComponent/faits-marquants-component';
 import { PerspectivesComponent } from './PerspectivesComponent/perspectives-component';
 import { PointsImportantsComponent } from './PointsImportantsComponent/points-importants-component';
 import { SignataireComponent } from './SignataireComponent/signataire-component';
+import { RisqueDeCessationComponent } from './RisqueDeCessationComponent/risque-de-cessation-component';
+import { EmpruntsComponent } from './EmpruntsComponent/emprunts-component';
 
 @NgModule({
   imports: [
@@ -26,35 +30,43 @@ import { SignataireComponent } from './SignataireComponent/signataire-component'
     ChiffresClesComponent,
     EvolutionChargesComponent,
     ChargesPersonnelComponent,
+    CotisationsTravauxIndependantsComponent,
     InvestissementComponent,
     ImpotSocietesTabComponent,
     AcompteImpotComponent,
     InfoFiscaleComponent,
     ProjetAffectResultatComponent,
     TresorerieComponent,
+    AutofinancementComponent,
     EstimAutofinancementComponent,
     MAJDocUniqueEvalComponent,
     FaitsMarquantsComponent,
     PerspectivesComponent,
     PointsImportantsComponent,
-    SignataireComponent
+    SignataireComponent,
+    RisqueDeCessationComponent,
+    EmpruntsComponent
   ],
   exports: [
     ChiffresClesComponent,
     EvolutionChargesComponent,
     ChargesPersonnelComponent,
+    CotisationsTravauxIndependantsComponent,
     InvestissementComponent,
     ImpotSocietesTabComponent,
     AcompteImpotComponent,
     InfoFiscaleComponent,
     ProjetAffectResultatComponent,
     TresorerieComponent,
+    AutofinancementComponent,
     EstimAutofinancementComponent,
     MAJDocUniqueEvalComponent,
     FaitsMarquantsComponent,
     PerspectivesComponent,
     PointsImportantsComponent,
-    SignataireComponent
+    SignataireComponent,
+    RisqueDeCessationComponent,
+    EmpruntsComponent
   ]
 })
 export class SectionsModule {}

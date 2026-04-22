@@ -1,5 +1,3 @@
-@use '../../../styles/variables.scss' as *;
-
 .history-container {
     max-height: 60vh; // Permet de scroller à l'intérieur de la modale si trop d'années
     overflow-y: auto;

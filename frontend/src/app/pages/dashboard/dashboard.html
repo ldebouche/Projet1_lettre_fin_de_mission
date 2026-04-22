@@ -17,15 +17,18 @@
             </div>
 
             <div class="sort-group">
-                <button class="sort-indicator-button" (click)="setSort(sortField)">
-                    Tri actuel : {{ getSortLabel() }}
-                    <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
-                        [class.desc]="sortDirection === 'desc'"></i>
-                </button>
+                <app-bouton-filtre [label]="getSortLabel()" [direction]="sortDirection"
+                    [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="setSort(sortField)">
+                </app-bouton-filtre>
             </div>
-        </div>
 
-        <button class="primary-action-button" (click)="addProspect()">+ Ajouter un prospect</button>
+            <button class="primary-action-button" *ngIf="userRole.includes('admin')" (click)="openModalAttente()">
+                Dossiers en attente d'acceptation
+
+                <app-rond-notif [value]="dossiersEnAttente.length" top="0" right="0" translateX="50%" translateY="-50%">
+                </app-rond-notif>
+            </button>
+        </div>
     </div>
 
     <nav class="tab-nav">
@@ -33,7 +36,7 @@
             Mes Dossiers
         </button>
 
-        <button *ngIf="userRole === 'chef'" [class.active]="activeTab === 'equipe'" (click)="selectTab('equipe')">
+        <button *ngIf="userRole.includes('chef')" [class.active]="activeTab === 'equipe'" (click)="selectTab('equipe')">
             Mon Équipe
         </button>
     </nav>
@@ -66,29 +69,40 @@
                                 [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
-                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th>Action</th>
-                        <th>Historique</th>
+                        <!-- <th>Historique</th> -->
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let dossier of mesDossiers" class="equipe-table">
-                        <td><div class="cell-content">{{ dossier.code_client }}</div></td>
-                        <td><div class="cell-content">{{ formatNomEntreprise(dossier) }}</div></td>
-                        <td><div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div></td>
-                        <td><div class="cell-content">
-                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
-                                class="action-button">
-                                Ouvrir
-                            </button></div>
+                        <td>
+                            <div class="cell-content">{{ dossier.code_client }}</div>
                         </td>
-                        <td><div class="cell-content">
-                            <button (click)="consulterHistorique(dossier)"
-                                class="action-button">
-                                Consulter
-                            </button></div>
+                        <td>
+                            <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
                         </td>
+                        <td>
+                            <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
+                                    class="action-button">
+                                    Ouvrir
+                                </button>
+                            </div>
+                        </td>
+                        <!--<td>
+                            <div class="cell-content">
+                                <button (click)="consulterHistorique(dossier)" class="action-button">
+                                    Consulter
+                                </button>
+                            </div>
+                        </td>
+                            -->
                     </tr>
                 </tbody>
             </table>
@@ -128,7 +142,8 @@
                                 [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
-                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'" [class.desc]="sortDirection === 'desc'"></i>
+                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
                         </th>
                         <th>Action</th>
                         <th>Historique</th>
@@ -136,21 +151,32 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let dossier of dossiersEquipe">
-                        <td><div class="cell-content">{{ dossier.code_client }}</div></td>
-                        <td><div class="cell-content">{{ formatNomEntreprise(dossier) }}</div></td>
-                        <td><div class="cell-content">{{ dossier.collaborateur }}</div></td>
-                        <td><div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div></td>
-                        <td><div class="cell-content">
-                            <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
-                                class="action-button">
-                                Ouvrir
-                            </button></div>
+                        <td>
+                            <div class="cell-content">{{ dossier.code_client }}</div>
                         </td>
-                        <td><div class="cell-content">
-                            <button (click)="consulterHistorique(dossier)"
-                                class="action-button">
-                                Consulter
-                            </button></div>
+                        <td>
+                            <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ dossier.collaborateur }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
+                                    class="action-button">
+                                    Ouvrir
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <button (click)="consulterHistorique(dossier)" class="action-button">
+                                    Consulter
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -164,18 +190,47 @@
     </div>
 </main>
 
-<app-modal 
-    [isOpen]="isHistoriqueModalOpen" 
-    [title]="'Historique des documents'" 
-    [isLarge]="true"
+<app-modal [isOpen]="isHistoriqueModalOpen" [title]="'Historique des documents'" [isLarge]="true"
     (closeEvent)="closeHistoriqueModal()">
-    
-    <app-liste-historique
-        modal-body 
-        [codeClient]="selectedCodeClient">
+
+    <app-liste-historique modal-body [codeClient]="selectedCodeClient">
     </app-liste-historique>
 
     <div modal-footer class="modal-actions">
         <button type="button" class="btn" (click)="closeHistoriqueModal()">Fermer</button>
+    </div>
+</app-modal>
+
+<app-modal [isOpen]="isModalAttenteOpen" title="Dossiers en attente de validation" [isLarge]="false"
+    (closeEvent)="closeModalAttente()">
+    <div modal-body>
+        <div class="attente-empty" *ngIf="!dossiersEnAttente?.length">
+            Aucun dossier en attente de validation
+        </div>
+
+        <div class="attente-list" *ngIf="dossiersEnAttente?.length">
+            <button type="button" class="attente-item" *ngFor="let d of dossiersEnAttente"
+                (click)="selectDossierAttente(d)" [class.selected]="selectedDossierAttente === d">
+                <div class="attente-main">
+                    <div class="attente-title">
+                        {{ formatNomEntreprise(d) }}
+                    </div>
+                    <div class="attente-sub">
+                        Code client : {{ d.code_client }}
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div modal-footer class="attente-footer">
+        <button class="btn secondary" type="button" (click)="closeModalAttente()">
+            Fermer
+        </button>
+
+        <button class="btn" type="button" *ngIf="dossiersEnAttente?.length" [disabled]="!selectedDossierAttente"
+            (click)="openLoginLab()">
+            Ouvrir
+        </button>
     </div>
 </app-modal>

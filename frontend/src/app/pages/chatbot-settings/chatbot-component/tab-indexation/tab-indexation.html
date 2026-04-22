@@ -1,0 +1,67 @@
+<div class="tab-indexation">
+    <ul class="file-list-status">
+        <li *ngFor="let file of filesToIndex" class="status-item">
+            <div class="item-label clickable" (click)="ouvrirPdf(file)">
+                <img class="tree-icon" [src]="iconFichier" alt="Icône de fichier" />
+                <span class="file-name">{{ file.nom }}</span>
+                <span class="file-size">
+                    ({{ file.tailleMo | number:'1.2-2' }} MB)
+                </span>
+            </div>
+
+            <div class="per-file-roles">
+                <div class="roles-dropdown" (click)="$event.stopPropagation()">
+                    <button type="button" class="roles-trigger" (click)="toggleRoles(file)">
+                        Rôles
+                        <span class="roles-summary">{{ getRolesLabel(file) }}</span>
+                        <span class="chev">▾</span>
+                    </button>
+
+                    <div class="roles-menu" *ngIf="file.rolesOpen">
+                        <label class="role-item">
+                            <input type="checkbox" [checked]="file.roles?.includes('general')"
+                                (change)="onRoleChange(file, 'general', $event)" />
+                            Général
+                        </label>
+
+                        <label class="role-item">
+                            <input type="checkbox" [checked]="file.roles?.includes('rh')"
+                                (change)="onRoleChange(file, 'rh', $event)" />
+                            RH
+                        </label>
+
+                        <label class="role-item">
+                            <input type="checkbox" [checked]="file.roles?.includes('comptable')"
+                                (change)="onRoleChange(file, 'comptable', $event)" />
+                            Comptable
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="per-file-select">
+                <select [(ngModel)]="file.targetFolder" [compareWith]="compareFolders">
+                    <option [ngValue]="null">Racine</option>
+                    <option *ngFor="let folder of availableFolders" [ngValue]="folder">
+                        {{ getIndentationForSelect(folder) }}{{ folder.name }}
+                    </option>
+                </select>
+            </div>
+
+            <button class="item-action delete-action" title="Retirer" (click)="removeFile(file)">
+                &times;
+            </button>
+        </li>
+
+        <li *ngIf="filesToIndex.length === 0" class="status-item empty">
+            Aucun fichier en attente.
+        </li>
+    </ul>
+
+    <div class="indexing-actions">
+        <button class="btn" [disabled]="filesToIndex.length === 0" (click)="startIndexing()">
+            Lancer l’indexation des fichiers
+        </button>
+    </div>
+
+</div>

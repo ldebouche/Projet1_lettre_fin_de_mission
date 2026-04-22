@@ -42,10 +42,17 @@ export class FormulaireService {
 
       // ===== CHARGES DE PERSONNEL =====
       CP: this.fb.group({
+        masquerSection: [false],
         heuresRemunN: [0],
-        heuresRemunN1: [0],
-        annexe1TNS: [],
-        annexe2TNS: []
+        heuresRemunN1: [0]
+      }),
+
+      // ===== COTISATIONS DES TRAVAILLEURS INDEPENDANTS =====
+      CI: this.fb.group({
+        masquerSection: [false],
+        annexe1TNS: [null],
+        annexe2TNS: [null],
+        commentaire: ['']
       }),
 
       // ===== INVESTISSEMENTS =====
@@ -55,7 +62,7 @@ export class FormulaireService {
         prevAmoN: [0],
         prevAmoN1: [0],
         prevAmoN2: [0],
-        tableau: []
+        tableau: [null]
       }),
 
       // ===== IMPÔT SUR LES SOCIÉTÉS =====
@@ -63,7 +70,8 @@ export class FormulaireService {
         masquerSection: [false],
         acomptes: [0],
         choixMontant: [''],
-        phraseAcomptes: ['']
+        phraseAcomptes: [''],
+        IS_montant: [0]
       }),
 
       // ===== ACOMPTES N+1 =====
@@ -82,7 +90,7 @@ export class FormulaireService {
 
       // ===== INFORMATION FISCALE =====
       IF: this.fb.array(
-        this.informations_fiscales.map(() => this.fb.control(false))
+        this.informations_fiscales.map(() => this.fb.control(true))
       ),
 
       // ===== PROJET D’AFFECTATION DU RÉSULTAT =====
@@ -103,7 +111,16 @@ export class FormulaireService {
 
       // ===== TABLEAU D’AUTOFINANCEMENT =====
       AF: this.fb.group({
-        enabled: [true]
+        enabled: [false],
+        resEx: [0],
+        dota: [0],
+        reprises: [0],
+        cessions: [0],
+        subv: [0],
+        capaAutof: [0],      // Capacité d'autofinancement calculée
+        rembours: [0],
+        divi: [0],
+        capaAutofNet: [0]    // Capacité d'autofinancement nette calculée
       }),
 
       // ===== FISCALITE =====
@@ -127,7 +144,13 @@ export class FormulaireService {
         tresoN: [0],
         frng: [0],
         bfr: [0],
-        emprunts: []
+        emprunts: [null]
+      }),
+
+      // ===== SYNTHESE DES EMPRUNTS =====
+      E: this.fb.group({
+        enabled: [false],
+        emprunts: [{ global: { emprunts: null } }]
       }),
 
       // ===== ESTIMATION D’AUTOFINANCEMENT =====
@@ -143,6 +166,12 @@ export class FormulaireService {
       // ===== MAJ DU DOCUMENT UNIQUE =====
       MD: this.fb.group({
         enabled: [false]
+      }),
+
+      // ===== RISQUE DE CESSATION DE PAIEMENT =====
+      RC: this.fb.group({
+        enabled: [false],
+        commentaire: ['']
       }),
 
       // ===== FAITS MARQUANTS =====

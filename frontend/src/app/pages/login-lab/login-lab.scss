@@ -1,0 +1,34 @@
+.login-subtitle {
+    margin: 0 0 1.4rem;
+    color: rgba(255, 255, 255, 0); // au cas où ton theme met le texte blanc ailleurs
+    color: #6e7b86;
+    font-size: 0.98rem;
+}
+
+/* Dans la modale */
+.entreprise-box {
+    padding: 14px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(79, 101, 119, 0.25);
+    background: rgba(79, 101, 119, 0.04);
+    text-align: left;
+}
+
+.entreprise-name {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #4f6577;
+    margin-bottom: 6px;
+}
+
+.entreprise-sub {
+    color: #6e7b86;
+    margin-top: 3px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}

@@ -1,35 +1,35 @@
-<fieldset class="block" [formGroup]="group">
+<fieldset class="block" [formGroup]="group" *ngIf="group">
     <legend>
         <label class="clickable">
-        <input type="checkbox" formControlName="masquerSection" />
-        <span class="titre">ACOMPTES IMPOT SUR LES SOCIETES N+1</span>
-        <small class="note">(Cocher la case pour afficher les acomptes N+1 dans la lettre de fin de mission)</small>
+            <input type="checkbox" formControlName="masquerSection" />
+            <span class="titre">ACOMPTES IMPOT SUR LES SOCIETES N+1</span>
+            <small class="note">(Cocher la case pour afficher les acomptes N+1 dans la lettre de fin de mission)</small>
         </label>
     </legend>
     <table class="table">
         <thead>
-        <tr>
-            <th>Acomptes :</th>
-            <th>N+1</th>
-        </tr>
+            <tr>
+                <th>Acomptes :</th>
+                <th>N+1</th>
+            </tr>
         </thead>
         <tbody>
-        <tr>
-            <td class="first-row">15/{{ moisCloture[0] }}</td>
-            <td><input type="number" class="inputNumber" formControlName="acompte1" step="1" /></td>
-        </tr>
-        <tr>
-            <td class="first-row">15/{{ moisCloture[1] }}</td>
-            <td><input type="number" class="inputNumber" formControlName="acompte2" step="1" /></td>
-        </tr>
-        <tr>
-            <td class="first-row">15/{{ moisCloture[2] }}</td>
-            <td><input type="number" class="inputNumber" formControlName="acompte3" step="1" /></td>
-        </tr>
-        <tr>
-            <td class="first-row">15/{{ moisCloture[3] }}</td>
-            <td><input type="number" class="inputNumber" formControlName="acompte4" step="1" /></td>
-        </tr>
+            <tr>
+                <td class="first-row">15/{{ moisCloture[0] }}</td>
+                <td><input type="number" class="inputNumber" formControlName="acompte1" step="1" /></td>
+            </tr>
+            <tr>
+                <td class="first-row">15/{{ moisCloture[1] }}</td>
+                <td><input type="number" class="inputNumber" formControlName="acompte2" step="1" /></td>
+            </tr>
+            <tr>
+                <td class="first-row">15/{{ moisCloture[2] }}</td>
+                <td><input type="number" class="inputNumber" formControlName="acompte3" step="1" /></td>
+            </tr>
+            <tr>
+                <td class="first-row">15/{{ moisCloture[3] }}</td>
+                <td><input type="number" class="inputNumber" formControlName="acompte4" step="1" /></td>
+            </tr>
         </tbody>
     </table>
 </fieldset>

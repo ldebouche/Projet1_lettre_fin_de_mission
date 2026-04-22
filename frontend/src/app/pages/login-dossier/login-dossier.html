@@ -1,7 +1,6 @@
 <div class="login-page">
   <div class="login-card">
-    <h2>Lettre de fin de mission</h2>
-    <h3>{{ nomEntreprise }}</h3>
+    <h2>{{ nomEntreprise }}</h2>
     <form (ngSubmit)="onSubmit()" [formGroup]="form">
       <div *ngIf="errorMessage" class="error-formulaire">
         {{ errorMessage }}
@@ -9,11 +8,8 @@
 
       <label>
         <span>Code client</span>
-        <input type="text" formControlName="code_client" />
+        <input type="text" formControlName="code_client" class="readonly" />
       </label>
-      <div *ngIf="form.get('code_client')?.invalid && form.get('code_client')?.touched" class="error-formulaire">
-        Le code client est requis
-      </div>
 
       <label>
         <span>Date de début d'exercice</span>

@@ -1,4 +1,4 @@
-<fieldset class="block" [formGroup]="group">
+<fieldset class="block" [formGroup]="group" *ngIf="group">
     <legend>
         <label class="clickable">
         <input type="checkbox" formControlName="enabled" />
@@ -25,7 +25,7 @@
             <td class="first-row">Remboursements emprunts</td>
             <td>{{ getValue(group.get('rembours')?.value) }}</td>
         </tr>
-        <tr>
+        <tr *ngIf="!isAssoc">
             <td class="first-row">Dividendes</td>
             <td><input type="number" class="inputNumber" formControlName="divi" step="1" /></td>
         </tr>

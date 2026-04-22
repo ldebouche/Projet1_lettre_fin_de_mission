@@ -15,8 +15,11 @@ import { ZeroIfEmpty } from '../../../../directives/zero-if-empty';
 })
 export class EstimAutofinancementComponent {
   @Input({ required: true }) group!: FormGroup;
+  @Input() isAssoc: boolean = false;
 
   get capaAutfinance(): number {
+    if (!this.group) return 0;
+    
     return (
       (this.group.get('resEx')?.value || 0) +
       (this.group.get('dot')?.value || 0) -

@@ -1,0 +1,66 @@
+<div class="sidebar-header">
+    <div class="header-left">
+        <div class="title-line">Fichiers</div>
+        <div class="title-line">indexés</div>
+    </div>
+
+    <div class="header-right">
+        <div class="actions-top">
+            <button class="add-folder-btn" title="Créer un dossier à la racine" (click)="demanderCreationRacine()">
+                <span class="btn-icon">+</span>
+                <span>Créer</span>
+            </button>
+
+            <app-bouton-filtre class="filtre" [label]="getSortLabel()" [direction]="dateSortOrder"
+                [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="toggleSortByDate.emit()">
+            </app-bouton-filtre>
+        </div>
+
+        <div class="actions-bottom">
+            <button class="add-folder-btn recherche" title="Rechercher un fichier" (click)="ouvrirRecherche()">
+                <span class="btn-icon">🔎</span>
+                <span>Rechercher</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="tree-view" *ngIf="!loading">
+    <ng-container *ngFor="let item of indexedItems">
+        <div *ngIf="isItemVisibleFn(item)" class="tree-item" [ngClass]="classesItem(item)"
+            (click)="item.isFolder ? demanderToggle(item) : ouvrirPdf(item, $event)">
+
+            <div class="item-label clickable">
+                <span class="folder-toggle-icon" *ngIf="item.isFolder && hasChildrenFn(item)"></span>
+                <img class="tree-icon" [src]="item.isFolder ? iconDossier : iconFichier"
+                    [alt]="item.isFolder ? 'Dossier' : 'Fichier'" />
+                <span>{{ item.name }}</span>
+            </div>
+
+            <div class="item-actions">
+                <button *ngIf="!item.isFolder" class="item-action edit-action" title="Modifier"
+                    (click)="$event.stopPropagation(); demanderEdition(item)">
+                    ✎
+                </button>
+
+                <button *ngIf="item.isFolder" class="item-action add-subfolder" title="Créer un sous-dossier"
+                    (click)="$event.stopPropagation(); demanderCreationSousDossier(item.id)">
+                    +
+                </button>
+
+                <button class="item-action delete-action" title="Supprimer"
+                    (click)="$event.stopPropagation(); demanderSuppression(item)">
+                    &times;
+                </button>
+            </div>
+        </div>
+    </ng-container>
+
+    <div *ngIf="indexedItems.length === 0" class="error-formulaire">
+        La base de connaissances est vide.
+    </div>
+</div>
+
+<div *ngIf="loading" class="loader">
+    Chargement des fichiers...
+</div>

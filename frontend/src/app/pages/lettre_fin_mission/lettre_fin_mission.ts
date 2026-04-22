@@ -53,20 +53,28 @@ export class LettreFinMissionComponent implements OnInit {
   infoChiffresCles: any = {};
   infoAutofinancement: any = {};
   infoEvolutionCharges: any = {};
+  allEvolutionCharges: any[] = [];
   informations_fiscales!: string[];
   infoSeuilRenta: any = {};
   infoRatioExploitation: any = {};
 
   dataCA = {};
   dataMarge = {};
-  
+
   dotations = [];
   immobs: any;
   anaSectorielle: any;
   pointsImportants: any;
   emprunts: any;
+  empruntsPath: any;
 
   data: any;
+  modeLFM: string | null = null;
+
+  autofinancement = false;
+  cotisationTravIndep = false;
+  isAssoc = false;
+  isSciIr = false;
 
   constructor(
     private pdfService: PdfService,
@@ -85,24 +93,28 @@ export class LettreFinMissionComponent implements OnInit {
     this.dateFinEx = this.dataService.getDateFinEx();
   }
 
-  
+
 
   ngOnInit(): void {
     this.form = this.formService.buildForm();
+    this.modeLFM = this.dataService.getModeLFM();
 
     forkJoin({
       data: this.db.GetDossierInfos(),
       dotations: this.pdfService.getDotations(this.codeClient, this.dateFinEx),
       immobs: this.pdfService.getImmob(this.codeClient, this.dateFinEx),
       pointsImportants: this.pdfService.getPointsImportants(this.codeClient, this.dateFinEx),
-      emprunts: this.pdfService.getEmprunts(this.codeClient, this.dateFinEx)
+      empruntsData: this.pdfService.getEmprunts(this.codeClient, this.dateFinEx)
     }).subscribe({
-      next: ({ data, dotations, immobs, pointsImportants, emprunts }: any) => {
+      next: ({ data, dotations, immobs, pointsImportants, empruntsData }: any) => {
+        const { emprunts, empruntsPath } = empruntsData || {};
         console.log(data);
         console.log(dotations);
         console.log(emprunts);
+        console.log(data.anaSectorielle);
+        console.log(immobs);
         this.data = data;
-        if (dotations) {        
+        if (dotations) {
           this.dotations = Object.values(dotations);
         }
 
@@ -114,27 +126,21 @@ export class LettreFinMissionComponent implements OnInit {
           this.pointsImportants = this.formatService.formatPointsImportants(pointsImportants);
         }
 
-        if (data.anaSectorielle.valeurs.length) {
-          this.anaSectorielle = [
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Tranches'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Nombre d’entreprises'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Effectif moyen (exploitant inclus)'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires HT en €'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Chiffre d’affaires par personne en €'),
-            data.anaSectorielle.valeurs.find((a: any) => a.libelle === 'Marge brute globale')
-          ];
+        if (data.anaSectorielle) {
+          this.anaSectorielle = data.anaSectorielle;
         }
 
-        if (emprunts) {
-        
+        if (emprunts.emprunts.length) {
           this.emprunts = this.formatService.formatEmprunts(emprunts, this.dateDebutEx, data.chiffreCles.dateFinEx);
+          this.empruntsPath = empruntsPath;
         }
-        
+
         this.infoChargesPersonnel = data.chargesPersonnel;
         this.infoImpotSociete = data.impotSociete;
         this.infoClient = data.client;
         this.infoChiffresCles = data.chiffreCles;
         this.infoAutofinancement = data.autofinancement;
+        this.autofinancement = data.tabAutofinancement;
         this.infoSeuilRenta = {
           seuilRenta: data.seuilRentaFinan,
           rentaJours: data.seuilRentaFinan / data.chiffreCles.CC_caN * 360
@@ -150,7 +156,9 @@ export class LettreFinMissionComponent implements OnInit {
         this.imposable = data.imposable;
         this.forme_societe = data.client.forme_societe;
         this.categorie_revenu = data.categorie_revenu;
-        
+        this.isAssoc = data.client.isAssoc;
+        this.isSciIr = data.client.isSciIr;
+
         this.dataCA = {
           caN: data.chiffreCles.CC_caN,
           caN1: data.chiffreCles.CC_caN1,
@@ -167,7 +175,7 @@ export class LettreFinMissionComponent implements OnInit {
           margeVar: data.chiffreCles.CC_margeVar,
           "%margeVar": data.chiffreCles["CC_%margeVar"],
         };
-        
+
         const comPerspective = this.formatService.texteRefactor(data.anaSectorielle.commentaire);
 
         this.moisClotureArray = this.fiscaliteService.getMoisClotureArray(data.mois_cloture);
@@ -178,17 +186,15 @@ export class LettreFinMissionComponent implements OnInit {
           data.montantDividendesN1 ?? 0
         );
 
-
-        let choixMontant = "payer";
-        if (this.infoImpotSociete.IS_montant < 0) {
-          choixMontant = "rembourser";
-        }
         const phraseAcomptes = this.fiscaliteService.getPhraseAcomptes(data.resEx, data.impotSociete.IS_tot);
         const acomptes = data.impotSociete.IS_acomptes;
-        
+
+        this.cotisationTravIndep = data.cotisationTravIndep;
+
         this.chargesService.loadEvoChargesWithComments(data.evolutionCharges, this.codeClient, this.dateFinEx).subscribe({
           next: (res) => {
-            this.infoEvolutionCharges = this.chargesService.formatEvoCharges(res, this.form.value);
+            this.allEvolutionCharges = res ?? [];
+            this.infoEvolutionCharges = this.chargesService.formatEvoCharges(this.allEvolutionCharges, this.form.value);
             this.loading = false;
           },
           error: (err) => {
@@ -196,33 +202,38 @@ export class LettreFinMissionComponent implements OnInit {
             this.loading = false;
           }
         });
-        
+
         this.form.patchValue({
           CC: {
             comPerspective
           },
+          CI: {
+            masquerSection: data.cotisationTravIndep,
+          },
           I: {
-            masquerSection: data.I_classe2 ? false : true,
+            masquerSection: data.I_classe2 ? true : false,
             prevAmoN: this.dotations[0] ? Math.round(this.dotations[0]) : null,
             prevAmoN1: this.dotations[1] ? Math.round(this.dotations[1]) : null,
             prevAmoN2: this.dotations[2] ? Math.round(this.dotations[2]) : null
           },
           IS: {
+            masquerSection: data.imposable ? false : true,
             acomptes,
-            choixMontant,
-            phraseAcomptes
+            choixMontant: this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - acomptes < 0 ? "rembourser" : "payer",
+            phraseAcomptes,
+            IS_montant: Math.round(this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - acomptes)
           },
           AI: {
             masquerSection: data.imposable && this.resEx > 0 && this.IS_tot > 3000 ? false : true,
-            acompte1: Math.round(data.acompte_total/4),
-            acompte2: Math.round(data.acompte_total/4),
-            acompte3: Math.round(data.acompte_total/4),
-            acompte4: Math.round(data.acompte_total/4),
+            acompte1: Math.round(data.acompte_total / 4),
+            acompte2: Math.round(data.acompte_total / 4),
+            acompte3: Math.round(data.acompte_total / 4),
+            acompte4: Math.round(data.acompte_total / 4),
             date1: this.moisClotureArray[0],
             date2: this.moisClotureArray[1],
             date3: this.moisClotureArray[2],
-            date4: this.moisClotureArray[3], 
-            date5: this.moisClotureArray[4]           
+            date4: this.moisClotureArray[3],
+            date5: this.moisClotureArray[4]
           },
           PA: {
             resEx: Math.round(this.resEx),
@@ -233,34 +244,43 @@ export class LettreFinMissionComponent implements OnInit {
             affect: Math.round(affectation.affect)
           },
           AF: {
-            enabled: data.tabAutofinancement
+            enabled: this.autofinancement,
+            resEx: Math.round(data.autofinancement.AF_resEx),
+            dota: Math.round(data.autofinancement.AF_dota),
+            reprises: Math.round(data.autofinancement.AF_reprises),
+            cessions: Math.round(data.autofinancement.AF_cessions),
+            subv: Math.round(data.autofinancement.AF_subv),
+            rembours: Math.round(data.autofinancement.AF_rembours),
+            divi: Math.round(data.autofinancement.AF_divi)
           },
           T: {
-            enabled: this.emprunts ? true : false,
-            tresoN1: Math.round(data.tresorerie.tresoN1),
-            CAF: Math.round(data.autofinancement.AF_capa),
-            RF_apport: Math.round(data.tresorerie.RF_apport),
-            RF_emprunts: Math.round(data.tresorerie.RF_emprunts),
-            RF_invest: Math.round(data.tresorerie.RF_invest),
-            RF_autre: Math.round(data.tresorerie.RF_autre),
-            EF_invest: Math.round(data.tresorerie.EF_invest),
-            EF_emprunts: Math.round(data.tresorerie.EF_emprunts),
-            EF_retraits: Math.round(data.tresorerie.EF_retraits),
-            EF_divi: Math.round(data.tresorerie.EF_divi),
-            V_stock: Math.round(data.tresorerie.V_stock),
-            V_creances: Math.round(data.tresorerie.V_creances),
-            V_dettes: Math.round(data.tresorerie.V_dettes),
-            V_autresCreances: Math.round(data.tresorerie.V_autresCreances),
-            V_autresDettes: Math.round(data.tresorerie.V_autresDettes),
-            tresoN: Math.round(data.tresorerie.tresoN),
-            frng: Math.round(data.autofinancement.AF_capa + data.tresorerie.RF_apport + data.tresorerie.RF_emprunts + data.tresorerie.RF_invest + data.tresorerie.RF_autre + data.tresorerie.EF_invest + data.tresorerie.EF_emprunts + data.tresorerie.EF_retraits + data.tresorerie.EF_divi),
-            bfr: Math.round(data.tresorerie.V_stock + data.tresorerie.V_creances + data.tresorerie.V_dettes + data.tresorerie.V_autresCreances + data.tresorerie.V_autresDettes),
+            tresoN1: Math.round(data.tresorerie?.tresoN1 || 0),
+            CAF: Math.round(data.autofinancement?.AF_capa || 0),
+            RF_apport: Math.round(data.tresorerie?.RF_apport || 0),
+            RF_emprunts: Math.round(data.tresorerie?.RF_emprunts || 0),
+            RF_invest: Math.round(data.tresorerie?.RF_invest || 0),
+            RF_autre: Math.round(data.tresorerie?.RF_autre || 0),
+            EF_invest: Math.round(data.tresorerie?.EF_invest || 0),
+            EF_emprunts: Math.round(data.tresorerie?.EF_emprunts || 0),
+            EF_retraits: Math.round(data.tresorerie?.EF_retraits || 0),
+            EF_divi: Math.round(data.tresorerie?.EF_divi || 0),
+            V_stock: Math.round(data.tresorerie?.V_stock || 0),
+            V_creances: Math.round(data.tresorerie?.V_creances || 0),
+            V_dettes: Math.round(data.tresorerie?.V_dettes || 0),
+            V_autresCreances: Math.round(data.tresorerie?.V_autresCreances || 0),
+            V_autresDettes: Math.round(data.tresorerie?.V_autresDettes || 0),
+            tresoN: Math.round(data.tresorerie?.tresoN || 0),
+            frng: Math.round((data.autofinancement?.AF_capa || 0) + (data.tresorerie?.RF_apport || 0) + (data.tresorerie?.RF_emprunts || 0) + (data.tresorerie?.RF_invest || 0) + (data.tresorerie?.RF_autre || 0) + (data.tresorerie?.EF_invest || 0) + (data.tresorerie?.EF_emprunts || 0) + (data.tresorerie?.EF_retraits || 0) + (data.tresorerie?.EF_divi || 0)),
+            bfr: Math.round((data.tresorerie?.V_stock || 0) + (data.tresorerie?.V_creances || 0) + (data.tresorerie?.V_dettes || 0) + (data.tresorerie?.V_autresCreances || 0) + (data.tresorerie?.V_autresDettes || 0)),
+            emprunts: this.emprunts
+          },
+          E: {
             emprunts: this.emprunts
           },
           EA: {
             resEx: Math.round(this.resEx),
-            dot: Math.round(this.dotations[1]),
-            rembours: emprunts ? Math.round(emprunts.totalRemboursN1) : 0,
+            dot: this.dotations[1] ? Math.round(this.dotations[1]) : 0,
+            rembours: emprunts?.totalRemboursN1 ? Math.round(emprunts?.totalRemboursN1) : 0,
           },
           MD: {
             enabled: data.MD_salaries
@@ -271,6 +291,15 @@ export class LettreFinMissionComponent implements OnInit {
           S: {
             nomExpert: `${data.signataire.nomExpert} ${data.signataire.prenomExpert}`,
             nomReviseur: `${data.signataire.nomReviseur} ${data.signataire.prenomReviseur}`,
+          }
+        });
+
+        // Écouter les changements du formulaire AF pour mettre à jour la CAF dans le formulaire T
+        this.form.get('AF')?.valueChanges.subscribe(afValues => {
+          if (afValues && afValues.capaAutof !== undefined) {
+            this.form.get('T')?.patchValue({
+              CAF: afValues.capaAutof
+            });
           }
         });
       },
@@ -285,8 +314,16 @@ export class LettreFinMissionComponent implements OnInit {
   get IF(): FormArray { return this.form.get('IF') as FormArray; }
 
   onSubmit() {
+    const choix1PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN) >= 0 ? "excédent" : "déficit";
+    const choix2PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN1) >= 0 ? "excédent" : "déficit";
+
     const EA = this.form.value.EA;
     const PA = this.form.value.PA;
+    const AF = this.form.value.AF;
+    const T = this.form.value.T; // Récupérer les valeurs actuelles de trésorerie
+
+    const evoChargesForPayload = this.chargesService.formatEvoCharges(this.allEvolutionCharges ?? [], this.form.value);
+    this.infoEvolutionCharges = evoChargesForPayload;
 
     this.form.patchValue({
       PA: {
@@ -299,6 +336,27 @@ export class LettreFinMissionComponent implements OnInit {
       },
       EA: {
         capa: EA.resEx + EA.dot - EA.rembours - EA.divi
+      },
+      T: {
+        tresoN1: T.tresoN1,
+        CAF: Math.round(AF.capaAutof),
+        RF_apport: T.RF_apport,
+        RF_emprunts: T.RF_emprunts,
+        RF_invest: T.RF_invest,
+        RF_autre: T.RF_autre,
+        EF_invest: T.EF_invest,
+        EF_emprunts: T.EF_emprunts,
+        EF_retraits: T.EF_retraits,
+        EF_divi: T.EF_divi,
+        V_stock: T.V_stock,
+        V_creances: T.V_creances,
+        V_dettes: T.V_dettes,
+        V_autresCreances: T.V_autresCreances,
+        V_autresDettes: T.V_autresDettes,
+        tresoN: T.tresoN,
+        frng: Math.round(AF.capaAutof + T.RF_apport + T.RF_emprunts + T.RF_invest + T.RF_autre + T.EF_invest + T.EF_emprunts + T.EF_retraits + T.EF_divi),
+        bfr: Math.round(T.V_stock + T.V_creances + T.V_dettes + T.V_autresCreances + T.V_autresDettes),
+        emprunts: this.emprunts
       },
       FM: {
         enabled: !!(this.form.value.FM.commentaire || this.form.value.FM.justificationsDemandes)
@@ -314,7 +372,7 @@ export class LettreFinMissionComponent implements OnInit {
       acc[key] = infoArray[idx];
       return acc;
     }, {} as Record<string, boolean>);
-    
+
     const payload = {
       ...formData,
       informationFiscaleArray: infoArray,
@@ -325,11 +383,25 @@ export class LettreFinMissionComponent implements OnInit {
       ...this.infoChiffresCles,
       ...this.infoChargesPersonnel,
       ...this.infoImpotSociete,
-      ...this.infoAutofinancement,
-      AS: this.formatService.formatASData(this.anaSectorielle),
+      // Utiliser les valeurs calculées du formulaire au lieu des valeurs initiales de la BDD
+      autofinancement: {
+        AF_resEx: AF.resEx,
+        AF_dota: AF.dota,
+        AF_reprises: AF.reprises,
+        AF_cessions: AF.cessions,
+        AF_subv: AF.subs,
+        AF_capa: AF.capaAutof,
+        AF_rembours: AF.rembours,
+        AF_divi: AF.divi,
+        AF_capaNet: AF.capaAutofNet
+      },
+      AS: this.anaSectorielle,
       SR: this.infoSeuilRenta,
-      EC_tab: this.infoEvolutionCharges,
+      EC_tab: evoChargesForPayload,
       RE: this.infoRatioExploitation,
+      empruntsPath: this.empruntsPath,
+      choix1PremierParagraphe,
+      choix2PremierParagraphe
     };
 
     const formattedPayload = this.formatService.formatPayload(payload);
@@ -342,9 +414,9 @@ export class LettreFinMissionComponent implements OnInit {
     }
 
     const code_client = this.infoClient.code_client
-    
+
     const folderPath = `C:\\outils-avenia\\${code_client}\\LFM\\${formattedPayload.anneeN}\\RESTITUTION`;
-    this.wordService.generateWord(formattedPayload, folderPath).subscribe({
+    this.wordService.generateWord(formattedPayload, folderPath, this.modeLFM).subscribe({
       next: (res) => {
         const jobId = res.jobId;
 
@@ -378,6 +450,6 @@ export class LettreFinMissionComponent implements OnInit {
 
   closeMessage() {
     this.generationDone = false;
-    this.router.navigate(['/accueil']);
+    this.router.navigate(['/dashboard']);
   }
 }

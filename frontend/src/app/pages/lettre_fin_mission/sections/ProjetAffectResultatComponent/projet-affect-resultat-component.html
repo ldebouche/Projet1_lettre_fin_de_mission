@@ -1,5 +1,10 @@
-<fieldset class="block" [formGroup]="group">
-    <legend class="titre">PROJET D’AFFECTATION DU RESULTAT</legend>
+<fieldset class="block" [formGroup]="group" *ngIf="group">
+    <legend>
+        <label class="clickable">
+        <input type="checkbox" formControlName="enabled" />
+        <span class="titre">PROJET D’AFFECTATION DU RESULTAT</span>
+        </label>
+    </legend>
     <table class="table">
         <thead>
         <tr>
@@ -15,19 +20,20 @@
         <tr class="row-affectations">
             <td colspan="2">Affectations</td>
         </tr>
-        <tr>
+        <tr *ngIf="!isAssoc && !isSciIr">
             <td class="indent">Réserve légale</td>
             <td><input type="number" class="inputNumber" formControlName="resLeg" step="1" /></td>
         </tr>
         <tr>
-            <td class="indent">Réserve ordinaire</td>
+            <td *ngIf="!isAssoc" class="indent">Réserve ordinaire</td>
+            <td *ngIf="isAssoc" class="indent">Fonds associatifs</td>
             <td><input type="number" class="inputNumber" formControlName="resOrd" step="1" /></td>
         </tr>
         <tr>
             <td class="indent">Report à nouveau</td>
             <td><input type="number" class="inputNumber" formControlName="report" step="1" /></td>
         </tr>
-        <tr>
+        <tr *ngIf="!isAssoc">
             <td class="indent">{{ affectation }}</td>
             <td><input type="number" class="inputNumber" formControlName="affect" step="1" /></td>
         </tr>

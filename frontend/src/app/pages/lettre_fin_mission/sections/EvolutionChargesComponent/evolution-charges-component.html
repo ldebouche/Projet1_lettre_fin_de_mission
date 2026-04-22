@@ -1,4 +1,4 @@
-<fieldset class="block" [formGroup]="group">
+<fieldset class="block" [formGroup]="group" *ngIf="group">
   <legend>
     <label class="clickable">
       <input type="checkbox" formControlName="masquerSection" />
@@ -44,7 +44,7 @@
           <td>{{ getValue(ec.EC_valN) }}</td>
           <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valN1) }}</td>
           <td *ngIf="anneeN1Existe">{{ getValue(ec.EC_valVar) }}</td>
-          <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_%Var'], true, true) }}</td>
+          <td *ngIf="anneeN1Existe">{{ getValue(ec['EC_pctVar'], true, true) }}</td>
         </tr>
         <tr *ngIf="ec.EC_comment_tab?.length">
           <td colspan="5">

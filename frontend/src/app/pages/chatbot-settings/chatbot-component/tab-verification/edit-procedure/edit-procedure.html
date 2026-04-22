@@ -1,0 +1,31 @@
+<app-modal [isOpen]="open" [title]="title" [isLarge]="true" (closeEvent)="close()">
+    <div modal-body>
+        <div class="editor">
+
+            <div class="editor-head">
+                <div class="editor-doc">
+                    <div class="editor-doc-title">{{ docName }}</div>
+                    <div class="editor-doc-sub">{{ docSource }}</div>
+                </div>
+
+                <div class="editor-status" *ngIf="loading">
+                    <div class="spinner"></div>
+                    Mise en forme en cours…
+                </div>
+            </div>
+
+            <div *ngIf="open" class="editor-body">
+                <div #quillHost class="quill-host"></div>
+            </div>
+        </div>
+    </div>
+    <div modal-footer class="modal-footer-layout">
+        <button class="btn secondary" (click)="close()">
+            Annuler
+        </button>
+
+        <button class="btn" [disabled]="loading" (click)="confirm()">
+            Appliquer les modifications
+        </button>
+    </div>
+</app-modal>

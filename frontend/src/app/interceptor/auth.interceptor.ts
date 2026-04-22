@@ -6,9 +6,9 @@ import { mergeMap } from 'rxjs/operators';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-    constructor(private msal: MsalService) {}
+    constructor(private msal: MsalService) { }
 
-    intercept(req: HttpRequest<any>, next: HttpHandler) {
+    intercept(req: HttpRequest<any>, next: HttpHandler) {        
         const activeAccount = this.msal.instance.getActiveAccount() ?? undefined;
 
         if (!activeAccount) {

@@ -1,4 +1,4 @@
-<fieldset class="block" [formGroup]="group">
+<fieldset class="block" [formGroup]="group" *ngIf="group">
   <legend><span class="titre">INVESTISSEMENTS</span></legend>
   <table class="table" *ngIf="dotations.length">
     <thead>
