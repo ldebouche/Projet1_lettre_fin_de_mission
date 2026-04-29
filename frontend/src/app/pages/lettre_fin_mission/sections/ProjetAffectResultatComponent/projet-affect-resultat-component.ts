@@ -20,6 +20,7 @@ export class ProjetAffectResultatComponent {
   @Input() resEx = 0;
   @Input() isAssoc: boolean = false;
   @Input() isSciIr: boolean = false;
+  @Input() isSciIs: boolean = false;
   affectation = '';
 
   messageErreur: string | null = null;
@@ -30,6 +31,8 @@ export class ProjetAffectResultatComponent {
       this.group.get('resLeg')?.setValue(0);
       this.group.get('divi')?.setValue(0);
     } else if (this.isSciIr) {
+      this.group.get('resLeg')?.setValue(0);
+    } else if (this.isSciIs) {
       this.group.get('resLeg')?.setValue(0);
     }
     
@@ -47,10 +50,10 @@ export class ProjetAffectResultatComponent {
   calculerAffections(values: any, res: any) {
     let sum;
     if (this.isAssoc) {
-      sum = (values.resOrd || 0) - (values.report || 0);
+      sum = (values.resOrd || 0) + (values.report || 0);
     } else if (this.isSciIr) {
       sum = (values.resOrd || 0) + (values.report || 0) + (values.affect || 0);
-    } else {
+    } else if (this.isSciIs) {
       sum = (values.resLeg || 0) + (values.resOrd || 0) + (values.report || 0) + (values.affect || 0);
     }
     const total = sum.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });

@@ -1,5 +1,10 @@
 <fieldset class="block" [formGroup]="group" *ngIf="group">
-  <legend><span class="titre">INVESTISSEMENTS</span></legend>
+    <legend>
+        <label class="clickable">
+        <input type="checkbox" formControlName="masquerSection" />
+        <span class="titre">INVESTISSEMENTS</span>
+        </label>
+    </legend>
   <table class="table" *ngIf="dotations.length">
     <thead>
       <tr>
@@ -18,5 +23,19 @@
       </tr>
     </tbody>
   </table>
-  <bouton-textarea formControlName="commentaire" categorie="investissement" [data]="immobs" (tableauInvestissement)="group.get('tableau')?.setValue($event)" *ngIf="immobs"></bouton-textarea>
+  
+  <div class="commentaire-section">
+    <label for="investissement-commentaire">Commentaire</label>
+    <textarea 
+      id="investissement-commentaire"
+      rows="4" 
+      class="area"
+      formControlName="commentaire"
+      placeholder="Entrez votre commentaire...">
+    </textarea>
+    <div class="boutons-commentaire">
+      <bouton-textarea formControlName="commentaire" categorie="investissement" [data]="group.get('commentaire')" [immobs]="immobs" (tableauInvestissement)="group.get('tableau')?.setValue($event)" [hideOwnTextarea]="true" *ngIf="immobs"></bouton-textarea>
+      <bouton-textarea class="reformuler" formControlName="commentaire" buttonLabel="Reformuler" categorie="reformuler" [data]="group.get('commentaire')"></bouton-textarea>
+    </div>
+  </div>
 </fieldset>

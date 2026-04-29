@@ -3,7 +3,7 @@
 
   <div class="checklist">
     <ng-container *ngFor="let ctrl of formArray.controls; let i = index">
-      <label class="checkline" *ngIf="shouldDisplay(items[i])">
+      <label class="checkline">
         <input type="checkbox" [formControl]="formArray.at(i)" />
         <span>{{ items[i] }}</span>
       </label>

@@ -1,0 +1,32 @@
+.commentaire-section {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-weight: 600;
+    color: var(--color-dark);
+    font-size: 14px;
+  }
+
+  textarea {
+    min-height: 100px;
+  }
+
+  .boutons-commentaire {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    
+    bouton-textarea {
+      flex: 1;
+      min-width: 120px;
+
+      &.reformuler {
+        flex: 0;
+      }
+    }
+  }
+}
+

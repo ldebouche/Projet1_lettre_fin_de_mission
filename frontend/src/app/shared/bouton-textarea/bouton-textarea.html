@@ -9,7 +9,7 @@
 </div>
 
 <div *ngIf="categorie !== 'reformuler'">
-  <div *ngIf="!showTextarea">
+  <div *ngIf="!showTextarea || hideOwnTextarea">
     <button 
       type="button"
       class="btn"
@@ -19,7 +19,7 @@
     </button>
   </div>
 
-  <div *ngIf="showTextarea">
+  <div *ngIf="showTextarea && !hideOwnTextarea">
     <textarea 
       rows="4" 
       class="area"

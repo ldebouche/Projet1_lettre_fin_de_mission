@@ -20,7 +20,7 @@
         <tr class="row-affectations">
             <td colspan="2">Affectations</td>
         </tr>
-        <tr *ngIf="!isAssoc && !isSciIr">
+        <tr *ngIf="!isAssoc && !isSciIr && !isSciIs">
             <td class="indent">Réserve légale</td>
             <td><input type="number" class="inputNumber" formControlName="resLeg" step="1" /></td>
         </tr>

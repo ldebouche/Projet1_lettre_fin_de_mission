@@ -41,7 +41,7 @@ export class InfoFiscaleComponent implements OnInit {
         this.info6 = data.info6;
         this.info7 = data.info7;
         this.info8 = data.info8;
-        this.setHiddenItemsFalse();
+        this.initializeCheckboxesByConditions();
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
@@ -49,13 +49,14 @@ export class InfoFiscaleComponent implements OnInit {
     });
   }
 
-  setHiddenItemsFalse() {
+  initializeCheckboxesByConditions() {
     this.items.forEach((item, idx) => {
-      if (!this.shouldDisplay(item)) {
-        const control = this.formArray.at(idx);
-        if (control && control.value !== false) {
-          control.setValue(false, { emitEvent: false });
-        }
+      const control = this.formArray.at(idx);
+      if (control) {
+        // Tous les checkboxes sont décochés par défaut
+        // Sauf ceux qui vérifient les conditions (shouldDisplay) qui seront cochés
+        const shouldBeChecked = this.shouldDisplay(item);
+        control.setValue(shouldBeChecked, { emitEvent: false });
       }
     });
   }

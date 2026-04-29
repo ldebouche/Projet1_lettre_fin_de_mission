@@ -40,21 +40,42 @@ export async function extractComments(filePath, numComptes) {
   }
   const buffer = fs.readFileSync(filePath);
   const data = await pdf(buffer);
-  const text = data.text;
+  let text = data.text;
 
   if (text.trim().length < 50) return [];
+
+  // Nettoyer les caractères spéciaux et normaliser les espaces
+  text = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[★☆•&✓✔]/g, ' ') // Enlever les symboles spéciaux
+    .replace(/\n{2,}/g, '\n') // Réduire les lignes vides multiples
+    .replace(/[ ]{2,}/g, ' '); // Réduire les espaces multiples
 
   const sectionDMatch = text.match(/(?:^|\n)\s*Cycle\s*D\b[\s\S]*?(?=(?:\n\s*Cycle\s*E\b)|$)/i);
   if (!sectionDMatch) return [];
 
   const sectionD = sectionDMatch[0];
 
-  const regex = /(\d{6,8})\s*-\s*(.+?)\n([\s\S]*?)(?=\n\d{6,8}\s*-|\nChapitre|\nEdition|\Z)/g;
-  const comptes = [...sectionD.matchAll(regex)].map(m => ({
-    compte: m[1],
-    libelle: m[2],
-    commentaire: m[3].replace(/[★☆•]+/g, '').trim()
-  }));
+  // Regex améliorée pour capturer les commentaires même avec des variations
+  const regex = /(\d{6,8})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n\d{6,8}\s*-|\nCycle\s|$)/g;
+  const comptes = [];
+  
+  let match;
+  while ((match = regex.exec(sectionD)) !== null) {
+    const compte = match[1].trim();
+    const libelle = match[2].trim();
+    let commentaire = match[3].trim();
+    
+    // Si le commentaire contient plusieurs lignes, prendre jusqu'à la première ligne vide
+    const commentLines = commentaire.split('\n').filter(l => l.trim());
+    commentaire = commentLines.join(' ').trim();
+    
+    // Ne garder que les comptes avec des commentaires non-vides
+    if (commentaire && commentaire.length > 2) {
+      comptes.push({ compte, libelle, commentaire });
+    }
+  }
   if (!numComptes) return comptes;
 
   const result = [];
@@ -73,6 +94,7 @@ export async function extractComments(filePath, numComptes) {
       }
     }
   }
+  console.log("Commentaires extraits pour les comptes " + numComptes + " : ", result);
   return result;
 }
 

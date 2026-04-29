@@ -50,5 +50,17 @@ export class ImpotSocietesTabComponent implements OnInit {
 
     const montant = IS_tot - IS_credit - acomptes;
     this.infoIS.IS_montant = montant;
+
+    if (montant >= 0) {
+      this.choixMontant = 'payer';
+    } else if (montant < 0) {
+      this.choixMontant = 'rembourser';
+    }
+
+    // Mettre à jour le FormGroup pour que le payload soit correct
+    this.group.patchValue({
+      IS_montant: Math.round(montant),
+      choixMontant: this.choixMontant
+    }, { emitEvent: false });
   }
 }

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class FiscaliteService {
   getPhraseAcomptes(resEx: number, IS_tot: number): string {
-    if (resEx < 0) {
+    if (resEx < 0 && IS_tot === 0) {
       return 'Compte tenu du déficit constaté, aucun acompte d\'impôt sur les sociétés n\'est exigible au titre de l\'exercice à venir.';
     } else if (resEx >= 0 && IS_tot <= 3000) {
       return 'Le montant total de l\'impôt sur les sociétés dû au titre de cet exercice étant inférieur à 3000 €, aucun acompte n\'est exigible pour l\'exercice suivant.';
@@ -22,11 +22,18 @@ export class FiscaliteService {
 
     if (data.client.isAssoc) {
       result.affectation = 'Fonds associatifs';
-      result.affect = data.resEx;
+      result.report = data.resEx;
     } else if (data.client.isSciIr) {
       result.affectation = 'Au prorata des comptes courants d’associés';
       if (data.resEx > 0) result.affect = data.resEx;
       else result.report = data.resEx;
+    } else if (data.client.isSciIs) {
+      result.affectation = 'Dividendes';
+      if (data.resEx > 0) {
+        result.resOrd = data.resEx;
+      } else {
+        result.report = data.resEx;
+      }
     } else {
       result.affectation = 'Dividendes';
       result.affect = montantDividendesN1;

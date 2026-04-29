@@ -23,6 +23,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
   @Input() categorie ='';
   @Input() data: any;
   @Input() anaSectorielle: any;
+  @Input() immobs: any;
+  @Input() hideOwnTextarea = false;
 
   @Output() tableauInvestissement = new EventEmitter<string>();
 
@@ -150,8 +152,8 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
 
       case 'investissement':
         // Préparer les données en vérifiant si les immobilisations sont vides
-        const entrees = this.data.immobEntree?.lignes || [];
-        const sorties = this.data.immobSortie?.lignes || [];
+        const entrees = this.immobs.immobEntree?.lignes || [];
+        const sorties = this.immobs.immobSortie?.lignes || [];
         const hasEntrees = entrees.length > 0;
         const hasSorties = sorties.length > 0;
 
@@ -160,13 +162,13 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
         let data_description = '';
         if (hasEntrees && hasSorties) {
           situation = 'entrees_et_sorties';
-          data_description = `Immobilisations entrées (total) : ${this.data.immobEntree.totalGeneral} EUR\nDétails entrées : ${JSON.stringify(entrees, null, 2)}\n\nImmobilisations sorties (total) : ${this.data.immobSortie.totalGeneral} EUR\nDétails sorties : ${JSON.stringify(sorties, null, 2)}`;
+          data_description = `Immobilisations entrées (total) : ${this.immobs.immobEntree.totalGeneral} EUR\nDétails entrées : ${JSON.stringify(entrees, null, 2)}\n\nImmobilisations sorties (total) : ${this.immobs.immobSortie.totalGeneral} EUR\nDétails sorties : ${JSON.stringify(sorties, null, 2)}`;
         } else if (hasEntrees) {
           situation = 'entrees_seules';
-          data_description = `Immobilisations entrées (total) : ${this.data.immobEntree.totalGeneral} EUR\nDétails entrées : ${JSON.stringify(entrees, null, 2)}`;
+          data_description = `Immobilisations entrées (total) : ${this.immobs.immobEntree.totalGeneral} EUR\nDétails entrées : ${JSON.stringify(entrees, null, 2)}`;
         } else if (hasSorties) {
           situation = 'sorties_seules';
-          data_description = `Immobilisations sorties (total) : ${this.data.immobSortie.totalGeneral} EUR\nDétails sorties : ${JSON.stringify(sorties, null, 2)}`;
+          data_description = `Immobilisations sorties (total) : ${this.immobs.immobSortie.totalGeneral} EUR\nDétails sorties : ${JSON.stringify(sorties, null, 2)}`;
         } else {
           situation = 'aucune_donnee';
           data_description = 'Aucune immobilisation d\'entrée ou de sortie';
@@ -177,9 +179,9 @@ export class BtnToTextareaComponent implements ControlValueAccessor {
           {
             situation,
             data_description,
-            total_entrees: hasEntrees ? this.data.immobEntree.totalGeneral : 0,
+            total_entrees: hasEntrees ? this.immobs.immobEntree.totalGeneral : 0,
             entrees: hasEntrees ? entrees : [],
-            total_sorties: hasSorties ? this.data.immobSortie.totalGeneral : 0,
+            total_sorties: hasSorties ? this.immobs.immobSortie.totalGeneral : 0,
             sorties: hasSorties ? sorties : [],
           }
         );

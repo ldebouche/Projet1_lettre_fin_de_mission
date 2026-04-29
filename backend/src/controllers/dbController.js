@@ -35,7 +35,7 @@ export const GetDossierInfos = async (req, res) => {
       anneeN1Existe: !!aggN1.datefinex,
       I_classe2: aggN.I_classe2,
       MD_salaries: aggN.MD_salaries,
-      imposable: infoClients.imposable,
+      imposable: infoClients.imposable === "O" ? true : false,
       cotisationTravIndep: aggN.cotisationTravIndep,
       mois_cloture: infoClients.mois_cloture,
       resEx: (aggN.totalProduits || 0) - (aggN.totalCharges || 0),
@@ -67,6 +67,9 @@ export const GetDossierInfos = async (req, res) => {
         site: siteSelectionne,
         forme_societe: infoClients.forme_societe,
         isAssoc: infoClients.forme_societe.startsWith('ASSOC') ? true : false,
+        isBnc: infoClients.categorie_revenu === 'BNC' ? true : false,
+        isEi: infoClients.forme_societe === 'EI' || infoClients.forme_societe === 'Entreprise individuelle' || infoClients.forme_societe === 'Entrepreneur individuel' ? true : false,
+        isSciIs: infoClients.forme_societe.startsWith('SCI') && infoClients.categorie_revenu === 'BIC' ? true : false,
         isSciIr: infoClients.forme_societe.startsWith('SCI') && infoClients.categorie_revenu === 'RFONC' ? true : false
       },
 
@@ -127,6 +130,7 @@ export const GetDossierInfos = async (req, res) => {
         const poids = totValN ? (valN / totValN) * 100 : 0;
 
         let comment = false;
+        console.log('poids', poids, 'pctVar', pctVar, 'valVar', valVar, 'totValN', totValN);
         if (poids > 30 || (pctVar !== null && Math.abs(pctVar) > 10 && Math.abs(valVar) / totValN * 100 > 6)) {
           comment = true;
         }

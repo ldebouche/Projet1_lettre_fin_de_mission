@@ -74,7 +74,10 @@ export class LettreFinMissionComponent implements OnInit {
   autofinancement = false;
   cotisationTravIndep = false;
   isAssoc = false;
+  isBnc = false;
   isSciIr = false;
+  isSciIs = false;
+  isEi = false;
 
   constructor(
     private pdfService: PdfService,
@@ -158,7 +161,9 @@ export class LettreFinMissionComponent implements OnInit {
         this.categorie_revenu = data.categorie_revenu;
         this.isAssoc = data.client.isAssoc;
         this.isSciIr = data.client.isSciIr;
-
+        this.isSciIs = data.client.isSciIs;
+        this.isBnc = data.client.isBnc;
+        this.isEi = data.client.isEi;
         this.dataCA = {
           caN: data.chiffreCles.CC_caN,
           caN1: data.chiffreCles.CC_caN1,
@@ -211,13 +216,11 @@ export class LettreFinMissionComponent implements OnInit {
             masquerSection: data.cotisationTravIndep,
           },
           I: {
-            masquerSection: data.I_classe2 ? true : false,
             prevAmoN: this.dotations[0] ? Math.round(this.dotations[0]) : null,
             prevAmoN1: this.dotations[1] ? Math.round(this.dotations[1]) : null,
             prevAmoN2: this.dotations[2] ? Math.round(this.dotations[2]) : null
           },
           IS: {
-            masquerSection: data.imposable ? false : true,
             acomptes,
             choixMontant: this.infoImpotSociete.IS_tot - this.infoImpotSociete.IS_credit - acomptes < 0 ? "rembourser" : "payer",
             phraseAcomptes,
@@ -314,9 +317,12 @@ export class LettreFinMissionComponent implements OnInit {
   get IF(): FormArray { return this.form.get('IF') as FormArray; }
 
   onSubmit() {
-    const choix1PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN) >= 0 ? "excédent" : "déficit";
-    const choix2PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN1) >= 0 ? "excédent" : "déficit";
-
+    let choix1PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN) >= 0 ? "bénéfice" : "déficit";
+    let choix2PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN1) >= 0 ? "bénéfice" : "déficit";
+    if (this.isAssoc || this.isBnc) {
+      choix1PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN) >= 0 ? "excédent" : "insuffisance";
+      choix2PremierParagraphe = parseFloat(this.infoChiffresCles.CC_resNetN1) >= 0 ? "excédent" : "insuffisance";
+    }
     const EA = this.form.value.EA;
     const PA = this.form.value.PA;
     const AF = this.form.value.AF;
@@ -444,7 +450,7 @@ export class LettreFinMissionComponent implements OnInit {
           }
         });
       },
-      error: () => alert("Erreur lors de l’envoi du job au serveur.")
+      error: () => alert("Erreur : Fichier word déjà ouvert.")
     });
   }
 

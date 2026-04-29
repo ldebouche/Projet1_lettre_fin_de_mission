@@ -33,7 +33,7 @@ export class FormulaireService {
 
       // ===== ÉVOLUTION CHARGES EXTERNES & AUTRES ACHATS =====
       EC: this.fb.group({
-        masquerSection: [false],
+        masquerSection: [true],
         montantVariationMin: [0],
         montantVariationMinPourcentage: [0],
         montantMinAffiché: [0],
@@ -95,6 +95,7 @@ export class FormulaireService {
 
       // ===== PROJET D’AFFECTATION DU RÉSULTAT =====
       PA: this.fb.group({
+        enabled: [false],
         resEx: [0],
         resLeg: [0],
         resOrd: [0],

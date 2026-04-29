@@ -20,7 +20,8 @@
       [anneeN1Existe]="anneeN1Existe"></section-charges-personnel-component>
 
     <!-- ===== COTISATIONS DES TRAVAILLEURS INDEPENDANTS ===== -->
-    <section-cotisations-travaux-independants-component [group]="f.CI" [cotisationTravIndep]="cotisationTravIndep"></section-cotisations-travaux-independants-component>
+    <section-cotisations-travaux-independants-component [group]="f.CI" [cotisationTravIndep]="cotisationTravIndep"
+      *ngIf="!isAssoc"></section-cotisations-travaux-independants-component>
 
     <!-- ===== INVESTISSEMENTS ===== -->
     <section-investissement-component [group]="f.I" [dotations]="dotations" [immobs]="immobs"
@@ -38,15 +39,11 @@
     <section-info-fiscale-component [formArray]="IF" [items]="informations_fiscales"></section-info-fiscale-component>
 
     <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx" [isAssoc]="isAssoc"
-      *ngIf="forme_societe != 'ei'"></section-projet-affect-resultat-component>
+    <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx" [isAssoc]="isAssoc" [isSciIr]="isSciIr"
+      [isSciIs]="isSciIs" *ngIf="imposable || isEi"></section-projet-affect-resultat-component>
 
     <!-- ===== TABLEAU D'AUTOFINANCEMENT ===== -->
     <section-autofinancement-component [group]="f.AF" *ngIf="autofinancement"></section-autofinancement-component>
-
-    <!-- ===== PROJET D’AFFECTATION DU RÉSULTAT ===== -->
-    <section-projet-affect-resultat-component [group]="f.PA" [resEx]="resEx" [isSciIr]="isSciIr"
-      *ngIf="forme_societe != 'ei' && imposable"></section-projet-affect-resultat-component>
 
     <!-- ===== TRESORERIE ===== -->
     <section-tresorerie-component [group]="f.T"></section-tresorerie-component>
@@ -55,7 +52,8 @@
     <section-emprunts-component [group]="f.E" *ngIf="emprunts"></section-emprunts-component>
 
     <!-- ===== ESTIMATION D’AUTOFINANCEMENT SUR LA BASE D'UNE HYPOTHESE DE MAINTIEN DU RÉSULTAT ACTUEL ===== -->
-    <section-estim-autofinancement-component [group]="f.EA" [isAssoc]="isAssoc"></section-estim-autofinancement-component>
+    <section-estim-autofinancement-component [group]="f.EA"
+      [isAssoc]="isAssoc"></section-estim-autofinancement-component>
 
     <!-- ===== MISE A JOUR DU DOCUMENT UNIQUE D’EVALUATION DES RISQUES PROFESSIONNELS DE L’ENTREPRISE ===== -->
     <section-majdoc-unique-eval-component [group]="f.MD" *ngIf="MD_salaries"></section-majdoc-unique-eval-component>
