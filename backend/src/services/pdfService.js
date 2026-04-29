@@ -52,13 +52,13 @@ export async function extractComments(filePath, numComptes) {
     .replace(/\n{2,}/g, '\n') // Réduire les lignes vides multiples
     .replace(/[ ]{2,}/g, ' '); // Réduire les espaces multiples
 
-  const sectionDMatch = text.match(/(?:^|\n)\s*Cycle\s*D\b[\s\S]*?(?=(?:\n\s*Cycle\s*E\b)|$)/i);
+  const sectionDMatch = text.match(/(?:^|\n)\s*Cycle\s*D\b[\s\S]*?(?=(?:\n\s*Cycle\s*[A-Z]\b)|$)/i);
   if (!sectionDMatch) return [];
 
   const sectionD = sectionDMatch[0];
 
   // Regex améliorée pour capturer les commentaires même avec des variations
-  const regex = /(\d{6,8})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n\d{6,8}\s*-|\nCycle\s|$)/g;
+  const regex = /(\d{6,10})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n\d{6,10}\s*-|\nCycle\s|$)/g;
   const comptes = [];
   
   let match;
