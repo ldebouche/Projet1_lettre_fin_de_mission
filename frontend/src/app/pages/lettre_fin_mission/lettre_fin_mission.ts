@@ -413,7 +413,7 @@ export class LettreFinMissionComponent implements OnInit {
     const formattedPayload = this.formatService.formatPayload(payload);
     console.log(formattedPayload);
 
-    const condition = this.wordService.checkConditions(this.form);
+    const condition = this.wordService.checkConditions(this.form, this.imposable || this.isEi);
     if (condition) {
       alert(condition);
       return;
