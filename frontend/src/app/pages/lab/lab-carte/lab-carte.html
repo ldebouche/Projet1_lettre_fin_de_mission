@@ -1,0 +1,16 @@
+<div class="lab-card">
+    <div class="lab-card__header" *ngIf="title || subtitle">
+        <div class="lab-card__titles">
+            <div class="lab-card__title" *ngIf="title">{{ title }}</div>
+            <div class="lab-card__subtitle" *ngIf="subtitle">{{ subtitle }}</div>
+        </div>
+
+        <div class="lab-card__actions">
+            <ng-content select="[card-actions]"></ng-content>
+        </div>
+    </div>
+
+    <div class="lab-card__body">
+        <ng-content></ng-content>
+    </div>
+</div>

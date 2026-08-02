@@ -1,0 +1,151 @@
+<div class="page">
+  <div class="tabs">
+    <a class="tab" routerLink="/lab/dashboard">Tableau de bord</a>
+    <span class="tab tab--on">Portefeuille</span>
+    <a class="tab" routerLink="/lab/evenements">Événements</a>
+    <a class="tab" routerLink="/lab/diligences">Diligences</a>
+  </div>
+
+  <app-lab-carte>
+    <div class="head">
+      <div class="head-titles">
+        <h1>Portefeuille clients</h1>
+        <p class="head-sub">{{ errorMessage || 'Vue opérationnelle pour créer, revoir et prioriser les dossiers LAB.' }}</p>
+      </div>
+      <a routerLink="/lab/dossier/formulaire" class="btn">Créer ou réviser un dossier</a>
+    </div>
+
+    <div class="sum">
+      <div class="sum-item"><b>{{ summary.total }}</b><span>clients suivis</span></div>
+      <div class="sum-item"><b>{{ summary.risqueEleve }}</b><span>risque élevé</span></div>
+      <div class="sum-item"><b>{{ summary.revuesEnRetard }}</b><span>revues en retard</span></div>
+      <div class="sum-item"><b>{{ summary.diligencesEnRetard }}</b><span>diligences en retard</span></div>
+      <div class="sum-item"><b>{{ summary.vigilanceRenforcee }}</b><span>vigilance renforcée</span></div>
+    </div>
+  </app-lab-carte>
+
+  <app-lab-carte>
+    <div class="filters-head">
+      <div>
+        <h2 class="filters-title">Filtres du portefeuille</h2>
+        <p class="filters-sub">Affinez la liste puis ouvrez le dossier ou la révision adaptée.</p>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="Rechercher un client, un code, un secteur…"
+        [(ngModel)]="search"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <select class="filter-select" [(ngModel)]="niveauFilter" (change)="applyFilters()">
+        <option value="">Tous niveaux</option>
+        <option value="Faible">Faible</option>
+        <option value="Moyen">Moyen</option>
+        <option value="Élevé">Élevé</option>
+        <option value="Non évalué">Non évalué</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="vigilanceFilter" (change)="applyFilters()">
+        <option value="">Toute vigilance</option>
+        <option value="Standard">Standard</option>
+        <option value="Renforcee">Renforcée</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="revueFilter" (change)="applyFilters()">
+        <option value="">Toutes revues</option>
+        <option value="late">Revue en retard</option>
+        <option value="soon">Revue &lt; 60 j</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="kycFilter" (change)="applyFilters()">
+        <option value="">Tous KYC</option>
+        <option value="Complet">Complet</option>
+        <option value="Incomplet">Incomplet</option>
+      </select>
+      <button class="btn-link" type="button" *ngIf="search" (click)="clearSearch()">Effacer</button>
+    </div>
+
+    <div class="active-filters" *ngIf="secteurFilter || paysFilter">
+      <span class="chip" *ngIf="secteurFilter">
+        Secteur : {{ secteurFilter }}
+        <button type="button" (click)="clearSecteurFilter()" aria-label="Retirer le filtre secteur">×</button>
+      </span>
+      <span class="chip" *ngIf="paysFilter">
+        Pays : {{ paysFilter }}
+        <button type="button" (click)="clearPaysFilter()" aria-label="Retirer le filtre pays">×</button>
+      </span>
+    </div>
+
+    <div class="meta">
+      <span *ngIf="loading">Chargement du portefeuille…</span>
+      <span *ngIf="!loading && !errorMessage && total > 0">
+        {{ rangeStart }}–{{ rangeEnd }} sur {{ total }} client(s)
+      </span>
+      <span *ngIf="!loading && !errorMessage && total === 0">Aucun client</span>
+      <span *ngIf="errorMessage" class="meta--error">{{ errorMessage }}</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Secteur</th>
+            <th>Pays</th>
+            <th>Niveau</th>
+            <th>Vigilance</th>
+            <th>KYC</th>
+            <th>Prochaine revue</th>
+            <th class="center">Diligences</th>
+            <th>Resp. LAB</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>
+              <a class="client-link" (click)="openDossier(row)">{{ dossierName(row) }}</a>
+              <div class="code">{{ row.code_client }}</div>
+              <div class="row-actions">
+                <button type="button" class="row-revise" (click)="openDossier(row)">Ouvrir le plan & suivi</button>
+                <button type="button" class="row-revise" (click)="openRevisionForm(row)">Réviser le dossier</button>
+              </div>
+            </td>
+            <td>{{ displayValue(row.secteur_activite) }}</td>
+            <td>{{ displayValue(row.zone_geographique_principale) }}</td>
+            <td>
+              <span [ngClass]="risqueClass(row.niveau_risque)">{{ displayValue(row.niveau_risque) }}</span>
+            </td>
+            <td>
+              <span [ngClass]="vigilanceClass(row.vigilance)">{{ vigilanceLabel(row.vigilance) }}</span>
+            </td>
+            <td>
+              <span class="pill" [ngClass]="row.kycComplet ? 'pill--green' : 'pill--amber'">
+                {{ row.kycComplet ? 'Complet' : 'Incomplet' }}
+              </span>
+            </td>
+            <td>
+              {{ row.date_prochaine_revue ? (row.date_prochaine_revue | date:'dd/MM/yyyy') : '—' }}
+              <span class="pill pill--red" *ngIf="row.retardRevueJours > 0">{{ row.retardRevueJours }} j</span>
+            </td>
+            <td class="center">
+              <span class="pill" [ngClass]="row.nb_diligences_retard > 0 ? 'pill--amber' : 'pill--green'">
+                {{ diligencesLabel(row) }}
+              </span>
+            </td>
+            <td>{{ displayValue(row.responsable_lab) }}</td>
+          </tr>
+          <tr *ngIf="!loading && rows.length === 0">
+            <td colspan="9" class="empty-cell">Aucun client ne correspond à ces filtres.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager" *ngIf="!loading && total > 0 && totalPages > 1">
+      <button class="pager-btn" type="button" [disabled]="page <= 1" (click)="prevPage()">‹ Précédent</button>
+      <span class="pager-info">Page {{ page }} / {{ totalPages }}</span>
+      <button class="pager-btn" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Suivant ›</button>
+    </div>
+  </app-lab-carte>
+</div>

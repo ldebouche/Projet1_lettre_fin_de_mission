@@ -8,7 +8,7 @@ export class WordService {
 
   constructor(private http: HttpClient) {}
 
-  checkConditions(form: any) {
+  checkConditions(form: any, validateAffectation = true) {
     const PAvalues = form.get('PA').value;
     const PAtotal = (PAvalues.resLeg || 0) + (PAvalues.resOrd || 0) + (PAvalues.report || 0) + (PAvalues.affect || 0);
 
@@ -55,7 +55,7 @@ export class WordService {
       { emitEvent: false }
     );
 
-    if (PAtotal != PAvalues.resEx) {
+    if (validateAffectation && PAtotal != PAvalues.resEx) {
       return "La somme des affectations diffère du résultat de l'exercice !";
     } else if (Tcalculee != Tvalues.tresoN) {
       return "Le solde de la trésorerie calculé est différent du solde de la trésorerie théorique !";

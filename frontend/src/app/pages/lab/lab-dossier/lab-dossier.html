@@ -1,0 +1,1071 @@
+<div class="lab-dossier-page">
+
+  <div *ngIf="loading" class="state-loading">Chargement du dossier LAB…</div>
+
+  <div *ngIf="!loading && errorMessage" class="state-error">{{ errorMessage }}</div>
+
+  <ng-container *ngIf="!loading && !errorMessage && client && lab">
+
+    <!-- HERO -->
+    <section class="section section-header">
+      <div class="header-main">
+        <div class="header-title-row">
+          <h1 class="header-name">
+            {{ client.raison_sociale || 'Client sans raison sociale' }}
+          </h1>
+          <span class="badge-statut">Statut&nbsp;: {{ getStatutDossierLabel() }}</span>
+          <span [class]="getRisqueClass()">Risque&nbsp;: {{ getRisqueLabel() }}</span>
+          <span class="badge" [class]="'badge tone-' + getKycTone()">
+            KYC&nbsp;: {{ getStatutKycLabel() }}
+          </span>
+        </div>
+
+        <div class="header-meta">
+          <span><b>Forme</b>&nbsp;: {{ val(client.forme_societe) }}</span>
+          <span class="sep">•</span>
+          <span><b>SIRET</b>&nbsp;: {{ val(client.siret) }}</span>
+          <span class="sep">•</span>
+          <span><b>RCS</b>&nbsp;: {{ val(client.rcs) }}</span>
+          <span class="sep">•</span>
+          <span><b>APE</b>&nbsp;: {{ val(client.ape) }}</span>
+          <span class="sep">•</span>
+          <span><b>Activité</b>&nbsp;: {{ val(client.activite) }}</span>
+          <span class="sep">•</span>
+          <span>
+            <b>Entrée cabinet</b>&nbsp;:
+            {{ client.date_entree_cabinet ? (client.date_entree_cabinet | date:'dd/MM/yyyy') : '—' }}
+          </span>
+          <span class="sep">•</span>
+          <span><b>Code client</b>&nbsp;: {{ client.code_client }}</span>
+        </div>
+
+        <div class="hero-kpis">
+          <div class="kpi">
+            <div class="kpi-label">Points KYC</div>
+            <div class="kpi-value">{{ getKycStatusDetail() }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Événements ouverts</div>
+            <div class="kpi-value">{{ lab.nb_evenements_ouverts }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Diligences en retard</div>
+            <div class="kpi-value">{{ lab.nb_diligences_retard }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Prochaine revue</div>
+            <div class="kpi-value">{{ lab.date_prochaine_revue ? (lab.date_prochaine_revue | date:'dd/MM/yyyy') : '—' }}</div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <button
+            type="button"
+            class="btn-primary-link"
+            (click)="onReviserDossier()"
+            [disabled]="actionBusy"
+          >
+            {{ revueEnCours ? 'Reprendre la revue' : 'Réviser le dossier client' }}
+          </button>
+          <a
+            class="btn-ghost-link"
+            [routerLink]="['/lab/portefeuille']"
+          >
+            Revenir au portefeuille
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="revue-banner" *ngIf="revueEnCours">
+      <div class="revue-banner-main">
+        <strong>Revue en cours</strong>
+        <span>Lancée le {{ revueEnCours.date_revue | date:'dd/MM/yyyy' }} — reprenez le wizard pour finaliser.</span>
+      </div>
+      <button type="button" class="btn-primary-link btn-primary-link--compact" (click)="onReprendreRevue()">
+        Reprendre la revue
+      </button>
+    </div>
+
+    <p class="action-feedback action-feedback--error" *ngIf="actionError">{{ actionError }}</p>
+
+    <div class="layout">
+      <div class="col-main">
+
+        <!-- Coordonnées -->
+        <section class="section section-anchor-nav">
+          <div class="section-head">
+            <h2 class="section-title">Accès rapides</h2>
+          </div>
+          <hr class="separator" />
+          <div class="anchor-links">
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-kyc')">KYC</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-beneficiaires')">Bénéficiaires</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-pieces')">Pièces</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-evenements')">Événements</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-diligences')">Plan de vigilance</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-revues')">Revues</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-risque-historique')">Historique du risque</button>
+          </div>
+          <div class="section-note">
+            Depuis cette fiche, gérez les bénéficiaires effectifs, les pièces KYC, les événements et les diligences.
+          </div>
+        </section>
+
+        <!-- Coordonnées -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Coordonnées</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item kv-item-wide">
+              <span class="kv-label">Adresse du siège</span>
+              <span class="kv-value">{{ getAdresseSiege() }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Téléphone fixe</span>
+              <span class="kv-value">{{ val(client.tel_fixe) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Téléphone portable</span>
+              <span class="kv-value">{{ val(client.tel_portable) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Email</span>
+              <span class="kv-value">{{ val(client.email) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">TVA intracommunautaire</span>
+              <span class="kv-value">{{ val(client.tvaintracom) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Informations juridiques & fiscales -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Informations juridiques &amp; fiscales</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Forme juridique</span>
+              <span class="kv-value">{{ val(client.forme_societe) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">RCS</span>
+              <span class="kv-value">{{ val(client.rcs) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Nature</span>
+              <span class="kv-value">{{ val(client.nature) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Capital social</span>
+              <span class="kv-value">{{ val(client.montant_capital_social) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Régime fiscal</span>
+              <span class="kv-value">{{ val(client.regime_fiscal) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Soumis à l'IS</span>
+              <span class="kv-value">{{ getSoumisIsLabel() }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Mois de clôture</span>
+              <span class="kv-value">{{ val(client.mois_cloture) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Logiciel comptable</span>
+              <span class="kv-value">{{ val(client.logiciel_compta) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- KYC structuré -->
+        <section class="section" id="section-kyc" *ngIf="kyc">
+          <div class="section-head">
+            <h2 class="section-title">KYC structuré</h2>
+            <div class="badges-row">
+              <span class="badge" [class]="'badge tone-' + getPepTone(kyc.pep_statut)">PEP&nbsp;: {{ kyc.pep_statut }}</span>
+              <span class="badge" [class]="'badge tone-' + getSanctionsTone(kyc.exposition_sanctions)">Sanctions / gel&nbsp;: {{ kyc.exposition_sanctions }}</span>
+              <span class="badge" [class]="'badge tone-' + (kyc.secteur_sensible ? 'warn' : 'ok')">Secteur sensible&nbsp;: {{ kyc.secteur_sensible ? 'Oui' : 'Non' }}</span>
+              <span class="badge tone-info" *ngIf="kyc.pays_a_risque.length > 0">Pays à risque&nbsp;: {{ kyc.pays_a_risque.length }}</span>
+            </div>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Catégorie</span>
+              <span class="kv-value">{{ kyc.categorie_client === 'Personne_morale' ? 'Personne morale' : 'Personne physique' }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Résidence fiscale</span>
+              <span class="kv-value">{{ val(kyc.pays_residence_fiscale) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Pays d’implantation</span>
+              <span class="kv-value">{{ val(kyc.pays_implantation) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Complexité structure</span>
+              <span class="kv-value">{{ kyc.complexite_structure }}</span>
+            </div>
+            <div class="kv-item kv-item-wide">
+              <span class="kv-label">Secteurs</span>
+              <span class="kv-value">
+                <span class="chips">
+                  <span class="chip" *ngFor="let s of kyc.secteurs">{{ s }}</span>
+                </span>
+              </span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.pays_a_risque.length > 0">
+              <span class="kv-label">Pays / zones à risque</span>
+              <span class="kv-value">
+                <span class="chips">
+                  <span class="chip chip-warn" *ngFor="let p of kyc.pays_a_risque">{{ p }}</span>
+                </span>
+              </span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.pep_details">
+              <span class="kv-label">Détail PEP</span>
+              <span class="kv-value">{{ kyc.pep_details }}</span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.justification_complexite">
+              <span class="kv-label">Justification complexité</span>
+              <span class="kv-value">{{ kyc.justification_complexite }}</span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.notes">
+              <span class="kv-label">Notes</span>
+              <span class="kv-value">{{ kyc.notes }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" *ngIf="!kyc">
+          <div class="section-head">
+            <h2 class="section-title">KYC structuré</h2>
+          </div>
+          <hr class="separator" />
+          <div class="empty-state">
+            Les détails KYC ne sont pas encore exposés par l'API LAB. Le statut global reste visible dans la synthèse du dossier.
+          </div>
+        </section>
+
+        <!-- Équipe cabinet -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Équipe cabinet</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Expert-comptable</span>
+              <span class="kv-value">
+                {{ formatCollaborateur(client.expert_comptable_prenom, client.expert_comptable_nom) }}
+              </span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Chef de mission</span>
+              <span class="kv-value">
+                {{ formatCollaborateur(client.chef_de_mission_prenom, client.chef_de_mission_nom) }}
+              </span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Responsable LAB</span>
+              <span class="kv-value">
+                {{ formatCollaborateur(lab.responsable_lab_prenom, lab.responsable_lab_nom) }}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bénéficiaires effectifs -->
+        <section class="section" id="section-beneficiaires">
+          <div class="section-head">
+            <h2 class="section-title">
+              Bénéficiaires effectifs
+              <span class="section-counter">({{ beneficiaires.length }})</span>
+            </h2>
+            <button type="button" class="btn-inline-action" (click)="onAjouterBeneficiaire()">+ Ajouter un BE</button>
+          </div>
+          <hr class="separator" />
+
+          <div class="be-grid" *ngIf="beneficiaires.length > 0; else noBeneficiaires">
+            <div class="be-chart">
+              <div class="chart-title">Répartition (détention/contrôle)</div>
+              <div class="chart-sub">Total déclaré&nbsp;: {{ getBeneficiairesTotalPct() }}%</div>
+              <div class="donut">
+                <svg viewBox="0 0 36 36" class="donut-svg" aria-hidden="true">
+                  <path class="donut-ring" d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="donut-segment" [attr.stroke-dasharray]="donutDasharray(getBeneficiairePrincipalPct(), 100)" d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="donut-center">
+                  <div class="donut-value">{{ getBeneficiairePrincipalPct() }}%</div>
+                  <div class="donut-label">BE principal</div>
+                </div>
+              </div>
+              <div class="chart-hint" *ngIf="getBeneficiairesHasUnknown()">
+                Certains statuts PEP/sanctions sont “Inconnu” — vérification recommandée.
+              </div>
+            </div>
+
+            <div class="be-list">
+              <table class="table">
+                <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Type</th>
+                  <th>%</th>
+                  <th>Nationalité</th>
+                  <th>PEP</th>
+                  <th>Sanctions</th>
+                  <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr *ngFor="let b of beneficiaires">
+                  <td>
+                    <div class="cell-title">{{ b.prenom ? (b.prenom + ' ') : '' }}{{ b.nom }}</div>
+                    <div class="cell-sub">{{ b.mode_controle }}</div>
+                  </td>
+                  <td>{{ b.type === 'Personne_physique' ? 'Physique' : 'Morale' }}</td>
+                  <td><span class="mono">{{ b.pourcentage == null ? '—' : (b.pourcentage + '%') }}</span></td>
+                  <td>{{ val(b.nationalite) }}</td>
+                  <td><span class="badge small" [class]="'badge tone-' + getPepTone(b.pep_statut)">{{ b.pep_statut }}</span></td>
+                  <td><span class="badge small" [class]="'badge tone-' + getSanctionsTone(b.sanctions_gel)">{{ b.sanctions_gel }}</span></td>
+                  <td>
+                    <button type="button" class="link-action link-action--inline" (click)="openEditBeneficiaireModal(b)">Modifier</button>
+                    <button type="button" class="link-action link-action--inline" (click)="deleteBeneficiaire(b)" [disabled]="actionBusy">Supprimer</button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <ng-template #noBeneficiaires>
+            <div class="empty-state">
+              Aucun bénéficiaire effectif n'est encore chargé pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Pièces KYC -->
+        <section class="section" id="section-pieces">
+          <div class="section-head">
+            <h2 class="section-title">
+              Pièces KYC
+              <span class="section-counter">({{ pieces.length }})</span>
+            </h2>
+            <button type="button" class="btn-inline-action" (click)="onAjouterPiece()">+ Ajouter une pièce</button>
+          </div>
+          <hr class="separator" />
+
+          <datalist id="piece-presets-dossier">
+            <option *ngFor="let t of pieceTypePresets" [value]="t"></option>
+          </datalist>
+
+          <ng-container *ngIf="pieces.length > 0; else noPieces">
+          <div class="pieces-summary">
+            <div class="bars">
+              <div class="bar ok" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().recue / getPiecesCounts().total) * 100 : 0"></div>
+              <div class="bar warn" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().manquante / getPiecesCounts().total) * 100 : 0"></div>
+              <div class="bar danger" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().perimee / getPiecesCounts().total) * 100 : 0"></div>
+              <div class="bar neutral" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().non_requise / getPiecesCounts().total) * 100 : 0"></div>
+            </div>
+            <div class="legend">
+              <span class="legend-item"><span class="dot ok"></span> Reçues ({{ getPiecesCounts().recue }})</span>
+              <span class="legend-item"><span class="dot warn"></span> Manquantes ({{ getPiecesCounts().manquante }})</span>
+              <span class="legend-item"><span class="dot danger"></span> Périmées ({{ getPiecesCounts().perimee }})</span>
+              <span class="legend-item"><span class="dot neutral"></span> Non requises ({{ getPiecesCounts().non_requise }})</span>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+            <tr>
+              <th>Pièce</th>
+              <th>Titulaire</th>
+              <th>Statut</th>
+              <th>Délivrée</th>
+              <th>Échéance</th>
+              <th>Référence</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let p of pieces">
+              <td>
+                <div class="cell-title">{{ p.type_piece }}</div>
+                <div class="cell-sub" *ngIf="p.commentaire">{{ p.commentaire }}</div>
+              </td>
+              <td>{{ p.titulaire }}</td>
+              <td>
+                <span class="badge small"
+                      [class]="
+                        'badge ' +
+                        (p.statut === 'Recue' ? 'tone-ok' :
+                         p.statut === 'Manquante' ? 'tone-warn' :
+                         p.statut === 'Perimee' ? 'tone-danger' : 'tone-neutral')
+                      ">
+                  {{ p.statut }}
+                </span>
+              </td>
+              <td>{{ p.date_delivrance ? (p.date_delivrance | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ p.date_echeance ? (p.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+              <td><span class="mono">{{ val(p.reference) }}</span></td>
+              <td>
+                <button type="button" class="link-action link-action--inline" (click)="openEditPieceModal(p)">Modifier</button>
+                <button type="button" class="link-action link-action--inline" (click)="deletePiece(p)" [disabled]="actionBusy">Supprimer</button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+          </ng-container>
+          <ng-template #noPieces>
+            <div class="empty-state">
+              Aucune pièce KYC n'est encore chargée pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Événements LAB -->
+        <section class="section" id="section-evenements">
+          <div class="section-head">
+            <h2 class="section-title">
+              Événements LAB
+              <span class="section-counter">({{ lab.nb_evenements_ouverts }} ouvert(s))</span>
+            </h2>
+            <button type="button" class="btn-inline-action" (click)="onCreerEvenement()">+ Créer un événement</button>
+          </div>
+          <hr class="separator" />
+
+          <div class="revue-blocker" *ngIf="evenementsBloquantsRevue.length > 0">
+            <strong>Revue bloquée</strong> — événements encore ouverts&nbsp;:
+            <span class="mono" *ngFor="let b of evenementsBloquantsRevue; let last = last">
+              {{ getEvenementTypeLabel(b.type) }} ({{ b.statut }})<span *ngIf="!last">, </span>
+            </span>
+          </div>
+
+          <div class="timeline" *ngIf="evenements.length > 0; else noEvenements">
+            <div class="t-item" *ngFor="let e of evenements">
+              <div class="t-dot" [class]="'dot tone-' + getEvenementTone(e.criticite)"></div>
+              <div class="t-body">
+                <div class="t-top">
+                  <div class="t-title">
+                    <span class="mono">{{ getEvenementTypeLabel(e.type) }}</span>
+                    <span class="badge small" [class]="'badge tone-' + getEvenementTone(e.criticite)">{{ e.criticite }}</span>
+                    <span class="badge small" [class]="'badge ' + (e.statut === 'Cloture' ? 'tone-ok' : (e.statut === 'En_cours' ? 'tone-info' : 'tone-warn'))">{{ e.statut }}</span>
+                  </div>
+                  <div class="t-actions" *ngIf="isEvenementEditable(e)">
+                    <button type="button" class="link-action" (click)="openEditEvenementModal(e)">Modifier</button>
+                    <button type="button" class="link-action" (click)="openCloseEvenementModal(e)">Clôturer</button>
+                    <button type="button" class="link-action" *ngIf="isEvenementOpen(e)" (click)="openCreateDiligenceModal(e)">+ Diligence</button>
+                  </div>
+                  <div class="t-date">{{ e.date_creation | date:'dd/MM/yyyy' }}</div>
+                </div>
+                <div class="t-desc">{{ e.resume }}</div>
+                <div class="t-meta">
+                  <span><b>Responsable</b>&nbsp;: {{ e.responsable }}</span>
+                  <span class="sep">•</span>
+                  <span><b>Échéance</b>&nbsp;: {{ e.echeance ? (e.echeance | date:'dd/MM/yyyy') : '—' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noEvenements>
+            <div class="empty-state">
+              Aucun événement LAB détaillé n'est encore chargé pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Plan de vigilance · diligences -->
+        <section class="section" id="section-diligences">
+          <div class="section-head">
+            <h2 class="section-title">
+              Plan de vigilance · diligences
+              <span class="section-counter">({{ diligences.length }})</span>
+            </h2>
+          </div>
+          <hr class="separator" />
+
+          <table class="table" *ngIf="diligences.length > 0; else noDiligences">
+            <thead>
+            <tr>
+              <th>Diligence</th>
+              <th>Origine</th>
+              <th>Statut</th>
+              <th>Responsable</th>
+              <th>Échéance</th>
+              <th>Retard</th>
+              <th>Preuve</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let d of diligences" [class.row-late]="isDiligenceLate(d)">
+              <td>
+                <div class="cell-title">{{ d.intitule }}</div>
+                <div class="cell-sub" *ngIf="d.commentaire">{{ d.commentaire }}</div>
+              </td>
+              <td>
+                <span [class]="getDiligenceOrigineClass(d)">{{ getDiligenceOrigineLabel(d) }}</span>
+              </td>
+              <td><span class="badge small" [class]="'badge tone-' + getDiligenceTone(d.statut)">{{ d.statut }}</span></td>
+              <td>{{ d.responsable }}</td>
+              <td>{{ d.date_echeance ? (d.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>
+                <span class="badge small" [class]="'badge ' + (isDiligenceLate(d) ? 'tone-danger' : 'tone-neutral')">
+                  {{ isDiligenceLate(d) ? 'En retard' : '—' }}
+                </span>
+              </td>
+              <td>
+                <span class="mono">{{ val(d.preuve) }}</span>
+                <button
+                  type="button"
+                  class="link-action link-action--inline"
+                  *ngIf="d.statut !== 'Realisee' && d.statut !== 'Abandonnee'"
+                  (click)="openEditDiligenceModal(d)"
+                >
+                  Modifier
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+          <ng-template #noDiligences>
+            <div class="empty-state">
+              Aucune diligence du plan de vigilance n'est encore chargée pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Revues -->
+        <section class="section" id="section-revues">
+          <div class="section-head">
+            <h2 class="section-title">Revues périodiques</h2>
+            <button
+              type="button"
+              class="btn-inline-action"
+              (click)="onLancerRevue()"
+              [disabled]="!canLancerRevue"
+              [title]="lancerRevueDisabledReason || ''"
+            >
+              Lancer revue
+            </button>
+          </div>
+          <hr class="separator" />
+
+          <p class="section-note" *ngIf="lancerRevueDisabledReason && !revueEnCours">{{ lancerRevueDisabledReason }}</p>
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Dernière revue</span>
+              <span class="kv-value">{{ lab.date_derniere_revue ? (lab.date_derniere_revue | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Prochaine revue</span>
+              <span class="kv-value">{{ lab.date_prochaine_revue ? (lab.date_prochaine_revue | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Périodicité (mois)</span>
+              <span class="kv-value">{{ val(lab.periodicite_revue_mois) }}</span>
+            </div>
+          </div>
+
+          <table class="table mt" *ngIf="revues.length > 0; else noRevues">
+            <thead>
+            <tr>
+              <th>Revue</th>
+              <th>Date</th>
+              <th>Responsable</th>
+              <th>Statut</th>
+              <th>Conclusion</th>
+              <th>Prochaine échéance</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let r of revues">
+              <td><span class="mono">{{ r.id }}</span></td>
+              <td>{{ r.date | date:'dd/MM/yyyy' }}</td>
+              <td>{{ r.responsable }}</td>
+              <td><span class="badge small" [class]="'badge ' + (r.statut === 'Cloturee' ? 'tone-ok' : 'tone-info')">{{ r.statut }}</span></td>
+              <td>{{ val(r.conclusion) }}</td>
+              <td>{{ r.prochain_rdv ? (r.prochain_rdv | date:'dd/MM/yyyy') : '—' }}</td>
+            </tr>
+            </tbody>
+          </table>
+          <ng-template #noRevues>
+            <div class="empty-state mt">
+              Aucun historique de revue n'est encore chargé pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+        <!-- Historique du risque -->
+        <section class="section" id="section-risque-historique">
+          <div class="section-head">
+            <h2 class="section-title">Historique du risque</h2>
+          </div>
+          <hr class="separator" />
+
+          <table class="table" *ngIf="risqueHistorique.length > 0; else noRisqueHistorique">
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Niveau</th>
+              <th>Origine</th>
+              <th>Utilisateur</th>
+              <th>Justification</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let h of risqueHistorique">
+              <td>{{ h.date | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="badge small"
+                      [class]="
+                        'badge ' +
+                        (h.niveau === 'Eleve' ? 'tone-danger' :
+                         h.niveau === 'Moyen' ? 'tone-warn' : 'tone-ok')
+                      ">
+                  {{ h.niveau === 'Eleve' ? 'Élevé' : h.niveau }}
+                </span>
+              </td>
+              <td><span class="mono">{{ h.origine }}</span></td>
+              <td>{{ h.utilisateur }}</td>
+              <td>{{ val(h.justification) }}</td>
+            </tr>
+            </tbody>
+          </table>
+          <ng-template #noRisqueHistorique>
+            <div class="empty-state">
+              Aucun historique de risque n'est encore chargé pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+      </div>
+
+      <div class="col-side">
+
+        <!-- Résumé dossier LAB -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Synthèse LAB</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="mini-kv">
+            <div class="mini-row">
+              <span class="mini-label">Statut dossier</span>
+              <span class="mini-value">{{ getStatutDossierLabel() }}</span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Risque</span>
+              <span class="mini-value"><span [class]="getRisqueClass()">{{ getRisqueLabel() }}</span></span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Vigilance</span>
+              <span class="mini-value">
+                <span class="badge small" [class]="lab.vigilance === 'Renforcee' ? 'badge tone-warn' : 'badge tone-ok'">
+                  {{ lab.vigilance === 'Renforcee' ? 'Renforcée' : 'Standard' }}
+                </span>
+              </span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">KYC</span>
+              <span class="mini-value"><span class="badge small" [class]="'badge tone-' + getKycTone()">{{ getStatutKycLabel() }}</span></span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Responsable LAB</span>
+              <span class="mini-value">{{ formatCollaborateur(lab.responsable_lab_prenom, lab.responsable_lab_nom) }}</span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Créé le</span>
+              <span class="mini-value">{{ lab.date_creation ? (lab.date_creation | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Modifié le</span>
+              <span class="mini-value">{{ lab.date_modification ? (lab.date_modification | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Actions disponibles</h2>
+          </div>
+          <hr class="separator" />
+          <div class="action-list">
+            <button
+              type="button"
+              class="action-link"
+              (click)="onReviserDossier()"
+              [disabled]="actionBusy"
+            >
+              <span class="action-link-title">{{ revueEnCours ? 'Reprendre la revue' : 'Réviser le dossier client' }}</span>
+              <span class="action-link-desc">
+                {{ revueEnCours
+                  ? 'Session de révision en cours — reprendre le wizard pour clôturer.'
+                  : 'Ouvre une session revue puis le wizard (KYC, pièces, ARPEC).' }}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="action-link"
+              (click)="onCreerEvenement()"
+            >
+              <span class="action-link-title">Créer un événement</span>
+              <span class="action-link-desc">Pièce manquante, KYC, transaction atypique ou autre suivi.</span>
+            </button>
+            <button
+              type="button"
+              class="action-link"
+              (click)="onLancerRevue()"
+              [disabled]="!canLancerRevue"
+            >
+              <span class="action-link-title">Lancer une revue périodique</span>
+              <span class="action-link-desc">
+                {{ revueEnCours
+                  ? 'Une revue est déjà en cours.'
+                  : (lancerRevueDisabledReason || 'Crée la session revue et ouvre le wizard de révision.') }}
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Journal d’audit -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Journal d’audit</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="audit" *ngIf="audit.length > 0; else noAudit">
+            <div class="audit-item" *ngFor="let a of audit">
+              <div class="audit-top">
+                <span class="audit-action">{{ getAuditActionLabel(a.action) }}</span>
+                <span class="audit-date">{{ a.date ? (a.date | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+              </div>
+              <div class="audit-main">
+                <div class="audit-user">{{ a.utilisateur }}</div>
+                <div class="audit-entity">{{ getAuditEntityLabel(a.entite) }}</div>
+              </div>
+              <div class="audit-details" *ngIf="getAuditDetailsLabel(a.details) as detailText">{{ detailText }}</div>
+            </div>
+          </div>
+          <ng-template #noAudit>
+            <div class="empty-state">
+              Aucun événement d'audit n'est encore chargé pour ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+      </div>
+    </div>
+
+  </ng-container>
+</div>
+
+<input
+  #pieceFileInput
+  type="file"
+  class="piece-file-input"
+  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods"
+  (change)="onPieceFileSelected($event)"
+/>
+
+<app-modal
+  [isOpen]="evenementModalMode !== null"
+  [title]="evenementModalTitle"
+  (closeEvent)="closeEvenementModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <ng-container *ngIf="evenementModalMode === 'create'">
+      <label class="lab-field">
+        <span class="lab-field-label">Type</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.type_evenement">
+          <option *ngFor="let t of manualEventTypes" [ngValue]="t">{{ getEvenementTypeLabel(t) }}</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Libellé</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="evenementForm.libelle" maxlength="200" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Criticité</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.criticite">
+          <option value="Faible">Faible</option>
+          <option value="Moyenne">Moyenne</option>
+          <option value="Elevee">Élevée</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="evenementForm.date_echeance" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Diligence initiale (optionnel)</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="evenementForm.diligence_intitule" maxlength="200" />
+      </label>
+      <label class="lab-field" *ngIf="evenementForm.diligence_intitule.trim()">
+        <span class="lab-field-label">Échéance diligence</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="evenementForm.diligence_echeance" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'edit'">
+      <label class="lab-field">
+        <span class="lab-field-label">Libellé</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="evenementForm.libelle" maxlength="200" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Criticité</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.criticite">
+          <option value="Faible">Faible</option>
+          <option value="Moyenne">Moyenne</option>
+          <option value="Elevee">Élevée</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Statut</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.statut">
+          <option value="Ouvert">Ouvert</option>
+          <option value="En_cours">En cours</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="evenementForm.date_echeance" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'close'">
+      <label class="lab-field">
+        <span class="lab-field-label">Conclusion *</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="4" [(ngModel)]="evenementForm.conclusion"></textarea>
+      </label>
+      <ng-container *ngIf="selectedEvenement?.type === 'TRANSACTION_ATYPIQUE'">
+        <label class="lab-field">
+          <span class="lab-field-label">TRACFIN déclaré *</span>
+          <select class="lab-field-input" [(ngModel)]="evenementForm.tracfin_declare">
+            <option value="">—</option>
+            <option value="O">Oui</option>
+            <option value="N">Non</option>
+          </select>
+        </label>
+        <label class="lab-field" *ngIf="evenementForm.tracfin_declare === 'O'">
+          <span class="lab-field-label">Commentaire TRACFIN *</span>
+          <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="evenementForm.tracfin_commentaire"></textarea>
+        </label>
+      </ng-container>
+    </ng-container>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closeEvenementModal()" [disabled]="actionBusy">Annuler</button>
+    <button type="button" class="lab-btn lab-btn--primary" (click)="saveEvenementModal()" [disabled]="actionBusy">
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="diligenceModalMode !== null"
+  [title]="diligenceModalTitle"
+  (closeEvent)="closeDiligenceModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <ng-container *ngIf="diligenceModalMode === 'create'">
+      <p class="lab-modal-hint" *ngIf="selectedEvenement">
+        Événement&nbsp;: {{ getEvenementTypeLabel(selectedEvenement.type) }}
+      </p>
+      <label class="lab-field">
+        <span class="lab-field-label">Intitulé *</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="diligenceForm.intitule" maxlength="200" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="diligenceForm.date_echeance" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="diligenceModalMode === 'edit'">
+      <label class="lab-field">
+        <span class="lab-field-label">Statut</span>
+        <select class="lab-field-input" [(ngModel)]="diligenceForm.statut">
+          <option *ngFor="let s of allowedDiligenceStatuts(selectedDiligence?.statut ?? diligenceForm.statut)" [value]="s">
+            {{ diligenceStatutLabel(s) }}
+          </option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="diligenceForm.date_echeance" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Commentaires</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="diligenceForm.commentaires"></textarea>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Référence preuve</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="diligenceForm.ref_piece_jointe" maxlength="500" />
+      </label>
+      <label class="lab-field" *ngIf="diligenceForm.statut === 'Abandonnee'">
+        <span class="lab-field-label">Motif abandon *</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="2" [(ngModel)]="diligenceForm.motif_abandon"></textarea>
+      </label>
+    </ng-container>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closeDiligenceModal()" [disabled]="actionBusy">Annuler</button>
+    <button type="button" class="lab-btn lab-btn--primary" (click)="saveDiligenceModal()" [disabled]="actionBusy">
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="beneficiaireModalMode !== null"
+  [title]="beneficiaireModalTitle"
+  (closeEvent)="closeBeneficiaireModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <label class="lab-field">
+      <span class="lab-field-label">Nom *</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.nom" maxlength="50" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Prénom</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.prenom" maxlength="30" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Nationalité</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.nationalite" maxlength="40" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Pays de résidence</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.pays_residence" maxlength="40" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Parts / contrôle (%)</span>
+      <input class="lab-field-input" type="number" min="0" max="100" step="0.1" [(ngModel)]="beneficiaireForm.pourcentage" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Mode de contrôle</span>
+      <select class="lab-field-input" [(ngModel)]="beneficiaireForm.mode_controle">
+        <option value="Detention_capital">Détention capital</option>
+        <option value="Droits_vote">Droits de vote</option>
+        <option value="Controle_de_fait">Contrôle de fait</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">PEP</span>
+      <select class="lab-field-input" [(ngModel)]="beneficiaireForm.pep_statut">
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+        <option value="Inconnu">Inconnu</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Sanctions / gel</span>
+      <select class="lab-field-input" [(ngModel)]="beneficiaireForm.sanctions_gel">
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+        <option value="Inconnu">Inconnu</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Commentaire</span>
+      <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="beneficiaireForm.commentaire" maxlength="500"></textarea>
+    </label>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closeBeneficiaireModal()" [disabled]="actionBusy">Annuler</button>
+    <button type="button" class="lab-btn lab-btn--primary" (click)="saveBeneficiaireModal()" [disabled]="actionBusy">
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="pieceModalMode !== null"
+  [title]="pieceModalTitle"
+  (closeEvent)="closePieceModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <label class="lab-field">
+      <span class="lab-field-label">Type de pièce *</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="pieceForm.type_piece" list="piece-presets-dossier" maxlength="200" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Titulaire</span>
+      <select class="lab-field-input" [(ngModel)]="pieceForm.titulaire">
+        <option value="Client">Client</option>
+        <option value="BE">BE</option>
+        <option value="Dirigeant">Dirigeant</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Statut</span>
+      <select class="lab-field-input" [(ngModel)]="pieceForm.statut">
+        <option value="Recue">Reçue</option>
+        <option value="Manquante">Manquante</option>
+        <option value="Perimee">Périmée</option>
+        <option value="Non_requise">Non requise</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Date de délivrance</span>
+      <input class="lab-field-input" type="date" [(ngModel)]="pieceForm.date_delivrance" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Date d'échéance</span>
+      <input class="lab-field-input" type="date" [(ngModel)]="pieceForm.date_echeance" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Fichier {{ pieceModalMode === 'create' ? '*' : '' }}</span>
+      <div class="piece-file-row">
+        <button type="button" class="lab-btn lab-btn--ghost" (click)="triggerPieceFilePicker()" [disabled]="actionBusy">
+          Parcourir…
+        </button>
+        <span class="piece-file-name" *ngIf="pendingPieceFile">{{ pendingPieceFileLabel }}</span>
+        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && pieceForm.reference">
+          {{ pieceForm.reference }}
+        </span>
+        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && !pieceForm.reference">
+          Aucun fichier sélectionné
+        </span>
+      </div>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Commentaire</span>
+      <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="pieceForm.commentaire"></textarea>
+    </label>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closePieceModal()" [disabled]="actionBusy">Annuler</button>
+    <button type="button" class="lab-btn lab-btn--primary" (click)="savePieceModal()" [disabled]="actionBusy">
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>

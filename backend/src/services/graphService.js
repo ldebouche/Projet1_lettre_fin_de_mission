@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getMsHttpsAgent } from "../utils/msHttpsAgent.js";
 
 const TENANT_ID = process.env.TENANT_ID;
 const CLIENT_ID = process.env.BACKEND_CLIENT_ID;
@@ -6,6 +7,11 @@ const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 
 let cachedToken = null;
 let tokenExpiresAt = 0;
+
+function msAxiosConfig() {
+    const agent = getMsHttpsAgent();
+    return agent ? { httpsAgent: agent, proxy: false } : {};
+}
 
 async function getGraphAppToken() {
     const now = Date.now();
@@ -20,7 +26,8 @@ async function getGraphAppToken() {
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
             resource: "https://graph.microsoft.com"
-        })
+        }),
+        msAxiosConfig()
     );
 
     cachedToken = res.data.access_token;
@@ -37,7 +44,8 @@ export async function getUserGroupsByOid(userOid) {
         {
             headers: {
                 Authorization: `Bearer ${token}`
-            }
+            },
+            ...msAxiosConfig()
         }
     );
 

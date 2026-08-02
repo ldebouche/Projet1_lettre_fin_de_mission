@@ -1,0 +1,150 @@
+<div class="page">
+  <div class="tabs">
+    <a class="tab" routerLink="/lab/dashboard">Tableau de bord</a>
+    <a class="tab" routerLink="/lab/portefeuille">Portefeuille</a>
+    <a class="tab" routerLink="/lab/evenements">Événements</a>
+    <span class="tab tab--on">Diligences</span>
+  </div>
+
+  <app-lab-carte>
+    <div class="head">
+      <div class="head-titles">
+        <h1>Diligences du cabinet</h1>
+        <p class="head-sub">
+          {{ errorMessage || 'Vue cabinet des diligences — filtres, retards et accès au plan & suivi.' }}
+        </p>
+      </div>
+      <a routerLink="/lab/evenements" class="btn btn--ghost">Voir les événements</a>
+    </div>
+
+    <div class="sum">
+      <div class="sum-item"><b>{{ total }}</b><span>diligence(s) affichée(s)</span></div>
+      <div class="sum-item"><b>{{ aFaireCount }}</b><span>à faire / en cours</span></div>
+      <div class="sum-item"><b>{{ enRetardCount }}</b><span>en retard</span></div>
+    </div>
+  </app-lab-carte>
+
+  <app-lab-carte>
+    <div class="filters-head">
+      <div>
+        <h2 class="filters-title">Filtres</h2>
+        <p class="filters-sub">
+          Statut, client et événement côté serveur ; retard et recherche sur la liste chargée.
+        </p>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="Code client…"
+        [(ngModel)]="codeClient"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="Id événement…"
+        [(ngModel)]="idEvenement"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <select class="filter-select" [(ngModel)]="statutFilter" (change)="applyFilters()">
+        <option value="">Tous statuts</option>
+        <option value="A_faire">À faire</option>
+        <option value="En_cours">En cours</option>
+        <option value="Realisee">Réalisée</option>
+        <option value="Abandonnee">Abandonnée</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="retardFilter" (change)="applyFilters()">
+        <option value="">Tous délais</option>
+        <option value="late">En retard</option>
+      </select>
+      <input
+        class="filter-input filter-input--wide"
+        type="text"
+        placeholder="Rechercher client, intitulé, type…"
+        [(ngModel)]="search"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <button class="btn-link" type="button" *ngIf="search" (click)="clearSearch()">Effacer recherche</button>
+      <button class="btn-link" type="button" *ngIf="codeClient" (click)="clearCodeClient()">Effacer code</button>
+      <button class="btn-link" type="button" *ngIf="idEvenement" (click)="clearIdEvenement()">Effacer événement</button>
+    </div>
+
+    <div class="meta">
+      <span *ngIf="loading">Chargement des diligences…</span>
+      <span *ngIf="!loading && !errorMessage && total > 0">{{ total }} diligence(s)</span>
+      <span *ngIf="!loading && !errorMessage && total === 0">Aucune diligence</span>
+      <span *ngIf="errorMessage" class="meta--error">{{ errorMessage }}</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Intitulé</th>
+            <th>Type</th>
+            <th>Événement</th>
+            <th>Statut</th>
+            <th>Échéance</th>
+            <th>Réalisation</th>
+            <th>Responsable</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows" [class.row-late]="isLate(row)">
+            <td>
+              <button
+                type="button"
+                class="client-link"
+                *ngIf="row.code_client"
+                (click)="openPlanSuivi(row)"
+              >
+                {{ displayValue(row.client) }}
+              </button>
+              <span class="td-strong" *ngIf="!row.code_client">{{ displayValue(row.client) }}</span>
+              <div class="code" *ngIf="row.code_client">{{ row.code_client }}</div>
+            </td>
+            <td>{{ displayValue(row.intitule) }}</td>
+            <td>{{ typeLabel(row.type_diligence) }}</td>
+            <td>
+              <a
+                class="event-link"
+                [routerLink]="['/lab/evenements']"
+                [queryParams]="eventLinkParams(row)"
+              >
+                #{{ row.id_evenement }} · {{ typeLabel(row.type_evenement) }}
+              </a>
+            </td>
+            <td>
+              <span [ngClass]="statutClass(row)">{{ statutLabel(row.statut) }}</span>
+              <span class="pill pill--red" *ngIf="isLate(row)">Retard</span>
+            </td>
+            <td>{{ row.date_echeance ? (row.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ row.date_realisation ? (row.date_realisation | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ displayValue(row.responsable) }}</td>
+            <td>
+              <button
+                type="button"
+                class="row-action"
+                *ngIf="row.code_client"
+                (click)="openPlanSuivi(row)"
+              >
+                Plan & suivi
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && rows.length === 0">
+            <td colspan="9" class="empty-cell">Aucune diligence ne correspond à ces filtres.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </app-lab-carte>
+</div>

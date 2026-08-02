@@ -1,0 +1,159 @@
+<div class="page">
+  <div class="tabs">
+    <a class="tab" routerLink="/lab/dashboard">Tableau de bord</a>
+    <a class="tab" routerLink="/lab/portefeuille">Portefeuille</a>
+    <span class="tab tab--on">Événements</span>
+    <a class="tab" routerLink="/lab/diligences">Diligences</a>
+  </div>
+
+  <app-lab-carte>
+    <div class="head">
+      <div class="head-titles">
+        <h1>Événements du cabinet</h1>
+        <p class="head-sub">
+          {{ errorMessage || 'Vue cabinet des événements LAB — filtres et accès au plan & suivi.' }}
+        </p>
+      </div>
+      <a routerLink="/lab/diligences" class="btn btn--ghost">Voir les diligences</a>
+    </div>
+
+    <div class="sum">
+      <div class="sum-item"><b>{{ total }}</b><span>événement(s) affiché(s)</span></div>
+      <div class="sum-item"><b>{{ ouvertsCount }}</b><span>ouverts / en cours</span></div>
+      <div class="sum-item"><b>{{ elevesCount }}</b><span>criticité élevée</span></div>
+    </div>
+  </app-lab-carte>
+
+  <app-lab-carte>
+    <div class="filters-head">
+      <div>
+        <h2 class="filters-title">Filtres</h2>
+        <p class="filters-sub">
+          Statut, criticité, id et ouverts côté serveur ; recherche texte sur la liste chargée.
+        </p>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="Code client…"
+        [(ngModel)]="codeClient"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <input
+        class="filter-input"
+        type="text"
+        placeholder="Id événement…"
+        [(ngModel)]="idEvenement"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <select class="filter-select" [(ngModel)]="statutFilter" (change)="applyFilters()">
+        <option value="">Tous statuts</option>
+        <option value="Ouvert">Ouvert</option>
+        <option value="En_cours">En cours</option>
+        <option value="Cloture">Clôturé</option>
+      </select>
+      <select class="filter-select" [(ngModel)]="criticiteFilter" (change)="applyFilters()">
+        <option value="">Toute criticité</option>
+        <option value="Faible">Faible</option>
+        <option value="Moyenne">Moyenne</option>
+        <option value="Elevee">Élevée</option>
+      </select>
+      <label class="filter-check">
+        <input type="checkbox" [(ngModel)]="ouvertsOnly" (change)="applyFilters()" />
+        Ouverts / en cours
+      </label>
+      <input
+        class="filter-input filter-input--wide"
+        type="text"
+        placeholder="Rechercher client, type, libellé…"
+        [(ngModel)]="search"
+        (keyup.enter)="applyFilters()"
+        (change)="applyFilters()"
+      />
+      <button class="btn-link" type="button" *ngIf="search" (click)="clearSearch()">Effacer recherche</button>
+      <button class="btn-link" type="button" *ngIf="codeClient" (click)="clearCodeClient()">Effacer code</button>
+      <button class="btn-link" type="button" *ngIf="idEvenement" (click)="clearIdEvenement()">Effacer id</button>
+      <button class="btn-link" type="button" *ngIf="ouvertsOnly" (click)="clearOuvertsOnly()">Tous (y compris clôturés)</button>
+    </div>
+
+    <div class="meta">
+      <span *ngIf="loading">Chargement des événements…</span>
+      <span *ngIf="!loading && !errorMessage && total > 0">{{ total }} événement(s)</span>
+      <span *ngIf="!loading && !errorMessage && total === 0">Aucun événement</span>
+      <span *ngIf="errorMessage" class="meta--error">{{ errorMessage }}</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Type</th>
+            <th>Libellé</th>
+            <th>Criticité</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Échéance</th>
+            <th>Responsable</th>
+            <th class="center">Diligences</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>
+              <button
+                type="button"
+                class="client-link"
+                *ngIf="row.code_client"
+                (click)="openPlanSuivi(row)"
+              >
+                {{ displayValue(row.client) }}
+              </button>
+              <span class="td-strong" *ngIf="!row.code_client">{{ displayValue(row.client) }}</span>
+              <div class="code" *ngIf="row.code_client">{{ row.code_client }}</div>
+            </td>
+            <td>{{ typeLabel(row.type_evenement) }}</td>
+            <td>{{ displayValue(row.libelle) }}</td>
+            <td>
+              <span [ngClass]="criticiteClass(row.criticite)">{{ criticiteLabel(row.criticite) }}</span>
+            </td>
+            <td>
+              <span [ngClass]="statutClass(row.statut)">{{ statutLabel(row.statut) }}</span>
+            </td>
+            <td>{{ row.date_evenement ? (row.date_evenement | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ row.date_echeance ? (row.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>{{ displayValue(row.responsable) }}</td>
+            <td class="center">
+              <a
+                class="pill pill--blue"
+                [routerLink]="['/lab/diligences']"
+                [queryParams]="{ id_evenement: row.id }"
+              >
+                {{ row.nb_diligences }}
+              </a>
+            </td>
+            <td>
+              <button
+                type="button"
+                class="row-action"
+                *ngIf="row.code_client"
+                (click)="openPlanSuivi(row)"
+              >
+                Plan & suivi
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && rows.length === 0">
+            <td colspan="10" class="empty-cell">Aucun événement ne correspond à ces filtres.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </app-lab-carte>
+</div>

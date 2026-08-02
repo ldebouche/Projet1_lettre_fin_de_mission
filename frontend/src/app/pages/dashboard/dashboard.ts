@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
+import { LabService } from '../../services/lab-service';
+import { RolesService } from '../../services/roles-service';
 import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
 import { ModalComponent } from '../../shared/modal/modal';
 import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
@@ -37,7 +39,7 @@ interface Dossier {
 export class DashboardComponent implements OnInit {
   collaborateur: any | null = null;
 
-  activeTab: 'mesDossiers' | 'equipe' = 'mesDossiers';
+  activeTab: 'mesDossiers' | 'equipe' | 'lab' = 'mesDossiers';
 
   isLoading = true;
   mesDossiers: Dossier[] = [];
@@ -73,15 +75,22 @@ export class DashboardComponent implements OnInit {
   isModalAttenteOpen = false;
   selectedDossierAttente: any | null = null;
 
+  risqueMap: Map<string, any> = new Map();
+  isLabUser: boolean = false;
+
   constructor(
     private router: Router,
     private db: DbService,
-    private dataService: DataService
+    private labService: LabService,
+    private dataService: DataService,
+    private rolesService: RolesService
   ) { }
 
   ngOnInit(): void {
     this.collaborateur = JSON.parse(localStorage.getItem('collaborateur') || 'null');
     this.loadData();
+
+    this.isLabUser = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ['admin', 'informatique', 'lab']);
 
     //données test 
     this.dossiersEnAttente = [
@@ -156,6 +165,7 @@ export class DashboardComponent implements OnInit {
         this._allMesDossiers = this.prepareData(data.dossiers);
         this._allDossiersEquipe = this.prepareData(data.dossiersEquipe);
         this.applyFilterAndSort()
+        this.loadRisqueLab(this._allMesDossiers);
         this.isLoading = false;
       },
       error: (err) => {
@@ -166,7 +176,30 @@ export class DashboardComponent implements OnInit {
 
   }
 
-  selectTab(tab: 'mesDossiers' | 'equipe') {
+  private loadRisqueLab(dossiers: Dossier[]) {
+    if (!this.isLabUser || !dossiers.length) return;
+    const codes = dossiers.map(d => d.code_client);
+    this.labService.getDossiersRisqueLab(codes).subscribe({
+      next: (res: any) => {
+        this.risqueMap = new Map(Object.entries(res.data || {}));
+      },
+      error: () => {} // silencieux si LAB non dispo
+    });
+  }
+
+  getRisqueLabel(code_client: string): string {
+    return this.risqueMap.get(code_client)?.niveau_risque || 'Non évalué';
+  }
+
+  getRisqueClass(code_client: string): string {
+    const niveau = this.risqueMap.get(code_client)?.niveau_risque;
+    if (niveau === 'Eleve') return 'risque-eleve';
+    if (niveau === 'Moyen') return 'risque-moyen';
+    if (niveau === 'Faible') return 'risque-faible';
+    return 'risque-non-evalue';
+  }
+
+  selectTab(tab: 'mesDossiers' | 'equipe' | 'lab') {
     this.activeTab = tab;
     this.currentPage = 1;
     this.filterClient = '';
@@ -208,7 +241,8 @@ export class DashboardComponent implements OnInit {
   }
 
   applyFilterAndSort() {
-    let sourceData = this.activeTab === 'mesDossiers' ? [...this._allMesDossiers] : [...this._allDossiersEquipe];
+    const isMesDossiersView = this.activeTab === 'mesDossiers' || this.activeTab === 'lab';
+    let sourceData = isMesDossiersView ? [...this._allMesDossiers] : [...this._allDossiersEquipe];
 
     if (this.filterClient) {
       const filterTerm = this.filterClient.toLowerCase();
@@ -249,7 +283,7 @@ export class DashboardComponent implements OnInit {
     const end = start + this.itemsPerPage;
     const paginatedData = sourceData.slice(start, end);
 
-    if (this.activeTab === 'mesDossiers') {
+    if (isMesDossiersView) {
       this.mesDossiers = paginatedData;
     } else {
       this.dossiersEquipe = paginatedData;
@@ -304,9 +338,17 @@ export class DashboardComponent implements OnInit {
     this.selectedDossierAttente = d;
   }
 
-  openLoginLab() {
-    if (!this.selectedDossierAttente) return;
+  openDossierAcceptation() {
+    const code = this.selectedDossierAttente?.code_client?.trim();
+    if (!code) return;
 
-    this.router.navigate(['/login-lab']);
+    this.closeModalAttente();
+    void this.router.navigate(['/lab/dossier/formulaire'], {
+      queryParams: {
+        code_client: code,
+        mode: 'acceptation',
+        returnTo: '/dashboard',
+      },
+    });
   }
 }
