@@ -61,6 +61,7 @@ export async function extractComments(filePath, numComptes) {
   const regex = /(\d{6,10})\s*-\s*([^\n]+)\n([\s\S]*?)(?=\n\d{6,10}\s*-|\nCycle\s|$)/g;
   const comptes = [];
   
+  
   let match;
   while ((match = regex.exec(sectionD)) !== null) {
     const compte = match[1].trim();
