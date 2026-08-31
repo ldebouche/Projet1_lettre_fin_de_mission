@@ -1,0 +1,15 @@
+<main class="mon-activite">
+  <div class="error-state" *ngIf="errorMessage">
+    <p>{{ errorMessage }}</p>
+    <button type="button" class="btn-retour" (click)="retourDashboard()">Retour au tableau de bord</button>
+  </div>
+
+  <iframe
+    *ngIf="iframeUrl"
+    class="pbi"
+    [title]="titre"
+    [src]="iframeUrl"
+    frameborder="0"
+    allowFullScreen="true">
+  </iframe>
+</main>

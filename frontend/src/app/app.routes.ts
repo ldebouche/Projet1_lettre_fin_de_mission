@@ -16,6 +16,12 @@ export const routes: Routes = [
   { path: '', component: AccueilIntranet, canActivate: [MsalGuard] },
   { path: 'refresh', component: AccueilIntranet },
   { path: 'dashboard', component: DashboardComponent, canActivate: [MsalGuard] },
+  {
+    path: 'mon-activite',
+    loadComponent: () =>
+      import('./pages/mon-activite/mon-activite').then((m) => m.MonActiviteComponent),
+    canActivate: [MsalGuard],
+  },
   { path: 'login-dossier', component: LoginDossierComponent, canActivate: [MsalGuard] },
   { path: 'lettre-fin-mission', component: LettreFinMissionComponent, canActivate: [MsalGuard] },
   { path: 'accueil-mission', component: AccueilMissionComponent, canActivate: [MsalGuard] },

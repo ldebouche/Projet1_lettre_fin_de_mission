@@ -13,6 +13,17 @@
     </div>
 
     <div class="right">
+      <label class="mon-activite-select" *ngIf="showMonActivite">
+        <span class="visually-hidden">Mon activité</span>
+        <select
+          [(ngModel)]="selectedActivite"
+          (ngModelChange)="onActiviteChange()"
+          aria-label="Mon activité">
+          <option value="" disabled hidden>Mon activité</option>
+          <option *ngFor="let opt of activiteOptions" [value]="opt.key">{{ opt.label }}</option>
+        </select>
+      </label>
+
       <button (click)="logout()" class="nav-btn">Déconnexion</button>
 
       <button *ngIf="hasRole" class="hamburger" (click)="toggleAdminMenu()" [attr.aria-expanded]="adminMenuOpen"
