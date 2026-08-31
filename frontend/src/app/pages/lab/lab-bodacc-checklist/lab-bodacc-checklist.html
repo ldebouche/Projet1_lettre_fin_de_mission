@@ -1,0 +1,107 @@
+<section class="bodacc-checklist" *ngIf="alertes.length">
+  <header class="bodacc-checklist__head">
+    <div>
+      <h3 class="bodacc-checklist__title">Checklist BODACC — revue annuelle</h3>
+      <p class="bodacc-checklist__intro">
+        Annonces légales officielles pour ce SIREN. Traitez chaque point avant de clôturer la revue.
+      </p>
+    </div>
+    <div class="bodacc-checklist__progress" [class.bodacc-checklist__progress--done]="allVisibleDone">
+      {{ traiteCount }} / {{ totalCount }} traité(s)
+      <span *ngIf="pendingCriticalCount > 0" class="bodacc-checklist__critical">
+        — {{ pendingCriticalCount }} critique(s) restante(s)
+      </span>
+    </div>
+  </header>
+
+  <div class="bodacc-checklist__toolbar">
+    <label class="bodacc-checklist__filter">
+      <input type="checkbox" [(ngModel)]="showCourantes" (ngModelChange)="onShowCourantesChange()" />
+      <span>Afficher aussi les annonces courantes (dépôts de comptes, créations…)</span>
+    </label>
+  </div>
+
+  <div class="bodacc-checklist__empty" *ngIf="!visibleAlertes.length">
+    Aucune annonce à traiter avec le filtre actuel. Cochez « Afficher aussi les annonces courantes » pour tout voir.
+  </div>
+
+  <article
+    class="bodacc-item"
+    *ngFor="let a of visibleAlertes"
+    [class.bodacc-item--elevee]="a.gravite === 'elevee'"
+    [class.bodacc-item--moyenne]="a.gravite === 'moyenne'"
+    [class.bodacc-item--faible]="a.gravite === 'faible'"
+    [class.bodacc-item--done]="getEntry(a.id).statut !== 'a_traiter'"
+  >
+    <div class="bodacc-item__top">
+      <span class="bodacc-item__gravite">{{ graviteLabel(a.gravite) }}</span>
+      <span class="bodacc-item__date">{{ a.date || '—' }}</span>
+      <span class="bodacc-item__statut">{{ statutLabel(getEntry(a.id).statut) }}</span>
+    </div>
+
+    <h4 class="bodacc-item__label">{{ a.familleLabel }}</h4>
+    <p class="bodacc-item__resume" *ngIf="a.resume">{{ a.resume }}</p>
+
+    <div class="bodacc-item__guide">
+      <strong>Que faire ?</strong>
+      <p>{{ a.actionGuide }}</p>
+    </div>
+
+    <ul class="bodacc-item__meta">
+      <li *ngIf="a.type"><span>Type d’avis</span> {{ a.type }}</li>
+      <li *ngIf="a.tribunal"><span>Tribunal</span> {{ a.tribunal }}</li>
+      <li *ngIf="a.typeEvenementLab"><span>Événement LAB suggéré</span> {{ a.typeEvenementLab }}</li>
+      <li><span>Diligence suggérée</span> {{ a.diligenceSuggeree }}</li>
+      <li><span>Étape du formulaire</span> {{ a.etapeLabel }}</li>
+    </ul>
+
+    <label class="bodacc-item__comment">
+      <span>Commentaire / trace de décision</span>
+      <textarea
+        rows="2"
+        [ngModel]="getEntry(a.id).commentaire"
+        (ngModelChange)="onCommentChange(a, $event)"
+        placeholder="Ex. : KBIS demandé, pas d’impact sur le risque…"
+      ></textarea>
+    </label>
+
+    <div class="bodacc-item__actions">
+      <button type="button" class="btn btn--ghost btn--sm" (click)="goToStep(a)">
+        Aller à : {{ a.etapeLabel }}
+      </button>
+      <a
+        *ngIf="a.lienBodacc"
+        class="btn btn--ghost btn--sm bodacc-item__link"
+        [href]="a.lienBodacc"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Voir l’annonce BODACC
+      </a>
+      <button
+        type="button"
+        class="btn btn--primary btn--sm"
+        *ngIf="getEntry(a.id).statut === 'a_traiter'"
+        (click)="setStatut(a, 'traite')"
+      >
+        Marquer traité
+      </button>
+      <button
+        type="button"
+        class="btn btn--ghost btn--sm"
+        *ngIf="getEntry(a.id).statut === 'a_traiter'"
+        (click)="setStatut(a, 'sans_suite')"
+      >
+        Sans suite
+      </button>
+      <button
+        type="button"
+        class="btn btn--ghost btn--sm"
+        *ngIf="getEntry(a.id).statut !== 'a_traiter'"
+        (click)="setStatut(a, 'a_traiter')"
+      >
+        Réouvrir
+      </button>
+    </div>
+  </article>
+</section>

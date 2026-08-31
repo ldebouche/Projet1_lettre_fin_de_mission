@@ -1,0 +1,61 @@
+<div class="tabs">
+  <a
+    class="tab"
+    routerLink="/lab/dashboard"
+    routerLinkActive="tab--on"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    Cartographie
+  </a>
+  <a
+    class="tab"
+    routerLink="/lab/portefeuille"
+    routerLinkActive="tab--on"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    Portefeuille
+  </a>
+  <a
+    class="tab"
+    routerLink="/lab/evenements"
+    routerLinkActive="tab--on"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    Événements
+  </a>
+  <a
+    class="tab"
+    routerLink="/lab/diligences"
+    routerLinkActive="tab--on"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    Diligences
+  </a>
+  <a
+    class="tab"
+    routerLink="/lab/parametrage"
+    routerLinkActive="tab--on"
+    [routerLinkActiveOptions]="{ exact: true }"
+    *ngIf="canReadParametrage"
+  >
+    Modulation cabinet
+  </a>
+</div>
+
+<div class="hero" *ngIf="title">
+  <div class="hero-accent"></div>
+  <div class="hero-main">
+    <div class="hero-top">
+      <div class="hero-title">
+        <span class="hero-name">{{ title }}</span>
+        <span class="status-pill" *ngIf="pill">{{ pill }}</span>
+      </div>
+      <div class="hero-cta-slot">
+        <ng-content select="[shell-cta]"></ng-content>
+      </div>
+    </div>
+    <p class="hero-meta" *ngIf="subtitle">{{ subtitle }}</p>
+  </div>
+</div>
+
+<ng-content></ng-content>

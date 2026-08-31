@@ -36,7 +36,15 @@ class dbService {
     console.log("GetListeDossiers - id_sellsy:", id_sellsy, "statut:", statut);
     if (statut.includes('informatique')) {
       const dossiers = await this.executeQuery(
-        `SELECT * FROM clients;`,
+        `SELECT
+          code_client,
+          raison_sociale,
+          forme_societe,
+          civilite,
+          nom,
+          prenom,
+          date_sortie_cabinet
+        FROM clients;`,
         {},
         false,
       );

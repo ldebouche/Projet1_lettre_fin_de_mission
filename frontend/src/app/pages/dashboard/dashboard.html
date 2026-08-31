@@ -4,28 +4,39 @@
 
     <div class="actions-bar">
         <div class="controls-group">
-            <div class="filter-group">
-                <label for="clientFilter">Filtrer par Client :</label>
-                <input id="clientFilter" type="text" placeholder="Nom du dossier..." [(ngModel)]="filterClient"
-                    (input)="applyFilterAndSort()" />
+            <div class="controls-group__filters">
+                <div class="filter-group">
+                    <label for="clientFilter">Filtrer par Client :</label>
+                    <input id="clientFilter" type="text" placeholder="Nom du dossier..." [(ngModel)]="filterClient"
+                        (input)="applyFilterAndSort()" />
+                </div>
+
+                <div class="filter-group checkbox-group">
+                    <input id="exitedFilter" type="checkbox" [(ngModel)]="showExitedClients"
+                        (change)="applyFilterAndSort()" />
+                    <label for="exitedFilter">Afficher les clients sortis</label>
+                </div>
+
+                <div class="sort-group">
+                    <app-bouton-filtre [label]="getSortLabel()" [direction]="sortDirection"
+                        [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="setSort(sortField)">
+                    </app-bouton-filtre>
+                </div>
             </div>
 
-            <div class="filter-group checkbox-group">
-                <input id="exitedFilter" type="checkbox" [(ngModel)]="showExitedClients"
-                    (change)="applyFilterAndSort()" />
-                <label for="exitedFilter">Afficher les clients sortis</label>
-            </div>
-
-            <div class="sort-group">
-                <app-bouton-filtre [label]="getSortLabel()" [direction]="sortDirection"
-                    [filterIconSrc]="'/assets/icons/filtre.png'" (clicked)="setSort(sortField)">
-                </app-bouton-filtre>
-            </div>
-
-            <button class="primary-action-button" *ngIf="userRole.includes('admin')" (click)="openModalAttente()">
-                Dossiers en attente d'acceptation
-
-                <app-rond-notif [value]="dossiersEnAttente.length" top="0" right="0" translateX="50%" translateY="-50%">
+            <button
+                class="primary-action-button"
+                type="button"
+                *ngIf="collaborateur"
+                (click)="openModalAttente()">
+                Prospects
+                <app-rond-notif
+                    *ngIf="dossiersAttenteTotal > 0"
+                    [value]="dossiersAttenteTotal"
+                    top="0"
+                    right="0"
+                    translateX="50%"
+                    translateY="-50%">
                 </app-rond-notif>
             </button>
         </div>
@@ -34,6 +45,10 @@
     <nav class="tab-nav">
         <button [class.active]="activeTab === 'mesDossiers'" (click)="selectTab('mesDossiers')">
             Mes Dossiers
+        </button>
+
+        <button *ngIf="isLabUser" [class.active]="activeTab === 'lab'" (click)="selectTab('lab')">
+            Vue LAB
         </button>
 
         <button *ngIf="userRole.includes('chef')" [class.active]="activeTab === 'equipe'" (click)="selectTab('equipe')">
@@ -46,7 +61,7 @@
     </div>
 
     <div class="tab-content" *ngIf="!isLoading">
-        <div *ngIf="activeTab === 'mesDossiers' && !isLoading" class="table-container">
+        <div *ngIf="(activeTab === 'mesDossiers' || activeTab === 'lab') && !isLoading" class="table-container">
             <div *ngIf="mesDossiers.length === 0 && filterClient" class="empty-state">
                 Aucun dossier ne correspond à votre filtre.
             </div>
@@ -55,7 +70,7 @@
                 Vous n'avez aucun dossier assigné pour le moment.
             </div>
 
-            <table *ngIf="mesDossiers.length > 0" class="mes-dossiers-table">
+            <table *ngIf="mesDossiers.length > 0 && activeTab === 'mesDossiers'" class="mes-dossiers-table">
                 <thead>
                     <tr>
                         <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
@@ -68,6 +83,7 @@
                             <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
                                 [class.desc]="sortDirection === 'desc'"></i>
                         </th>
+                        <th *ngIf="isLabUser">Risque LAB</th>
                         <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
                             Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
                                 [class.desc]="sortDirection === 'desc'"></i>
@@ -83,6 +99,17 @@
                         </td>
                         <td>
                             <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
+                        </td>
+                        <td *ngIf="isLabUser">
+                            <div class="cell-content">
+                                <span class="lab-risque-cell" [ngClass]="getRisqueClass(dossier.code_client)"
+                                    [ngStyle]="{
+                                        color: getRisqueClass(dossier.code_client) === 'risque-faible' ? '#2e7d32' :
+                                               getRisqueClass(dossier.code_client) === 'risque-moyen' ? '#ef6c00' :
+                                               getRisqueClass(dossier.code_client) === 'risque-eleve' ? '#c62828' : '#757575',
+                                        fontWeight: '600'
+                                    }">{{ getRisqueLabel(dossier.code_client) }}</span>
+                            </div>
                         </td>
                         <td>
                             <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
@@ -103,6 +130,77 @@
                             </div>
                         </td>
                             -->
+                    </tr>
+                </tbody>
+            </table>
+
+            <table *ngIf="mesDossiers.length > 0 && activeTab === 'lab'" class="mes-dossiers-table lab-vue-table">
+                <thead>
+                    <tr>
+                        <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
+                            Code Client
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
+                            Nom du Dossier
+                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th>Niveau de risque</th>
+                        <th>Statut KYC</th>
+                        <th>Prochaine revue</th>
+                        <th>Événements ouverts</th>
+                        <th>Diligences en retard</th>
+                        <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
+                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
+                                [class.desc]="sortDirection === 'desc'"></i>
+                        </th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let dossier of mesDossiers" class="equipe-table">
+                        <td>
+                            <div class="cell-content">{{ dossier.code_client }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <span class="lab-risque-cell" [ngClass]="getRisqueClass(dossier.code_client)"
+                                    [ngStyle]="{
+                                        color: getRisqueClass(dossier.code_client) === 'risque-faible' ? '#2e7d32' :
+                                               getRisqueClass(dossier.code_client) === 'risque-moyen' ? '#ef6c00' :
+                                               getRisqueClass(dossier.code_client) === 'risque-eleve' ? '#c62828' : '#757575',
+                                        fontWeight: '600'
+                                    }">{{ getRisqueLabel(dossier.code_client) }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.statut_kyc || '—' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.date_prochaine_revue | date:'dd/MM/yyyy' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.nb_evenements_ouverts ?? '—' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ risqueMap.get(dossier.code_client)?.nb_diligences_retard ?? '—' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
+                                    class="action-button">
+                                    Ouvrir
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -201,14 +299,18 @@
     </div>
 </app-modal>
 
-<app-modal [isOpen]="isModalAttenteOpen" title="Dossiers en attente de validation" [isLarge]="false"
+<app-modal [isOpen]="isModalAttenteOpen" title="Prospects" [isLarge]="false"
     (closeEvent)="closeModalAttente()">
     <div modal-body>
-        <div class="attente-empty" *ngIf="!dossiersEnAttente?.length">
-            Aucun dossier en attente de validation
+        <div class="attente-empty" *ngIf="dossiersAttenteLoading">
+            Chargement des prospects…
         </div>
 
-        <div class="attente-list" *ngIf="dossiersEnAttente?.length">
+        <div class="attente-empty" *ngIf="!dossiersAttenteLoading && !dossiersEnAttente?.length">
+            Aucun prospect
+        </div>
+
+        <div class="attente-list" *ngIf="!dossiersAttenteLoading && dossiersEnAttente?.length">
             <button type="button" class="attente-item" *ngFor="let d of dossiersEnAttente"
                 (click)="selectDossierAttente(d)" [class.selected]="selectedDossierAttente === d">
                 <div class="attente-main">
@@ -228,8 +330,9 @@
             Fermer
         </button>
 
-        <button class="btn" type="button" *ngIf="dossiersEnAttente?.length" [disabled]="!selectedDossierAttente"
-            (click)="openLoginLab()">
+        <button class="btn" type="button" *ngIf="!dossiersAttenteLoading && dossiersEnAttente?.length"
+            [disabled]="!selectedDossierAttente"
+            (click)="openDossierAcceptation()">
             Ouvrir
         </button>
     </div>

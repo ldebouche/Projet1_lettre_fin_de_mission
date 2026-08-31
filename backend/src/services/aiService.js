@@ -1,6 +1,8 @@
 ﻿import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import fs from 'fs';
+import path from 'path';
+import { PATHS } from '../config/paths.js';
 
 axiosRetry(axios, {
   retries: 3,
@@ -8,7 +10,7 @@ axiosRetry(axios, {
   retryCondition: error => error.response?.status === 429
 });
 
-const prompts = JSON.parse(fs.readFileSync('./config/prompts.json', 'utf-8'));
+const prompts = JSON.parse(fs.readFileSync(path.join(PATHS.srcRoot, 'config', 'prompts.json'), 'utf-8'));
 
 export function fillTemplate(template, variables) {
   if (typeof template === "string") {

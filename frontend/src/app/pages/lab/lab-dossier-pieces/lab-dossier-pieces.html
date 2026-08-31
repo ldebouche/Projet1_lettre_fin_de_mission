@@ -1,0 +1,152 @@
+        <!-- Pièces KYC -->
+        <section class="section" id="section-pieces">
+          <div class="section-head">
+            <h2 class="section-title">
+              Pièces KYC
+              <span class="section-counter">({{ pieces.length }})</span>
+            </h2>
+            <button type="button" class="btn-inline-action" (click)="onAjouterPiece()">+ Ajouter une pièce</button>
+          </div>
+          <hr class="separator" />
+
+          <datalist id="piece-presets-dossier">
+            <option *ngFor="let t of pieceTypePresets" [value]="t"></option>
+          </datalist>
+
+          <ng-container *ngIf="pieces.length > 0; else noPieces">
+          <div class="pieces-summary">
+            <div class="bars">
+              <div class="bar ok" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().recue / getPiecesCounts().total) * 100 : 0"></div>
+              <div class="bar warn" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().manquante / getPiecesCounts().total) * 100 : 0"></div>
+              <div class="bar danger" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().perimee / getPiecesCounts().total) * 100 : 0"></div>
+              <div class="bar neutral" [style.width.%]="getPiecesCounts().total ? (getPiecesCounts().non_requise / getPiecesCounts().total) * 100 : 0"></div>
+            </div>
+            <div class="legend">
+              <span class="legend-item"><span class="dot ok"></span> Reçues ({{ getPiecesCounts().recue }})</span>
+              <span class="legend-item"><span class="dot warn"></span> Manquantes ({{ getPiecesCounts().manquante }})</span>
+              <span class="legend-item"><span class="dot danger"></span> Périmées ({{ getPiecesCounts().perimee }})</span>
+              <span class="legend-item"><span class="dot neutral"></span> Non requises ({{ getPiecesCounts().non_requise }})</span>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+            <tr>
+              <th>Pièce</th>
+              <th>Titulaire</th>
+              <th>Statut</th>
+              <th>Délivrée</th>
+              <th>Échéance</th>
+              <th>Référence</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let p of pieces">
+              <td>
+                <div class="cell-title">{{ p.type_piece }}</div>
+                <div class="cell-sub" *ngIf="p.commentaire">{{ p.commentaire }}</div>
+              </td>
+              <td>{{ p.titulaire }}</td>
+              <td>
+                <span class="badge small"
+                      [class]="
+                        'badge ' +
+                        (p.statut === 'Recue' ? 'tone-ok' :
+                         p.statut === 'Manquante' ? 'tone-warn' :
+                         p.statut === 'Perimee' ? 'tone-danger' : 'tone-neutral')
+                      ">
+                  {{ statutPieceLabel(p.statut) }}
+                </span>
+              </td>
+              <td>{{ p.date_delivrance ? (p.date_delivrance | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ p.date_echeance ? (p.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+              <td><span class="mono">{{ val(p.reference) }}</span></td>
+              <td>
+                <button type="button" class="link-action link-action--inline" (click)="openEditPieceModal(p)">Modifier</button>
+                <button type="button" class="link-action link-action--inline" (click)="deletePiece(p)" [disabled]="actionBusy">Supprimer</button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+          </ng-container>
+          <ng-template #noPieces>
+            <div class="empty-state">
+              Aucune pièce KYC sur ce dossier.
+              <button type="button" class="btn-inline-action" (click)="onAjouterPiece()">Ajouter</button>
+            </div>
+          </ng-template>
+        </section>
+
+<input
+  #pieceFileInput
+  type="file"
+  class="piece-file-input"
+  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods"
+  (change)="onPieceFileSelected($event)"
+/>
+
+<app-modal
+  [isOpen]="pieceModalMode !== null"
+  [title]="pieceModalTitle"
+  (closeEvent)="closePieceModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <label class="lab-field">
+      <span class="lab-field-label">Type de pièce *</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="pieceForm.type_piece" list="piece-presets-dossier" maxlength="200" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Titulaire</span>
+      <select class="lab-field-input" [(ngModel)]="pieceForm.titulaire">
+        <option value="Client">Client</option>
+        <option value="BE">BE</option>
+        <option value="Dirigeant">Dirigeant</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Statut</span>
+      <select class="lab-field-input" [(ngModel)]="pieceForm.statut">
+        <option value="Recue">Reçue</option>
+        <option value="Manquante">Manquante</option>
+        <option value="Perimee">Périmée</option>
+        <option value="Non_requise">Non requise</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Date de délivrance</span>
+      <input class="lab-field-input" type="date" [(ngModel)]="pieceForm.date_delivrance" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Date d'échéance</span>
+      <input class="lab-field-input" type="date" [(ngModel)]="pieceForm.date_echeance" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Fichier {{ pieceModalMode === 'create' ? '*' : '' }}</span>
+      <div class="piece-file-row">
+        <button type="button" class="lab-btn lab-btn--ghost" (click)="triggerPieceFilePicker()" [disabled]="actionBusy">
+          Parcourir…
+        </button>
+        <span class="piece-file-name" *ngIf="pendingPieceFile">{{ pendingPieceFileLabel }}</span>
+        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && pieceForm.reference">
+          {{ pieceForm.reference }}
+        </span>
+        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && !pieceForm.reference">
+          Aucun fichier sélectionné
+        </span>
+      </div>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Commentaire</span>
+      <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="pieceForm.commentaire"></textarea>
+    </label>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closePieceModal()" [disabled]="actionBusy">Annuler</button>
+    <button type="button" class="lab-btn lab-btn--primary" (click)="savePieceModal()" [disabled]="actionBusy">
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>

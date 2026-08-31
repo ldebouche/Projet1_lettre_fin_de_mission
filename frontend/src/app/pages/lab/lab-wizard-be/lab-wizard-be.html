@@ -1,0 +1,81 @@
+<app-lab-carte class="wizard-card form-section" id="section-be" title="Bénéficiaires effectifs" subtitle="Identité, contrôle, PEP / sanctions">
+  <p class="panel-intro">
+    Un ou plusieurs bénéficiaires effectifs conformément au registre ou aux déclarations ; tout changement devra donner lieu à un événement <strong>CHANGEMENT_BE</strong> une fois le workflow relié à la base.
+  </p>
+  <div class="repeat-toolbar">
+    <span class="repeat-toolbar-title">Bénéficiaires ({{ beneficiaires.length }})</span>
+    <button type="button" class="btn btn--ghost btn--sm" (click)="addBeneficiaire()">+ Ajouter un BE</button>
+  </div>
+  <div class="stack">
+    <div class="repeat-card" *ngFor="let be of beneficiaires; trackBy: trackById">
+      <div class="repeat-card-head">
+        <span class="repeat-card-title">Bénéficiaire</span>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="removeBeneficiaire(be.id)" [disabled]="beneficiaires.length === 1">
+          Retirer
+        </button>
+      </div>
+      <div class="form-grid form-grid--2">
+        <label class="field">
+          <span class="field-label">Type</span>
+          <select class="field-input" [name]="'be_type_' + be.id" [(ngModel)]="be.type">
+            <option value="">—</option>
+            <option value="Personne_physique">Personne physique</option>
+            <option value="Personne_morale">Personne morale</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Parts / contrôle (%)</span>
+          <input class="field-input" type="text" [name]="'be_pct_' + be.id" [(ngModel)]="be.pourcentage" />
+        </label>
+        <label class="field">
+          <span class="field-label">Nom ou dénomination</span>
+          <input class="field-input" type="text" [name]="'be_nom_' + be.id" [(ngModel)]="be.nom" />
+        </label>
+        <label class="field">
+          <span class="field-label">Prénom <span class="muted">(si PP)</span></span>
+          <input class="field-input" type="text" [name]="'be_pre_' + be.id" [(ngModel)]="be.prenom" />
+        </label>
+        <label class="field">
+          <span class="field-label">Nationalité</span>
+          <input class="field-input" type="text" [name]="'be_nat_' + be.id" [(ngModel)]="be.nationalite" />
+        </label>
+        <label class="field">
+          <span class="field-label">Pays résidence</span>
+          <input class="field-input" type="text" [name]="'be_pay_' + be.id" [(ngModel)]="be.pays_residence" />
+        </label>
+        <label class="field">
+          <span class="field-label">Mode de contrôle</span>
+          <select class="field-input" [name]="'be_mode_' + be.id" [(ngModel)]="be.mode_controle">
+            <option value="">—</option>
+            <option value="Detention_capital">Détention capital</option>
+            <option value="Droits_vote">Droits de vote</option>
+            <option value="Controle_de_fait">Contrôle de fait</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">PEP</span>
+          <select class="field-input" [name]="'be_pep_' + be.id" [(ngModel)]="be.pep_statut">
+            <option value="">—</option>
+            <option value="Oui">Oui</option>
+            <option value="Non">Non</option>
+            <option value="Inconnu">Inconnu</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Sanctions / gel</span>
+          <select class="field-input" [name]="'be_san_' + be.id" [(ngModel)]="be.sanctions_gel">
+            <option value="">—</option>
+            <option value="Oui">Oui</option>
+            <option value="Non">Non</option>
+            <option value="Inconnu">Inconnu</option>
+          </select>
+        </label>
+        <label class="field field--full">
+          <span class="field-label">Commentaire</span>
+          <textarea class="field-input field-textarea" rows="2" [name]="'be_com_' + be.id" [(ngModel)]="be.commentaire"></textarea>
+        </label>
+      </div>
+    </div>
+  </div>
+</app-lab-carte>

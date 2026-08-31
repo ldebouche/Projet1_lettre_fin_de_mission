@@ -1,0 +1,390 @@
+<div class="lab-dossier-page">
+
+  <div *ngIf="loading" class="state-loading">Chargement du dossier…</div>
+
+  <div *ngIf="!loading && errorMessage" class="state-error">{{ errorMessage }}</div>
+
+  <ng-container *ngIf="!loading && !errorMessage && client && lab">
+
+    <nav class="lab-crumb" aria-label="Fil d’Ariane">
+      <a routerLink="/lab/dashboard">Cartographie</a>
+      <span class="lab-crumb-sep">/</span>
+      <a routerLink="/lab/portefeuille">Portefeuille</a>
+      <span class="lab-crumb-sep">/</span>
+      <span>Plan &amp; suivi</span>
+    </nav>
+
+    <!-- HERO -->
+    <section class="section section-header">
+      <div class="header-main">
+        <div class="header-title-row">
+          <h1 class="header-name">
+            {{ client.raison_sociale || 'Client sans raison sociale' }}
+          </h1>
+          <span class="badge-statut">Statut&nbsp;: {{ getStatutDossierLabel() }}</span>
+          <span [class]="getRisqueClass()">Risque&nbsp;: {{ getRisqueLabel() }}</span>
+          <span class="badge" [class]="'badge tone-' + getKycTone()">
+            KYC&nbsp;: {{ getStatutKycLabel() }}
+          </span>
+        </div>
+
+        <details class="header-legal">
+          <summary>Informations légales</summary>
+          <div class="header-meta">
+            <span><b>Forme</b>&nbsp;: {{ val(client.forme_societe) }}</span>
+            <span class="sep">•</span>
+            <span><b>SIRET</b>&nbsp;: {{ val(client.siret) }}</span>
+            <span class="sep">•</span>
+            <span><b>RCS</b>&nbsp;: {{ val(client.rcs) }}</span>
+            <span class="sep">•</span>
+            <span><b>APE</b>&nbsp;: {{ val(client.ape) }}</span>
+            <span class="sep">•</span>
+            <span><b>Activité</b>&nbsp;: {{ val(client.activite) }}</span>
+            <span class="sep">•</span>
+            <span>
+              <b>Entrée cabinet</b>&nbsp;:
+              {{ client.date_entree_cabinet ? (client.date_entree_cabinet | date:'dd/MM/yyyy') : '—' }}
+            </span>
+            <span class="sep">•</span>
+            <span><b>Code client</b>&nbsp;: {{ client.code_client }}</span>
+          </div>
+        </details>
+
+        <div class="hero-kpis">
+          <div class="kpi">
+            <div class="kpi-label">Points KYC</div>
+            <div class="kpi-value">{{ getKycStatusDetail() }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Événements ouverts</div>
+            <div class="kpi-value">{{ lab.nb_evenements_ouverts }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Diligences en retard</div>
+            <div class="kpi-value">{{ lab.nb_diligences_retard }}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Prochaine revue</div>
+            <div class="kpi-value">{{ lab.date_prochaine_revue ? (lab.date_prochaine_revue | date:'dd/MM/yyyy') : '—' }}</div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <button
+            type="button"
+            class="btn-primary-link"
+            (click)="onReviserDossier()"
+            [disabled]="actionBusy"
+          >
+            {{ revueEnCours ? 'Reprendre la revue' : 'Réviser le dossier client' }}
+          </button>
+          <a
+            class="btn-ghost-link"
+            [routerLink]="['/lab/portefeuille']"
+          >
+            Revenir au portefeuille
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="revue-banner" *ngIf="revueEnCours">
+      <div class="revue-banner-main">
+        <strong>Revue en cours</strong>
+        <span>Lancée le {{ revueEnCours.date_revue | date:'dd/MM/yyyy' }} — reprenez le formulaire de révision pour finaliser.</span>
+      </div>
+      <button type="button" class="btn-primary-link btn-primary-link--compact" (click)="onReprendreRevue()">
+        Reprendre la revue
+      </button>
+    </div>
+
+    <p class="action-feedback action-feedback--error" *ngIf="actionError">{{ actionError }}</p>
+
+    <div class="layout">
+      <div class="col-main">
+
+        <!-- Coordonnées -->
+        <section class="section section-anchor-nav">
+          <div class="section-head">
+            <h2 class="section-title">Accès rapides</h2>
+          </div>
+          <hr class="separator" />
+          <div class="anchor-links">
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-kyc')">KYC</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-beneficiaires')">Bénéficiaires</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-pieces')">Pièces</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-evenements')">Événements</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-diligences')">Plan de vigilance</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-chat')">Discussion</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-revues')">Revues</button>
+            <button type="button" class="anchor-link" (click)="scrollToSection('section-risque-historique')">Historique du risque</button>
+          </div>
+          <div class="section-note">
+            Depuis cette fiche, gérez les bénéficiaires effectifs, les pièces KYC, les événements et les diligences.
+          </div>
+        </section>
+
+        <!-- Coordonnées -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Coordonnées</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item kv-item-wide">
+              <span class="kv-label">Adresse du siège</span>
+              <span class="kv-value">{{ getAdresseSiege() }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Téléphone fixe</span>
+              <span class="kv-value">{{ val(client.tel_fixe) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Téléphone portable</span>
+              <span class="kv-value">{{ val(client.tel_portable) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Email</span>
+              <span class="kv-value">{{ val(client.email) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">TVA intracommunautaire</span>
+              <span class="kv-value">{{ val(client.tvaintracom) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Informations juridiques & fiscales -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Informations juridiques &amp; fiscales</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Forme juridique</span>
+              <span class="kv-value">{{ val(client.forme_societe) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">RCS</span>
+              <span class="kv-value">{{ val(client.rcs) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Nature</span>
+              <span class="kv-value">{{ val(client.nature) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Capital social</span>
+              <span class="kv-value">{{ val(client.montant_capital_social) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Régime fiscal</span>
+              <span class="kv-value">{{ val(client.regime_fiscal) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Soumis à l'IS</span>
+              <span class="kv-value">{{ getSoumisIsLabel() }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Mois de clôture</span>
+              <span class="kv-value">{{ val(client.mois_cloture) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Logiciel comptable</span>
+              <span class="kv-value">{{ val(client.logiciel_compta) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <app-lab-dossier-kyc [kyc]="kyc"></app-lab-dossier-kyc>
+
+        <!-- Équipe cabinet -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Équipe cabinet</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Expert-comptable</span>
+              <span class="kv-value">
+                {{ formatCollaborateur(client.expert_comptable_prenom, client.expert_comptable_nom) }}
+              </span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Chef de mission</span>
+              <span class="kv-value">
+                {{ formatCollaborateur(client.chef_de_mission_prenom, client.chef_de_mission_nom) }}
+              </span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Responsable LAB</span>
+              <span class="kv-value">
+                {{ formatCollaborateur(lab.responsable_lab_prenom, lab.responsable_lab_nom) }}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <app-lab-dossier-beneficiaires
+          [beneficiaires]="beneficiaires"
+          [codeClient]="client!.code_client"
+          (changed)="onSectionChanged()"
+          (failed)="actionError = $event"
+        ></app-lab-dossier-beneficiaires>
+
+        <app-lab-dossier-pieces
+          [pieces]="pieces"
+          [codeClient]="client!.code_client"
+          (changed)="onSectionChanged()"
+          (failed)="actionError = $event"
+        ></app-lab-dossier-pieces>
+
+        <app-lab-dossier-evenements
+          #evenementsCmp
+          [evenements]="evenements"
+          [diligences]="diligences"
+          [codeClient]="client!.code_client"
+          [canValiderCloture]="canValiderCloture"
+          [idResponsableLab]="lab.id_responsable_lab"
+          [nbEvenementsOuverts]="lab.nb_evenements_ouverts"
+          (changed)="onSectionChanged()"
+          (failed)="actionError = $event"
+          (createDiligence)="planCmp.openCreateDiligenceModal($event)"
+        ></app-lab-dossier-evenements>
+
+        <app-lab-dossier-plan
+          #planCmp
+          [diligences]="diligences"
+          [evenements]="evenements"
+          [codeClient]="client!.code_client"
+          [idResponsableLab]="lab.id_responsable_lab"
+          (changed)="onSectionChanged()"
+          (failed)="actionError = $event"
+        ></app-lab-dossier-plan>
+
+        <section class="section" id="section-chat">
+          <div class="section-head">
+            <h2 class="section-title">Discussion du dossier</h2>
+          </div>
+          <hr class="separator" />
+          <app-lab-chat-dossier
+            *ngIf="client?.code_client"
+            [codeClient]="client!.code_client"
+            [evenements]="evenements"
+            [diligences]="diligences"
+          ></app-lab-chat-dossier>
+        </section>
+
+        <app-lab-dossier-revues
+          [lab]="lab"
+          [revues]="revues"
+          [canLancerRevue]="canLancerRevue"
+          [lancerRevueDisabledReason]="lancerRevueDisabledReason"
+          [revueEnCours]="revueEnCours"
+          [actionBusy]="actionBusy"
+          (lancerRevue)="onLancerRevue()"
+        ></app-lab-dossier-revues>
+
+        <app-lab-dossier-historique [risqueHistorique]="risqueHistorique"></app-lab-dossier-historique>
+
+      </div>
+
+      <div class="col-side">
+
+        <!-- Résumé dossier LAB -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Synthèse LAB</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="mini-kv">
+            <div class="mini-row">
+              <span class="mini-label">Statut dossier</span>
+              <span class="mini-value">{{ getStatutDossierLabel() }}</span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Risque</span>
+              <span class="mini-value"><span [class]="getRisqueClass()">{{ getRisqueLabel() }}</span></span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Vigilance</span>
+              <span class="mini-value">
+                <span class="badge small" [class]="lab.vigilance === 'Renforcee' ? 'badge tone-warn' : 'badge tone-ok'">
+                  {{ lab.vigilance === 'Renforcee' ? 'Renforcée' : 'Standard' }}
+                </span>
+              </span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">KYC</span>
+              <span class="mini-value"><span class="badge small" [class]="'badge tone-' + getKycTone()">{{ getStatutKycLabel() }}</span></span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Responsable LAB</span>
+              <span class="mini-value">{{ formatCollaborateur(lab.responsable_lab_prenom, lab.responsable_lab_nom) }}</span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Créé le</span>
+              <span class="mini-value">{{ lab.date_creation ? (lab.date_creation | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="mini-row">
+              <span class="mini-label">Modifié le</span>
+              <span class="mini-value">{{ lab.date_modification ? (lab.date_modification | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Actions disponibles</h2>
+          </div>
+          <hr class="separator" />
+          <div class="action-list">
+            <button
+              type="button"
+              class="action-link"
+              (click)="onReviserDossier()"
+              [disabled]="actionBusy"
+            >
+              <span class="action-link-title">{{ revueEnCours ? 'Reprendre la revue' : 'Réviser le dossier client' }}</span>
+              <span class="action-link-desc">
+                {{ revueEnCours
+                  ? 'Session de révision en cours — reprendre le formulaire pour clôturer.'
+                  : 'Ouvre une session revue puis le formulaire de révision (KYC, pièces, évaluation).' }}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="action-link"
+              (click)="evenementsCmp.openCreateEvenementModal()"
+            >
+              <span class="action-link-title">Créer un événement</span>
+              <span class="action-link-desc">Pièce manquante, KYC, transaction atypique ou autre suivi.</span>
+            </button>
+            <button
+              type="button"
+              class="action-link"
+              (click)="onLancerRevue()"
+              [disabled]="!canLancerRevue"
+            >
+              <span class="action-link-title">Lancer une revue périodique</span>
+              <span class="action-link-desc">
+                {{ revueEnCours
+                  ? 'Une revue est déjà en cours.'
+                  : (lancerRevueDisabledReason || 'Crée la session revue et ouvre le formulaire de révision.') }}
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <app-lab-dossier-audit [audit]="audit"></app-lab-dossier-audit>
+
+      </div>
+    </div>
+
+  </ng-container>
+</div>

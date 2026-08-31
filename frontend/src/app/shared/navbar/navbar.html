@@ -62,6 +62,30 @@
         </a>
       </div>
 
+      <div class="col">
+        <div class="col-title">Conformité LAB</div>
+      
+        <a 
+          *ngIf="hasRoleLab"
+          class="dd-link" 
+          [routerLink]="['/lab/dashboard']" 
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }" 
+          (click)="closeAdminMenu()">
+          Cartographie cabinet
+        </a>
+
+        <a
+          *ngIf="hasRoleLab"
+          class="dd-link"
+          [routerLink]="['/lab/parametrage']"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="closeAdminMenu()">
+          Modulation cabinet
+        </a>
+      </div>
+
     </div>
   </div>
 </nav>

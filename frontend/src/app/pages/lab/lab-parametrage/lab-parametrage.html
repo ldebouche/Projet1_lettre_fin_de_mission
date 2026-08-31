@@ -1,0 +1,161 @@
+<div class="page">
+  <app-lab-shell
+    title="Modulation cabinet"
+    pill="Règles"
+    subtitle="Règles du cabinet et questionnaire ARPEC. Les modifications s’appliquent aux prochains dossiers et revues."
+  >
+  <button
+    shell-cta
+    type="button"
+    [hidden]="!canEditParametrage || forbidden"
+    [disabled]="saving || loading || !canEditParametrage || forbidden"
+    (click)="save()"
+  >
+    {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+  </button>
+
+  <app-lab-carte *ngIf="successMessage || errorMessage || loading">
+    <div class="banner banner--ok" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="banner banner--err" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <p class="meta" *ngIf="loading">Chargement de la modulation cabinet…</p>
+  </app-lab-carte>
+
+  <ng-container *ngIf="!forbidden && !loading">
+    <app-lab-carte>
+      <div class="filters-head">
+        <h2 class="filters-title">Paramètres cabinet</h2>
+        <p class="filters-sub">Périodicité des revues, délais et autres règles du cabinet.</p>
+      </div>
+
+      <div class="table-wrap" *ngIf="parametres.length > 0">
+        <table class="table table--params">
+          <colgroup>
+            <col />
+            <col class="col-valeur" />
+            <col class="col-version" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Paramètre</th>
+              <th>Valeur</th>
+              <th>Version</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of parametres">
+              <td>
+                <div class="td-strong" [title]="p.code_param">{{ displayValue(p.libelle) }}</div>
+              </td>
+              <td>
+                <input
+                  class="field"
+                  type="text"
+                  [(ngModel)]="p.valeur"
+                  [name]="'param-' + p.code_param"
+                  [disabled]="!canEditParametrage || saving"
+                />
+              </td>
+              <td>{{ p.version != null ? p.version : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="empty-cell" *ngIf="parametres.length === 0">Aucun paramètre cabinet n’est défini.</p>
+    </app-lab-carte>
+
+    <app-lab-carte>
+      <div class="filters-head">
+        <h2 class="filters-title">Questionnaire ARPEC</h2>
+        <p class="filters-sub">
+          Questions groupées par axe. Vous pouvez modifier le libellé, le déclencheur, le niveau, l’ordre et l’activité. Pas de création ni de suppression.
+        </p>
+      </div>
+
+      <div class="axe-block" *ngFor="let axe of axesGroupes">
+        <h3 class="axe-title" [title]="axe.code">{{ axe.libelle }}</h3>
+
+        <div class="table-wrap">
+          <table class="table table--questions">
+            <colgroup>
+              <col />
+              <col class="col-select" />
+              <col class="col-select" />
+              <col class="col-ordre" />
+              <col class="col-select" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Libellé</th>
+                <th>Déclencheur</th>
+                <th>Niveau si oui</th>
+                <th>Ordre</th>
+                <th>Actif</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let q of axe.questions">
+                <td [title]="q.code_question">
+                  <textarea
+                    class="field field--area"
+                    rows="3"
+                    [(ngModel)]="q.libelle"
+                    [name]="'libelle-' + q.id"
+                    [disabled]="!canEditParametrage || saving"
+                  ></textarea>
+                </td>
+                <td>
+                  <select
+                    class="field"
+                    [(ngModel)]="q.est_declencheur"
+                    [name]="'decl-' + q.id"
+                    [disabled]="!canEditParametrage || saving"
+                  >
+                    <option value="Oui">Oui</option>
+                    <option value="Non">Non</option>
+                  </select>
+                </td>
+                <td>
+                  <select
+                    class="field"
+                    [(ngModel)]="q.niveau_risque_si_oui"
+                    [name]="'niv-' + q.id"
+                    [disabled]="!canEditParametrage || saving"
+                  >
+                    <option value="Moyen">Moyen</option>
+                    <option value="Élevé">Élevé</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    class="field field--num"
+                    type="number"
+                    [(ngModel)]="q.ordre_affichage"
+                    [name]="'ordre-' + q.id"
+                    [disabled]="!canEditParametrage || saving"
+                  />
+                </td>
+                <td>
+                  <select
+                    class="field"
+                    [(ngModel)]="q.actif"
+                    [name]="'actif-' + q.id"
+                    [disabled]="!canEditParametrage || saving"
+                  >
+                    <option value="Oui">Oui</option>
+                    <option value="Non">Non</option>
+                  </select>
+                </td>
+              </tr>
+              <tr *ngIf="axe.questions.length === 0">
+                <td colspan="5" class="empty-cell">Aucune question pour cet axe.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="empty-cell" *ngIf="axesGroupes.length === 0">Aucune question ARPEC n’est définie.</p>
+    </app-lab-carte>
+  </ng-container>
+  </app-lab-shell>
+</div>

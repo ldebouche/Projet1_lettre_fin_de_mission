@@ -1,0 +1,26 @@
+        <!-- Journal d’audit -->
+        <section class="section">
+          <div class="section-head">
+            <h2 class="section-title">Journal d’audit</h2>
+          </div>
+          <hr class="separator" />
+
+          <div class="audit" *ngIf="audit.length > 0; else noAudit">
+            <div class="audit-item" *ngFor="let a of audit">
+              <div class="audit-top">
+                <span class="audit-action">{{ getAuditActionLabel(a.action) }}</span>
+                <span class="audit-date">{{ a.date ? (a.date | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+              </div>
+              <div class="audit-main">
+                <div class="audit-user">{{ a.utilisateur }}</div>
+                <div class="audit-entity">{{ getAuditEntityLabel(a.entite) }}</div>
+              </div>
+              <div class="audit-details" *ngIf="getAuditDetailsLabel(a.details) as detailText">{{ detailText }}</div>
+            </div>
+          </div>
+          <ng-template #noAudit>
+            <div class="empty-state">
+              Aucun événement d’audit sur ce dossier.
+            </div>
+          </ng-template>
+        </section>

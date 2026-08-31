@@ -1,0 +1,138 @@
+<div class="eval-page" [class.eval-page--embedded]="embedded">
+  <div class="eval-layout">
+    <div class="eval-main">
+      <p class="eval-blocking-alert" *ngIf="questionnaireError" role="alert">
+        {{ questionnaireError }}
+      </p>
+      <p class="eval-loading" *ngIf="loadingQuestionnaire">Chargement du questionnaire ARPEC…</p>
+
+      <p class="panel-intro panel-intro--embedded">
+        Évaluation ARPEC pour <strong>{{ clientLabel }}</strong> —
+        <ng-container *ngIf="!loadingEvaluation">{{ answeredCount }} / {{ questionTotal }} réponses · niveau calculé :
+        <span [class]="niveauPillClass(evaluation.niveauCalcule)">{{ evaluation.niveauCalcule }}</span></ng-container>
+        <ng-container *ngIf="loadingEvaluation">chargement de l'évaluation…</ng-container>
+      </p>
+      <p class="justification-hint" *ngIf="showCompletenessHint">
+        {{ validationError }}
+      </p>
+
+      <ng-container *ngIf="!questionnaireBlocked">
+      <app-lab-carte
+        *ngFor="let axe of axes"
+        [title]="axe.code + ' — ' + axe.libelle"
+        [subtitle]="axeSubtitle(axe.code)"
+        class="axis-card"
+      >
+        <div class="question-list">
+          <div
+            class="question"
+            [class.question--unanswered]="showCompletenessHint && !isQuestionAnswered(q.code)"
+            *ngFor="let q of axe.questions"
+          >
+            <div class="question-text">
+              {{ q.libelle }}
+              <span class="pill pill--red pill--xs" *ngIf="q.estDeclencheur">déclencheur</span>
+              <span class="question-sous-axe" *ngIf="q.sousAxe">{{ q.sousAxe }}</span>
+            </div>
+            <div class="toggle" role="group" [attr.aria-label]="q.code">
+              <button
+                type="button"
+                class="toggle-btn"
+                [class.toggle-btn--oui]="reponses[q.code] === 'O'"
+                (click)="setReponse(q.code, 'O')"
+              >
+                OUI
+              </button>
+              <button
+                type="button"
+                class="toggle-btn"
+                [class.toggle-btn--non]="reponses[q.code] === 'N'"
+                (click)="setReponse(q.code, 'N')"
+              >
+                NON
+              </button>
+            </div>
+          </div>
+        </div>
+      </app-lab-carte>
+      </ng-container>
+
+      <ng-container *ngIf="!questionnaireBlocked">
+      <app-lab-carte title="Ajuster le niveau" subtitle="Hausse ou baisse justifiée du niveau calculé">
+        <p class="panel-intro">
+          Le cabinet peut retenir un niveau différent du calcul automatique. Toute hausse ou baisse doit être justifiée et tracée.
+        </p>
+        <div class="modulation-opts">
+          <label class="modulation-opt" [class.modulation-opt--active]="modulation === 0">
+            <input type="radio" name="modulation" [value]="0" [ngModel]="modulation" (ngModelChange)="onModulationChange(0)" />
+            <span>= Conforme au calcul</span>
+          </label>
+          <label class="modulation-opt" [class.modulation-opt--active]="modulation === 1">
+            <input type="radio" name="modulation" [value]="1" [ngModel]="modulation" (ngModelChange)="onModulationChange(1)" />
+            <span>▲ Hausser d'un niveau</span>
+          </label>
+          <label class="modulation-opt" [class.modulation-opt--active]="modulation === -1">
+            <input type="radio" name="modulation" [value]="-1" [ngModel]="modulation" (ngModelChange)="onModulationChange(-1)" />
+            <span>▼ Baisser d'un niveau</span>
+          </label>
+        </div>
+        <label class="field field--full">
+          <span class="field-label">Justification de la modulation</span>
+          <textarea
+            class="field-input field-textarea"
+            rows="3"
+            [(ngModel)]="justification"
+            (ngModelChange)="onJustificationChange()"
+            placeholder="Justification obligatoire si le niveau retenu diffère du calcul."
+          ></textarea>
+        </label>
+        <p class="justification-hint" *ngIf="showJustificationHint">
+          Une justification est obligatoire pour moduler le niveau.
+        </p>
+      </app-lab-carte>
+
+      <p class="save-notice" *ngIf="saveNotice">{{ saveNotice }}</p>
+      </ng-container>
+    </div>
+
+    <aside class="eval-side" *ngIf="!questionnaireBlocked">
+      <app-lab-carte title="Synthèse risque" subtitle="Niveau retenu selon le questionnaire du cabinet">
+        <div class="summary-kv">
+          <span class="summary-k">Niveau calculé</span>
+          <span [class]="niveauPillClass(evaluation.niveauCalcule)">{{ evaluation.niveauCalcule }}</span>
+        </div>
+        <div class="summary-kv">
+          <span class="summary-k">Niveau retenu</span>
+          <span [class]="niveauPillClass(evaluation.niveauRetenu)">
+            {{ evaluation.niveauRetenu }}<span *ngIf="modulation !== 0"> · modulé</span>
+          </span>
+        </div>
+        <div class="summary-kv">
+          <span class="summary-k">Vigilance</span>
+          <span [class]="vigilancePillClass(evaluation.vigilance)">{{ evaluation.vigilance }}</span>
+        </div>
+        <p class="vig-why" *ngIf="evaluation.vigilance === 'Renforcée'">
+          Vigilance renforcée : niveau dossier Élevé (axe le plus fort).
+        </p>
+        <p class="vig-why" *ngIf="evaluation.vigilance === 'Standard'">
+          Aucun axe Élevé : diligences habituelles.
+        </p>
+        <p class="vig-why vig-why--triggers" *ngIf="evaluation.declencheursActifs.length">
+          Déclencheurs actifs : {{ evaluation.declencheursActifs.length }} critère(s) OUI.
+        </p>
+
+        <div class="axes-mini">
+          <div class="axes-mini-title">Niveau par axe</div>
+          <div class="mini-row" *ngFor="let axe of evaluation.axes">
+            <span class="mini-lab">{{ axe.code }}</span>
+            <div class="mini-track">
+              <div class="mini-fill" [style.width.%]="axisMiniFillPct(axe.nbOui, axe.nbTotal)"></div>
+            </div>
+            <span class="mini-val">{{ axe.nbOui }}/{{ axe.nbTotal }}</span>
+            <span [class]="niveauPillClass(axe.niveau) + ' pill--xs'">{{ axe.niveau }}</span>
+          </div>
+        </div>
+      </app-lab-carte>
+    </aside>
+  </div>
+</div>

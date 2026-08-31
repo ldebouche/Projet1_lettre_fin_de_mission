@@ -1,0 +1,242 @@
+.bodacc-checklist {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  border: 1px solid rgba(79, 101, 119, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.bodacc-checklist__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.bodacc-checklist__title {
+  margin: 0 0 4px;
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #4f6577;
+}
+
+.bodacc-checklist__intro {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6e7b86;
+  line-height: 1.45;
+}
+
+.bodacc-checklist__progress {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #1565c0;
+  white-space: nowrap;
+
+  &--done {
+    color: #2e7d32;
+  }
+}
+
+.bodacc-checklist__critical {
+  color: #c62828;
+}
+
+.bodacc-checklist__toolbar {
+  margin-bottom: 12px;
+}
+
+.bodacc-checklist__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: #5c6b78;
+  font-weight: 600;
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-blue-petrol);
+  }
+}
+
+.bodacc-checklist__empty {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(79, 101, 119, 0.05);
+  color: #6e7b86;
+  font-size: 0.9rem;
+}
+
+.bodacc-item {
+  border: 1px solid rgba(79, 101, 119, 0.16);
+  border-left-width: 4px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: rgba(79, 101, 119, 0.02);
+
+  &--elevee {
+    border-left-color: #c62828;
+    background: rgba(198, 40, 40, 0.04);
+  }
+
+  &--moyenne {
+    border-left-color: #ef6c00;
+  }
+
+  &--faible {
+    border-left-color: #2e7d32;
+  }
+
+  &--done {
+    opacity: 0.82;
+  }
+}
+
+.bodacc-item__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.bodacc-item__gravite {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.bodacc-item--elevee .bodacc-item__gravite { color: #c62828; }
+.bodacc-item--moyenne .bodacc-item__gravite { color: #ef6c00; }
+.bodacc-item--faible .bodacc-item__gravite { color: #2e7d32; }
+
+.bodacc-item__date {
+  color: #5c6b78;
+  font-weight: 700;
+}
+
+.bodacc-item__statut {
+  margin-left: auto;
+  font-weight: 800;
+  color: #1565c0;
+}
+
+.bodacc-item__label {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #4f6577;
+}
+
+.bodacc-item__resume {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: #6e7b86;
+  line-height: 1.4;
+}
+
+.bodacc-item__guide {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(25, 118, 210, 0.06);
+  border: 1px solid rgba(25, 118, 210, 0.14);
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.82rem;
+    color: #1565c0;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #4f6577;
+  }
+}
+
+.bodacc-item__meta {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: #5c6b78;
+
+  li span {
+    font-weight: 800;
+    margin-right: 6px;
+    color: #4f6577;
+  }
+}
+
+.bodacc-item__comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5c6b78;
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(79, 101, 119, 0.22);
+    font: inherit;
+    resize: vertical;
+    min-height: 56px;
+  }
+}
+
+.bodacc-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bodacc-item__link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn--sm {
+  padding: 6px 12px;
+  font-size: 0.86rem;
+}
+
+.btn {
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  font-family: inherit;
+
+  &--ghost {
+    background: #fff;
+    border-color: rgba(79, 101, 119, 0.22);
+    color: #4f6577;
+  }
+
+  &--primary {
+    background: var(--color-blue-petrol);
+    color: #fff;
+  }
+}

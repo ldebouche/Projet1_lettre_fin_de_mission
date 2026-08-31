@@ -1,0 +1,105 @@
+<app-lab-carte class="wizard-card form-section" id="section-kyc" title="KYC structuré" subtitle="PEP, risques pays, complexité, origine des fonds">
+  <div class="form-grid form-grid--2">
+    <label class="field">
+      <span class="field-label">Catégorie client</span>
+      <select class="field-input" name="kyc_cat" [(ngModel)]="m.kyc.categorie_client">
+        <option value="">—</option>
+        <option value="Personne_morale">Personne morale</option>
+        <option value="Personne_physique">Personne physique</option>
+      </select>
+    </label>
+    <label class="field" *ngIf="m.kyc.categorie_client === 'Personne_physique'">
+      <span class="field-label">Civilité</span>
+      <select class="field-input" name="kyc_civ" [(ngModel)]="m.kyc.civilite">
+        <option value="">—</option>
+        <option value="M.">M.</option>
+        <option value="Mme">Mme</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </label>
+    <label class="field" *ngIf="m.kyc.categorie_client === 'Personne_physique'">
+      <span class="field-label">Nom</span>
+      <input class="field-input" type="text" name="kyc_nom_pp" [(ngModel)]="m.kyc.nom_physique" />
+    </label>
+    <label class="field" *ngIf="m.kyc.categorie_client === 'Personne_physique'">
+      <span class="field-label">Prénom</span>
+      <input class="field-input" type="text" name="kyc_prenom_pp" [(ngModel)]="m.kyc.prenom_physique" />
+    </label>
+    <label class="field">
+      <span class="field-label">Pays résidence fiscale</span>
+      <input class="field-input" type="text" name="kyc_pays_fisc" [(ngModel)]="m.kyc.pays_residence_fiscale" />
+    </label>
+    <label class="field">
+      <span class="field-label">Pays implantation principale</span>
+      <input class="field-input" type="text" name="kyc_pays_imp" [(ngModel)]="m.kyc.pays_implantation" />
+      <app-lab-wizard-field-meta [meta]="getFieldMeta('kyc.pays_implantation')" (acceptApi)="acceptApi.emit('kyc.pays_implantation')" />
+    </label>
+    <label class="field field--full">
+      <span class="field-label">Pays / zones à risque (LCB‑FT)</span>
+      <textarea class="field-input field-textarea" name="kyc_pays_risque" rows="3" [(ngModel)]="m.kyc.pays_a_risque_text"></textarea>
+      <span class="field-hint">Une ligne ou une entrée par pays / zone surveillée.</span>
+    </label>
+    <label class="field field--full">
+      <span class="field-label">Secteurs d’activité (liste ou précisions)</span>
+      <textarea class="field-input field-textarea" name="kyc_secteurs" rows="3" [(ngModel)]="m.kyc.secteurs_text"></textarea>
+      <app-lab-wizard-field-meta [meta]="getFieldMeta('kyc.secteurs_text')" (acceptApi)="acceptApi.emit('kyc.secteurs_text')" />
+    </label>
+    <label class="check field--full check--solo">
+      <input type="checkbox" name="kyc_secteur_sensible" [(ngModel)]="m.kyc.secteur_sensible" />
+      <span>Secteur sensible (liste cabinet / réglementaire)</span>
+    </label>
+    <label class="field">
+      <span class="field-label">Statut PEP</span>
+      <select class="field-input" name="kyc_pep" [(ngModel)]="m.kyc.pep_statut">
+        <option value="">—</option>
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+        <option value="Inconnu">Inconnu</option>
+      </select>
+    </label>
+    <label class="field field--full">
+      <span class="field-label">Détails PEP / lien PEP</span>
+      <textarea class="field-input field-textarea" name="kyc_pep_det" rows="2" [(ngModel)]="m.kyc.pep_details"></textarea>
+    </label>
+    <label class="check field--full check--solo">
+      <input type="checkbox" name="kyc_origine_req" [(ngModel)]="m.kyc.origine_fonds_requise" />
+      <span>Origine des fonds / richesse : collecte requise</span>
+    </label>
+    <label class="field">
+      <span class="field-label">Statut origine des fonds</span>
+      <select class="field-input" name="kyc_origine_statut" [(ngModel)]="m.kyc.origine_fonds_statut">
+        <option value="">—</option>
+        <option value="Renseignee">Renseignée</option>
+        <option value="A_renseigner">À renseigner</option>
+        <option value="Non_applicable">Non applicable</option>
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">Complexité structure juridique</span>
+      <select class="field-input" name="kyc_complex" [(ngModel)]="m.kyc.complexite_structure">
+        <option value="">—</option>
+        <option value="Simple">Simple</option>
+        <option value="Moyenne">Moyenne</option>
+        <option value="Complexe">Complexe</option>
+        <option value="Inconnue">Inconnue</option>
+      </select>
+    </label>
+    <label class="field field--full">
+      <span class="field-label">Justification complexité</span>
+      <textarea class="field-input field-textarea" name="kyc_just_complex" rows="2" [(ngModel)]="m.kyc.justification_complexite"></textarea>
+    </label>
+    <label class="field">
+      <span class="field-label">Exposition sanctions / gel des avoirs</span>
+      <select class="field-input" name="kyc_sanctions" [(ngModel)]="m.kyc.exposition_sanctions">
+        <option value="">—</option>
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+        <option value="Inconnu">Inconnu</option>
+      </select>
+    </label>
+    <label class="field field--full">
+      <span class="field-label">Notes internes KYC</span>
+      <textarea class="field-input field-textarea" name="kyc_notes" rows="4" [(ngModel)]="m.kyc.notes"></textarea>
+    </label>
+  </div>
+</app-lab-carte>

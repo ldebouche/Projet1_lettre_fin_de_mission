@@ -93,3 +93,10 @@ Thumbs.db
 *.pdf
 
 *.tsbuildinfo
+
+# ------------------------------
+# Cursor / docs locaux
+# ------------------------------
+.cursor/
+docs/
+CONTEXT.md

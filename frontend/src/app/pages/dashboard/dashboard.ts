@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
+import { LabDossierAttenteItem, LabService } from '../../services/lab-service';
+import { RolesService } from '../../services/roles-service';
 import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
 import { ModalComponent } from '../../shared/modal/modal';
 import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
@@ -37,7 +39,7 @@ interface Dossier {
 export class DashboardComponent implements OnInit {
   collaborateur: any | null = null;
 
-  activeTab: 'mesDossiers' | 'equipe' = 'mesDossiers';
+  activeTab: 'mesDossiers' | 'equipe' | 'lab' = 'mesDossiers';
 
   isLoading = true;
   mesDossiers: Dossier[] = [];
@@ -69,53 +71,28 @@ export class DashboardComponent implements OnInit {
   isHistoriqueModalOpen = false;
   selectedCodeClient: string | null = null;
 
-  dossiersEnAttente: any[] = [];
+  dossiersEnAttente: LabDossierAttenteItem[] = [];
+  dossiersAttenteTotal = 0;
+  dossiersAttenteLoading = false;
   isModalAttenteOpen = false;
-  selectedDossierAttente: any | null = null;
+  selectedDossierAttente: LabDossierAttenteItem | null = null;
+
+  risqueMap: Map<string, any> = new Map();
+  isLabUser: boolean = false;
 
   constructor(
     private router: Router,
     private db: DbService,
-    private dataService: DataService
+    private labService: LabService,
+    private dataService: DataService,
+    private rolesService: RolesService
   ) { }
 
   ngOnInit(): void {
     this.collaborateur = JSON.parse(localStorage.getItem('collaborateur') || 'null');
+    this.isLabUser = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ['admin', 'informatique', 'lab']);
     this.loadData();
-
-    //données test 
-    this.dossiersEnAttente = [
-      {
-        code_client: 'CLT-4587',
-        raison_sociale: 'Les Garçons Coiffeurs',
-        forme_societe: 'SAS',
-        civilite: null,
-        nom: null,
-        prenom: null,
-        date_creation: '2024-11-12',
-        statut: 'EN_ATTENTE'
-      },
-      {
-        code_client: 'CLT-4621',
-        raison_sociale: 'Boulangerie du Centre',
-        forme_societe: 'SARL',
-        civilite: null,
-        nom: null,
-        prenom: null,
-        date_creation: '2024-12-03',
-        statut: 'EN_ATTENTE'
-      },
-      {
-        code_client: 'CLT-4709',
-        raison_sociale: null,
-        forme_societe: null,
-        civilite: 'M.',
-        nom: 'Durand',
-        prenom: 'Lucas',
-        date_creation: '2025-01-08',
-        statut: 'EN_ATTENTE'
-      }
-    ];
+    this.loadDossiersAttente();
   }
 
   private prepareData(data: any[]): Dossier[] {
@@ -156,6 +133,7 @@ export class DashboardComponent implements OnInit {
         this._allMesDossiers = this.prepareData(data.dossiers);
         this._allDossiersEquipe = this.prepareData(data.dossiersEquipe);
         this.applyFilterAndSort()
+        this.loadRisqueLab(this._allMesDossiers);
         this.isLoading = false;
       },
       error: (err) => {
@@ -166,7 +144,30 @@ export class DashboardComponent implements OnInit {
 
   }
 
-  selectTab(tab: 'mesDossiers' | 'equipe') {
+  private loadRisqueLab(dossiers: Dossier[]) {
+    if (!this.isLabUser || !dossiers.length) return;
+    const codes = dossiers.map(d => d.code_client);
+    this.labService.getDossiersRisqueLab(codes).subscribe({
+      next: (res: any) => {
+        this.risqueMap = new Map(Object.entries(res.data || {}));
+      },
+      error: () => {} // silencieux si LAB non dispo
+    });
+  }
+
+  getRisqueLabel(code_client: string): string {
+    return this.risqueMap.get(code_client)?.niveau_risque || 'Non évalué';
+  }
+
+  getRisqueClass(code_client: string): string {
+    const niveau = this.risqueMap.get(code_client)?.niveau_risque;
+    if (niveau === 'Eleve') return 'risque-eleve';
+    if (niveau === 'Moyen') return 'risque-moyen';
+    if (niveau === 'Faible') return 'risque-faible';
+    return 'risque-non-evalue';
+  }
+
+  selectTab(tab: 'mesDossiers' | 'equipe' | 'lab') {
     this.activeTab = tab;
     this.currentPage = 1;
     this.filterClient = '';
@@ -208,7 +209,8 @@ export class DashboardComponent implements OnInit {
   }
 
   applyFilterAndSort() {
-    let sourceData = this.activeTab === 'mesDossiers' ? [...this._allMesDossiers] : [...this._allDossiersEquipe];
+    const isMesDossiersView = this.activeTab === 'mesDossiers' || this.activeTab === 'lab';
+    let sourceData = isMesDossiersView ? [...this._allMesDossiers] : [...this._allDossiersEquipe];
 
     if (this.filterClient) {
       const filterTerm = this.filterClient.toLowerCase();
@@ -249,7 +251,7 @@ export class DashboardComponent implements OnInit {
     const end = start + this.itemsPerPage;
     const paginatedData = sourceData.slice(start, end);
 
-    if (this.activeTab === 'mesDossiers') {
+    if (isMesDossiersView) {
       this.mesDossiers = paginatedData;
     } else {
       this.dossiersEquipe = paginatedData;
@@ -291,22 +293,57 @@ export class DashboardComponent implements OnInit {
     this.selectedCodeClient = null;
   }
 
+  private loadDossiersAttente(selectFirst = false): void {
+    if (!this.collaborateur) {
+      this.dossiersEnAttente = [];
+      this.dossiersAttenteTotal = 0;
+      this.selectedDossierAttente = null;
+      return;
+    }
+
+    this.dossiersAttenteLoading = true;
+    this.labService.getDossiersAttenteLab({ page: 1, pageSize: 200 }).subscribe({
+      next: (res) => {
+        this.dossiersEnAttente = res.data || [];
+        this.dossiersAttenteTotal = res.total ?? this.dossiersEnAttente.length;
+        this.dossiersAttenteLoading = false;
+        if (selectFirst) {
+          this.selectedDossierAttente = this.dossiersEnAttente[0] ?? null;
+        }
+      },
+      error: () => {
+        this.dossiersEnAttente = [];
+        this.dossiersAttenteTotal = 0;
+        this.dossiersAttenteLoading = false;
+        this.selectedDossierAttente = null;
+      },
+    });
+  }
+
   openModalAttente() {
     this.isModalAttenteOpen = true;
-    this.dossiersEnAttente ? this.selectedDossierAttente = this.dossiersEnAttente[0] : null;
+    this.loadDossiersAttente(true);
   }
 
   closeModalAttente() {
     this.isModalAttenteOpen = false;
   }
 
-  selectDossierAttente(d: any) {
+  selectDossierAttente(d: LabDossierAttenteItem) {
     this.selectedDossierAttente = d;
   }
 
-  openLoginLab() {
-    if (!this.selectedDossierAttente) return;
+  openDossierAcceptation() {
+    const code = this.selectedDossierAttente?.code_client?.trim();
+    if (!code) return;
 
-    this.router.navigate(['/login-lab']);
+    this.closeModalAttente();
+    void this.router.navigate(['/lab/dossier/formulaire'], {
+      queryParams: {
+        code_client: code,
+        mode: 'acceptation',
+        returnTo: '/dashboard',
+      },
+    });
   }
 }

@@ -41,7 +41,18 @@
     display: flex;
     align-items: center;
     width: 100%;
-    justify-content: space-evenly;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.controls-group__filters {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    flex: 1;
+    min-width: 0;
 }
 
 .checkbox-group {

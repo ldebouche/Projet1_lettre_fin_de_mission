@@ -1,0 +1,167 @@
+<div class="page">
+  <nav class="lab-crumb" aria-label="Fil d’Ariane">
+    <a routerLink="/lab/dashboard">Cartographie</a>
+    <span class="lab-crumb-sep">/</span>
+    <a routerLink="/lab/portefeuille">Portefeuille</a>
+    <span class="lab-crumb-sep">/</span>
+    <span>Assistant dossier</span>
+  </nav>
+  <div class="hero">
+    <div class="hero-accent"></div>
+    <div class="hero-main">
+      <div class="hero-top">
+        <div class="hero-title">
+          <span class="hero-name" *ngIf="!isAcceptationMode">Création / révision de dossier LAB</span>
+          <span class="hero-name" *ngIf="isAcceptationMode">Acceptation de dossier LAB</span>
+          <span class="status-pill status-pill--acceptation" *ngIf="isAcceptationMode">Acceptation</span>
+          <span class="status-pill" *ngIf="!isAcceptationMode && (hasExistingLabDossier || idRevue)">Révision</span>
+          <span
+            class="status-pill status-pill--new"
+            *ngIf="!isAcceptationMode && !hasExistingLabDossier && !idRevue && codeClient"
+          >Création</span>
+        </div>
+        <div class="hero-links">
+          <a *ngIf="returnTo === '/dashboard'" routerLink="/dashboard" class="link-back">← Tableau de bord</a>
+          <a routerLink="/lab/dashboard" class="link-back">← Cartographie cabinet</a>
+          <a routerLink="/lab/portefeuille" class="link-back">← Portefeuille</a>
+        </div>
+      </div>
+      <div class="hero-meta">
+        <span *ngIf="loading">Chargement des données existantes…</span>
+        <span *ngIf="!loading && errorMessage" class="hero-error">{{ errorMessage }}</span>
+        <span *ngIf="!loading && !errorMessage">
+          Préremplissage depuis la fiche et les registres publics. Les registres publics complètent la fiche.
+          <span *ngIf="divergenceCount > 0" class="hero-divergence"> — {{ divergenceCount }} écart(s) à vérifier.</span>
+          <span *ngIf="bodaccPendingCritical > 0" class="hero-divergence">
+            — {{ bodaccPendingCritical }} annonce(s) BODACC critique(s) à traiter.
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wizard-shell">
+    <div *ngIf="loading" class="wizard-loading">Chargement des données…</div>
+
+    <div *ngIf="!loading && isWizardLocked" class="wizard-locked">
+      <app-lab-carte title="Dossier déjà ouvert" subtitle="Une fiche existe déjà pour ce client">
+        <p class="panel-intro">
+          Ce dossier a déjà une fiche. Lancez une revue depuis le plan &amp; suivi.
+        </p>
+        <a
+          *ngIf="codeClient"
+          class="btn btn--primary"
+          [routerLink]="['/lab/dossier']"
+          [queryParams]="{ code_client: codeClient, returnTo: returnTo || undefined }"
+        >Ouvrir le plan &amp; suivi</a>
+      </app-lab-carte>
+    </div>
+
+    <nav *ngIf="!loading && !isWizardLocked" class="stepper" aria-label="Étapes du formulaire">
+      <button
+        type="button"
+        class="stepper-item"
+        *ngFor="let s of steps; let i = index"
+        [class.stepper-item--active]="i === stepIndex"
+        [class.stepper-item--done]="i < stepIndex"
+        [disabled]="step1Saving || submitting || revueActionBusy"
+        (click)="onStepperSelect(i)"
+      >
+        <span class="stepper-num">{{ i + 1 }}</span>
+        <span class="stepper-text">
+          <span class="stepper-label">{{ s.label }}</span>
+          <span class="stepper-hint">{{ s.hint }}</span>
+        </span>
+      </button>
+    </nav>
+
+    <form class="wizard-form" *ngIf="!loading && !isWizardLocked" (ngSubmit)="$event.preventDefault()">
+
+      <!-- Étape 1 — Dossier client (page unique) -->
+      <div class="dossier-page" *ngIf="stepIndex === 0">
+        <nav class="wizard-toc" aria-label="Sections du dossier">
+          <a href="#section-identifiants">Identifiants</a>
+          <a href="#section-bodacc">BODACC</a>
+          <a href="#section-identite">Identité</a>
+          <a href="#section-coordonnees">Siège</a>
+          <a href="#section-fiscal">Fiscal</a>
+          <a href="#section-affectation">Affectation</a>
+          <a href="#section-kyc">KYC</a>
+          <a href="#section-be">Bénéficiaires</a>
+          <a href="#section-pieces">Pièces</a>
+        </nav>
+        <app-lab-wizard-identite
+          [m]="m"
+          [fieldMeta]="fieldMeta"
+          [enriching]="enriching"
+          [enrichmentError]="enrichmentError"
+          [alertesBodacc]="alertesBodacc"
+          [bodaccPendingCritical]="bodaccPendingCritical"
+          [bodaccSectionOpen]="bodaccSectionOpen"
+          [codeClient]="codeClient"
+          [clientExpertComptableDisplay]="clientExpertComptableDisplay"
+          [clientChefDeMissionDisplay]="clientChefDeMissionDisplay"
+          (enrich)="enrichFromPublicApis()"
+          (acceptApi)="acceptApiValue($event)"
+          (siretBlur)="onSiretBlur()"
+          (bodaccProgressChange)="onBodaccProgressChange($event)"
+          (bodaccSectionToggle)="onBodaccSectionToggle($event)"
+          (navigateStep)="goToWizardStep($event)"
+        />
+        <app-lab-wizard-kyc
+          [m]="m"
+          [fieldMeta]="fieldMeta"
+          (acceptApi)="acceptApiValue($event)"
+        />
+        <app-lab-wizard-be
+          [(beneficiaires)]="beneficiaires"
+          (removedPersistedId)="onRemovedPersistedBeneficiaire($event)"
+        />
+        <app-lab-wizard-pieces
+          [(pieces)]="pieces"
+          [pieceTypePresets]="pieceTypePresets"
+          (removedPersistedId)="onRemovedPersistedPiece($event)"
+        />
+      </div>
+
+      <!-- Étape 2 — Évaluation du risque (ARPEC) -->
+      <div class="step-panel step-panel--eval" *ngIf="stepIndex === 1">
+        <app-lab-evaluation-risque
+          #evalRisque
+          [embedded]="true"
+          [codeClient]="m.code_client || codeClient || ''"
+          [raisonSociale]="m.raison_sociale"
+        />
+      </div>
+
+        <p class="wizard-checklist-warning" *ngIf="bodaccChecklistWarning">{{ bodaccChecklistWarning }}</p>
+        <p class="wizard-submit-error" *ngIf="submitError">{{ submitError }}</p>
+
+        <div class="wizard-actions">
+          <button type="button" class="btn btn--ghost" (click)="goPrev()" [disabled]="isFirstStep || step1Saving">Précédent</button>
+          <button
+            type="button"
+            class="btn btn--ghost btn--danger"
+            *ngIf="idRevue"
+            (click)="annulerRevue()"
+            [disabled]="submitting || revueActionBusy"
+          >
+            {{ revueActionBusy ? 'Annulation…' : 'Annuler la revue' }}
+          </button>
+          <div class="wizard-actions-spacer"></div>
+          <button
+            type="button"
+            class="btn btn--primary"
+            *ngIf="!isLastStep"
+            (click)="goNext()"
+            [disabled]="step1Saving || submitting || revueActionBusy"
+          >
+            {{ step1Saving ? 'Enregistrement…' : 'Continuer vers l\'évaluation du risque →' }}
+          </button>
+          <button type="button" class="btn btn--primary" *ngIf="isLastStep" (click)="submitWizard()" [disabled]="submitting || step1Saving || revueActionBusy || arpecQuestionnaireBlocked">
+            {{ submitting ? 'Enregistrement…' : 'Valider et ouvrir le plan de vigilance →' }}
+          </button>
+        </div>
+      </form>
+  </div>
+</div>

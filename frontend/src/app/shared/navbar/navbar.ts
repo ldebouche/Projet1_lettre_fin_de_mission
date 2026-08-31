@@ -31,6 +31,7 @@ export class NavbarComponent implements OnInit {
   currentUrl: string = '';
   collaborateur: any;
   hasRole: boolean = false;
+  hasRoleLab: boolean = false;
 
   adminMenuOpen = false;
 
@@ -59,6 +60,7 @@ export class NavbarComponent implements OnInit {
       this.collaborateur = collab;
 
       this.hasRole = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique"]);
+      this.hasRoleLab = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique", "lab"]);
       this.activiteOptions = getActiviteOptions(this.collaborateur?.groupes_microsoft || []);
     });
   }
@@ -99,6 +101,40 @@ export class NavbarComponent implements OnInit {
   }
 
   handleReturn() {
+    const returnTo = this.resolveReturnToFromUrl();
+    if (returnTo && this.currentUrl.startsWith('/lab/dossier')) {
+      this.router.navigate([returnTo]);
+      return;
+    }
+
+    // Les URLs avec query params (ex: /lab/dossier?code_client=...) ne matchent pas
+    // une clé de mapping "exacte" : on gère ce cas via un préfixe.
+    if (this.currentUrl.startsWith('/lab/dossier/formulaire')) {
+      this.router.navigate(['/lab/portefeuille']);
+      return;
+    }
+
+    if (this.currentUrl.startsWith('/lab/dossier')) {
+      this.router.navigate(['/lab/portefeuille']);
+      return;
+    }
+
+    // Pages LAB avec query string éventuelle (ex: /lab/portefeuille?niveau=...)
+    if (this.currentUrl.startsWith('/lab/portefeuille')) {
+      this.router.navigate(['/lab/dashboard']);
+      return;
+    }
+
+    if (this.currentUrl.startsWith('/lab/parametrage')) {
+      this.router.navigate(['/lab/dashboard']);
+      return;
+    }
+
+    if (this.currentUrl.startsWith('/lab/dashboard')) {
+      this.router.navigate(['/accueil-intranet']);
+      return;
+    }
+
     if (this.currentUrl.startsWith('/mon-activite')) {
       this.router.navigate(['/dashboard']);
       return;
@@ -110,11 +146,38 @@ export class NavbarComponent implements OnInit {
       "/dashboard": "/",
       "/login-dossier": "/dashboard",
       "/accueil-mission": "/login-dossier",
-      "/lettre-fin-mission": "/accueil-mission"
+      "/lettre-fin-mission": "/accueil-mission",
     };
 
     const target = routesMap[this.currentUrl];
     if (target) this.router.navigate([target]);
+  }
+
+  /** Cible de retour explicite (?returnTo=…) — ex. depuis accueil-mission. */
+  private resolveReturnToFromUrl(): string | null {
+    const qIndex = this.currentUrl.indexOf('?');
+    if (qIndex === -1) return null;
+
+    const raw = new URLSearchParams(this.currentUrl.slice(qIndex + 1)).get('returnTo')?.trim();
+    if (!raw) return null;
+
+    try {
+      const path = decodeURIComponent(raw);
+      if (!path.startsWith('/') || path.startsWith('//') || path.includes('://')) {
+        return null;
+      }
+      const allowed = new Set([
+        '/accueil-mission',
+        '/login-dossier',
+        '/lab/dashboard',
+        '/lab/portefeuille',
+        '/accueil-intranet',
+        '/dashboard',
+      ]);
+      return allowed.has(path) ? path : null;
+    } catch {
+      return null;
+    }
   }
 
   logout() {
