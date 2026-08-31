@@ -1,28 +1,94 @@
 <div class="page">
-  <div class="tabs">
-    <span class="tab tab--on">Tableau de bord</span>
-    <a class="tab" routerLink="/lab/portefeuille">Portefeuille</a>
-    <a class="tab" routerLink="/lab/evenements">Événements</a>
-    <a class="tab" routerLink="/lab/diligences">Diligences</a>
-  </div>
+  <app-lab-shell
+    title="Cartographie cabinet"
+    [pill]="loading ? 'Chargement' : (hasActiveFilters ? 'Vue filtrée' : 'Vue cabinet')"
+    [subtitle]="errorMessage || 'Pilotage des risques, revues et diligences. Un graphique ouvre le portefeuille filtré.'"
+  >
+  <a shell-cta routerLink="/lab/dossier/formulaire">Réviser un dossier</a>
 
-  <div class="hero">
-    <div class="hero-accent"></div>
-
-    <div class="hero-main">
-      <div class="hero-top">
-        <div class="hero-title">
-          <span class="hero-name">Dashboard LAB</span>
-          <span class="status-pill">{{ loading ? 'Chargement' : 'Vue cabinet' }}</span>
-        </div>
-        <a routerLink="/lab/dossier/formulaire" class="hero-cta">Réviser un dossier</a>
+  <div class="filters-card">
+    <div class="filters-head">
+      <div>
+        <h2 class="filters-title">Filtres de la cartographie</h2>
+        <p class="filters-sub">
+          Filtrer par collaborateur et période.
+        </p>
       </div>
+      <button
+        class="btn-link"
+        type="button"
+        *ngIf="hasActiveFilters"
+        [disabled]="loading"
+        (click)="resetFilters()"
+      >
+        Réinitialiser
+      </button>
+    </div>
 
-      <div class="hero-meta">
-        <span>{{ errorMessage || 'Vue de pilotage des risques, revues et diligences du cabinet.' }}</span>
-        <span class="sep">•</span>
-        <span>Cliquez sur un graphique pour ouvrir le portefeuille filtré.</span>
-      </div>
+    <div class="filters">
+      <select
+        class="filter-select"
+        [(ngModel)]="collaborateurSelect"
+        (change)="onCollaborateurSelectChange()"
+        [disabled]="loading"
+        aria-label="Filtrer par collaborateur"
+      >
+        <option value="">Tous les collaborateurs</option>
+        <option *ngIf="meIdSellsy" [value]="meIdSellsy">{{ meLabel }}</option>
+        <option *ngIf="isFull" [value]="collabCustom">Autre collaborateur…</option>
+      </select>
+
+      <input
+        *ngIf="showCustomCollab"
+        class="filter-input filter-input--id"
+        type="text"
+        placeholder="Autre collaborateur"
+        [(ngModel)]="collaborateurCustom"
+        [disabled]="loading"
+        aria-label="Autre collaborateur"
+      />
+
+      <label class="filter-date">
+        <span>Du</span>
+        <input
+          class="filter-select"
+          type="date"
+          [(ngModel)]="dateDebut"
+          [disabled]="loading"
+          aria-label="Date de début"
+        />
+      </label>
+
+      <label class="filter-date">
+        <span>Au</span>
+        <input
+          class="filter-select"
+          type="date"
+          [(ngModel)]="dateFin"
+          [disabled]="loading"
+          aria-label="Date de fin"
+        />
+      </label>
+
+      <button
+        class="btn-apply"
+        type="button"
+        [disabled]="loading"
+        (click)="applyFilters()"
+      >
+        Appliquer
+      </button>
+    </div>
+
+    <div class="active-filters" *ngIf="hasActiveFilters">
+      <span class="chip" *ngIf="filterCollabLabel">
+        Collaborateur : {{ filterCollabLabel }}
+        <button type="button" (click)="clearCollaborateur()" aria-label="Retirer le filtre collaborateur">×</button>
+      </span>
+      <span class="chip" *ngIf="filterPeriodLabel">
+        Période : {{ filterPeriodLabel }}
+        <button type="button" (click)="clearPeriod()" aria-label="Retirer le filtre période">×</button>
+      </span>
     </div>
   </div>
 
@@ -73,8 +139,8 @@
       </div>
     </div>
 
-    <div class="row">
-      <div class="col-4">
+    <div class="row row--charts">
+      <div class="col-chart">
         <app-lab-carte title="Répartition par niveau de risque" subtitle="Faible / Moyen / Élevé / Non évalué">
           <div class="chart">
             <div class="bars bar-chart">
@@ -111,9 +177,9 @@
         </app-lab-carte>
       </div>
 
-      <div class="col-4">
+      <div class="col-chart">
         <app-lab-carte title="Répartition par secteur" subtitle="Top secteurs renseignés">
-          <div class="chart">
+          <div class="chart" *ngIf="histogramSecteur.length > 0; else noSecteur">
             <div class="bars bar-chart">
               <button
                 class="bar"
@@ -133,12 +199,15 @@
               </button>
             </div>
           </div>
+          <ng-template #noSecteur>
+            <p class="empty-cell">Aucun secteur renseigné sur le portefeuille.</p>
+          </ng-template>
         </app-lab-carte>
       </div>
 
-      <div class="col-4">
+      <div class="col-chart">
         <app-lab-carte title="Répartition par pays" subtitle="Zones géographiques renseignées">
-          <div class="chart">
+          <div class="chart" *ngIf="histogramPays.length > 0; else noPays">
             <div class="bars bar-chart">
               <button
                 class="bar"
@@ -158,10 +227,13 @@
               </button>
             </div>
           </div>
+          <ng-template #noPays>
+            <p class="empty-cell">Aucun pays renseigné sur le portefeuille.</p>
+          </ng-template>
         </app-lab-carte>
       </div>
 
-      <div class="col-4">
+      <div class="col-chart">
         <app-lab-carte title="Répartition par vigilance" subtitle="Standard / Renforcée">
           <div class="chart">
             <div class="bars bar-chart">
@@ -213,11 +285,17 @@
               <tbody>
                 <tr *ngFor="let e of evenementsCritiquesOuverts">
                   <td class="td-strong">{{ e.client }}</td>
-                  <td>{{ e.type }}</td>
+                  <td>{{ typeEvenementLabel(e.type) }}</td>
                   <td>
-                    <span class="risk-pill" [ngClass]="criticiteClass(e.criticite)">{{ e.criticite }}</span>
+                    <span class="risk-pill" [ngClass]="criticiteClass(e.criticite)">{{ criticiteLabel(e.criticite) }}</span>
                   </td>
                   <td>{{ e.date ? (e.date | date:'dd/MM/yyyy') : '—' }}</td>
+                </tr>
+                <tr *ngIf="!loading && evenementsCritiquesOuverts.length === 0">
+                  <td colspan="4" class="empty-cell">
+                    Aucun événement critique ouvert.
+                    <a routerLink="/lab/evenements">Voir les événements</a>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -249,6 +327,12 @@
                   <td>{{ r.echeanceDepassee ? (r.echeanceDepassee | date:'dd/MM/yyyy') : '—' }}</td>
                   <td><span class="pill pill--late">{{ r.retardJours }} j</span></td>
                 </tr>
+                <tr *ngIf="!loading && revuesEnRetardListe.length === 0">
+                  <td colspan="3" class="empty-cell">
+                    Aucune revue en retard.
+                    <a routerLink="/lab/portefeuille" [queryParams]="{ revue: 'late' }">Ouvrir le portefeuille</a>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -277,6 +361,12 @@
                   <td>{{ d.echeance ? (d.echeance | date:'dd/MM/yyyy') : '—' }}</td>
                   <td><span class="pill pill--late">{{ d.retardJours }} j</span></td>
                 </tr>
+                <tr *ngIf="!loading && diligencesEnRetardListe.length === 0">
+                  <td colspan="4" class="empty-cell">
+                    Aucune diligence en retard.
+                    <a routerLink="/lab/diligences" [queryParams]="{ retard: 'late' }">Voir les diligences</a>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -289,4 +379,5 @@
       </div>
     </div>
   </div>
+  </app-lab-shell>
 </div>

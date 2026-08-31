@@ -4,15 +4,22 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { LabCarteComponent } from '../lab-carte/lab-carte';
+import { LabCabinetListeComponent } from '../lab-cabinet-liste/lab-cabinet-liste';
+import { LabShellComponent } from '../lab-shell/lab-shell';
 import { LabEvenementListItem, LabService } from '../../../services/lab-service';
+import {
+  criticiteLabel as formatCriticite,
+  statutEvenementLabel,
+  typeEvenementLabel,
+} from '../lab-labels';
 
-type StatutFilter = '' | 'Ouvert' | 'En_cours' | 'Cloture';
+type StatutFilter = '' | 'Ouvert' | 'En_cours' | 'A_VALIDER' | 'Cloture';
 type CriticiteFilter = '' | 'Faible' | 'Moyenne' | 'Elevee';
 
 @Component({
   selector: 'app-lab-evenements',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent, LabShellComponent, LabCabinetListeComponent],
   templateUrl: './lab-evenements.html',
   styleUrls: ['./lab-evenements.scss'],
 })
@@ -31,11 +38,29 @@ export class LabEvenementsComponent implements OnInit {
   total = 0;
 
   get ouvertsCount(): number {
-    return this.rows.filter((r) => r.statut === 'Ouvert' || r.statut === 'En_cours').length;
+    return this.rows.filter((r) => r.statut === 'Ouvert' || r.statut === 'En_cours' || r.statut === 'A_VALIDER').length;
   }
 
   get elevesCount(): number {
     return this.rows.filter((r) => r.criticite === 'Elevee').length;
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(
+      this.codeClient.trim() ||
+      this.statutFilter ||
+      this.criticiteFilter ||
+      this.idEvenement.trim() ||
+      this.ouvertsOnly ||
+      this.search.trim()
+    );
+  }
+
+  get eventFilterLabel(): string {
+    const id = this.idEvenement.trim();
+    const row = this.rows.find((r) => String(r.id) === id) || this.rows[0];
+    if (row?.type_evenement) return typeEvenementLabel(row.type_evenement);
+    return 'événement';
   }
 
   constructor(
@@ -55,7 +80,7 @@ export class LabEvenementsComponent implements OnInit {
     if (code?.trim()) this.codeClient = code.trim();
 
     const statut = params.get('statut');
-    if (statut === 'Ouvert' || statut === 'En_cours' || statut === 'Cloture') {
+    if (statut === 'Ouvert' || statut === 'En_cours' || statut === 'A_VALIDER' || statut === 'Cloture') {
       this.statutFilter = statut;
     }
 
@@ -156,10 +181,31 @@ export class LabEvenementsComponent implements OnInit {
     this.applyFilters();
   }
 
+  resetFilters(): void {
+    this.codeClient = '';
+    this.statutFilter = '';
+    this.criticiteFilter = '';
+    this.idEvenement = '';
+    this.ouvertsOnly = false;
+    this.search = '';
+    this.applyFilters();
+  }
+
   openPlanSuivi(row: LabEvenementListItem): void {
     if (!row.code_client) return;
     this.router.navigate(['/lab/dossier'], {
       queryParams: { code_client: row.code_client },
+    });
+  }
+
+  openDiscussion(row: LabEvenementListItem): void {
+    if (!row.code_client) return;
+    this.router.navigate(['/lab/dossier'], {
+      queryParams: {
+        code_client: row.code_client,
+        id_evenement: String(row.id),
+        chat: '1',
+      },
     });
   }
 
@@ -169,8 +215,7 @@ export class LabEvenementsComponent implements OnInit {
   }
 
   criticiteLabel(value: string | null | undefined): string {
-    if (value === 'Elevee') return 'Élevée';
-    return this.displayValue(value);
+    return formatCriticite(value);
   }
 
   criticiteClass(value: string | null | undefined): string {
@@ -181,21 +226,18 @@ export class LabEvenementsComponent implements OnInit {
   }
 
   statutLabel(value: string | null | undefined): string {
-    if (value === 'En_cours') return 'En cours';
-    if (value === 'Cloture') return 'Clôturé';
-    return this.displayValue(value);
+    return statutEvenementLabel(value);
   }
 
   statutClass(value: string | null | undefined): string {
     if (value === 'Ouvert') return 'pill pill--amber';
     if (value === 'En_cours') return 'pill pill--blue';
+    if (value === 'A_VALIDER') return 'pill pill--blue';
     if (value === 'Cloture') return 'pill pill--green';
     return 'pill';
   }
 
   typeLabel(value: string | null | undefined): string {
-    const v = value != null ? String(value).trim() : '';
-    if (!v) return '—';
-    return v.replace(/_/g, ' ');
+    return typeEvenementLabel(value);
   }
 }

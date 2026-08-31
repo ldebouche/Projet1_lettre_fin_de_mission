@@ -1,3 +1,4 @@
+import { LabDossierError, assertDossierInScope as labAssertDossierInScope } from '../services/lab-utils.js';
 import {
   getDossiersRisque as labGetDossiersRisque,
   getResumeLab as labGetResumeLab,
@@ -5,43 +6,75 @@ import {
   createDossierLab as labCreateDossierLab,
   updateDossierLab as labUpdateDossierLab,
   updateClientLab as labUpdateClientLab,
+} from '../services/lab-dossier-service.js';
+import {
   upsertKycLab as labUpsertKycLab,
   createBeneficiaireLab as labCreateBeneficiaireLab,
   updateBeneficiaireLab as labUpdateBeneficiaireLab,
   deleteBeneficiaireLab as labDeleteBeneficiaireLab,
   resolveBeneficiaireCodeClient as labResolveBeneficiaireCodeClient,
+} from '../services/lab-kyc-service.js';
+import {
   createPieceKycLab as labCreatePieceKycLab,
   updatePieceKycLab as labUpdatePieceKycLab,
   deletePieceKycLab as labDeletePieceKycLab,
   savePieceKycFileLab as labSavePieceKycFileLab,
   resolvePieceCodeClient as labResolvePieceCodeClient,
+  scanPiecesPerimeesLab as labScanPiecesPerimeesLab,
+} from '../services/lab-pieces-service.js';
+import {
   saveArpecEvaluation as labSaveArpecEvaluation,
   getArpecQuestionnaire as labGetArpecQuestionnaire,
   getArpecEvaluation as labGetArpecEvaluation,
-  genererPlanVigilanceLab as labGenererPlanVigilanceLab,
-  LabDossierError,
+} from '../services/lab-arpec-service.js';
+import { genererPlanVigilanceLab as labGenererPlanVigilanceLab } from '../services/lab-plan-service.js';
+import {
   getDashboardLab as labGetDashboardLab,
   getDossiersLab as labGetDossiersLab,
+  getDossiersAttenteLab as labGetDossiersAttenteLab,
+} from '../services/lab-dashboard-service.js';
+import {
   getEvenementsLab as labGetEvenementsLab,
-  getDiligencesLab as labGetDiligencesLab,
   createEvenementLab as labCreateEvenementLab,
   updateEvenementLab as labUpdateEvenementLab,
   cloturerEvenementLab as labCloturerEvenementLab,
+  demanderClotureEvenementLab as labDemanderClotureEvenementLab,
+  refuserClotureEvenementLab as labRefuserClotureEvenementLab,
+  resolveEvenementCodeClient as labResolveEvenementCodeClient,
+} from '../services/lab-evenements-service.js';
+import {
+  getDiligencesLab as labGetDiligencesLab,
   createDiligenceLab as labCreateDiligenceLab,
   updateDiligenceLab as labUpdateDiligenceLab,
-  resolveEvenementCodeClient as labResolveEvenementCodeClient,
   resolveDiligenceCodeClient as labResolveDiligenceCodeClient,
+} from '../services/lab-diligences-service.js';
+import {
   resolveRevueCodeClient as labResolveRevueCodeClient,
   getRevuesLab as labGetRevuesLab,
   createRevueLab as labCreateRevueLab,
   cloturerRevueLab as labCloturerRevueLab,
   annulerRevueLab as labAnnulerRevueLab,
+  scanRevueAnnuelleLab as labScanRevueAnnuelleLab,
+} from '../services/lab-revues-service.js';
+import {
   getTransactionsLab as labGetTransactionsLab,
   getTracfinLab as labGetTracfinLab,
-  getParametrageLab as labGetParametrageLab,
-  assertDossierInScope as labAssertDossierInScope,
-} from '../services/labService.js';
+} from '../services/lab-tracfin-service.js';
+import { getParametrageLab as labGetParametrageLab, updateParametrageLab as labUpdateParametrageLab } from '../services/lab-parametrage-service.js';
 import { getLabEnrichissement } from '../services/lab-enrichment-service.js';
+import {
+  ensureConversationLab as labEnsureConversation,
+  getMessagesLab as labGetMessages,
+  createMessageLab as labCreateMessage,
+  updateMessageLab as labUpdateMessage,
+  deleteMessageLab as labDeleteMessage,
+} from '../services/lab-chat-service.js';
+import {
+  fetchPortefeuilleForExport,
+  buildPortefeuillePdfBuffer,
+  buildPortefeuilleCsvBuffer,
+  portefeuilleExportFilename,
+} from '../services/lab-portefeuille-export-service.js';
 import dbService from '../services/dbService.js';
 import { getUserGroupsByOid } from '../services/graphService.js';
 
@@ -93,6 +126,19 @@ async function resolveLabScope(req) {
 function denyIfNoScope(scope, res) {
   if (!scope.isFull && !scope.idSellsy) {
     res.status(403).json({ error: 'Accès LAB non autorisé' });
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Refuse l'accès TRACFIN (403) si l'appelant n'est pas isFull.
+ * Confidentialité L.561-18 : lecture réservée à l'équipe LAB (groupes admin | informatique | lab).
+ * @returns {boolean} true si la réponse 403 a été envoyée (le handler doit s'arrêter).
+ */
+function assertTracfinAccess(scope, res) {
+  if (!scope.isFull) {
+    res.status(403).json({ error: "Accès TRACFIN réservé à l'équipe LAB" });
     return true;
   }
   return false;
@@ -453,7 +499,14 @@ export async function getArpecQuestionnaire(req, res) {
     const scope = await resolveLabScope(req);
     if (denyIfNoScope(scope, res)) return;
 
-    const data = await labGetArpecQuestionnaire();
+    const codeClient = req.query?.code_client;
+    if (codeClient == null || String(codeClient).trim() === '') {
+      return res.status(400).json({ error: 'code_client requis' });
+    }
+
+    await labAssertDossierInScope(codeClient, scope);
+
+    const data = await labGetArpecQuestionnaire(codeClient);
     return res.json({ data });
   } catch (err) {
     if (err instanceof LabDossierError) {
@@ -554,6 +607,63 @@ export async function getDossiersLab(req, res) {
   }
 }
 
+export async function getDossiersAttenteLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    const result = await labGetDossiersAttenteLab(req.query, scope);
+    return res.json(result);
+  } catch (err) {
+    console.error('Erreur getDossiersAttenteLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+/**
+ * GET /api/lab/portefeuille/export?format=pdf|csv + filtres portefeuille.
+ * Export du portefeuille entier (périmètre RBAC) ou selon les filtres actifs.
+ */
+export async function getPortefeuilleExportLab(req, res) {
+  try {
+    // Gros PDF (~3700 lignes / ~12 Mo) : éviter les coupures proxy/socket trop courtes.
+    req.setTimeout(300000);
+    res.setTimeout(300000);
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+
+    const formatRaw = req.query.format != null ? String(req.query.format).trim().toLowerCase() : 'pdf';
+    const format = formatRaw === 'csv' ? 'csv' : 'pdf';
+
+    const payload = await fetchPortefeuilleForExport(req.query, scope);
+    const actor = {
+      nom: req.user?.name || req.user?.unique_name || 'Utilisateur',
+      email: req.user?.unique_name || '',
+    };
+    const filename = portefeuilleExportFilename(format);
+
+    if (format === 'csv') {
+      const buffer = buildPortefeuilleCsvBuffer(payload);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', String(buffer.length));
+      return res.status(200).end(buffer);
+    }
+
+    const buffer = await buildPortefeuillePdfBuffer(payload, actor);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', String(buffer.length));
+    return res.status(200).end(buffer);
+  } catch (err) {
+    console.error('Erreur getPortefeuilleExportLab:', err);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Impossible de générer l'export portefeuille" });
+    }
+    return undefined;
+  }
+}
+
 export async function getEvenementsLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
@@ -627,6 +737,31 @@ export async function putEvenementLab(req, res) {
   }
 }
 
+export async function demanderClotureEvenementLabHandler(req, res) {
+  try {
+    const id = req.query.id;
+    if (id === undefined || id === null || String(id).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre id requis' });
+    }
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+
+    const codeClient = await labResolveEvenementCodeClient(id);
+    await labAssertDossierInScope(codeClient, scope);
+
+    const userId = await resolveUserId(req);
+    const data = await labDemanderClotureEvenementLab(id, req.body ?? {}, userId);
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur demanderClotureEvenementLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
 export async function cloturerEvenementLabHandler(req, res) {
   try {
     const id = req.query.id;
@@ -641,13 +776,38 @@ export async function cloturerEvenementLabHandler(req, res) {
     await labAssertDossierInScope(codeClient, scope);
 
     const userId = await resolveUserId(req);
-    const data = await labCloturerEvenementLab(id, req.body ?? {}, userId);
+    const data = await labCloturerEvenementLab(id, req.body ?? {}, userId, scope);
     return res.json({ data });
   } catch (err) {
     if (err instanceof LabDossierError) {
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error('Erreur cloturerEvenementLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function refuserClotureEvenementLabHandler(req, res) {
+  try {
+    const id = req.query.id;
+    if (id === undefined || id === null || String(id).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre id requis' });
+    }
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+
+    const codeClient = await labResolveEvenementCodeClient(id);
+    await labAssertDossierInScope(codeClient, scope);
+
+    const userId = await resolveUserId(req);
+    const data = await labRefuserClotureEvenementLab(id, req.body ?? {}, userId, scope);
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur refuserClotureEvenementLab:', err);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }
@@ -810,11 +970,37 @@ export async function getTransactionsLab(req, res) {
   }
 }
 
+/**
+ * Hint RBAC pour l'UI. Pas de denyIfNoScope : un collaborateur sans id_sellsy
+ * et sans isFull reçoit quand même le hint (tous flags false).
+ * Groupe lab = équipe LAB cabinet. canReadParametrage et canEditParametrage
+ * ont le même mapping isFull (décision patron 13/08 + contrat 5.1).
+ */
+export async function getMeLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    const isFull = Boolean(scope.isFull);
+    return res.json({
+      data: {
+        isFull,
+        id_sellsy: scope.idSellsy,
+        canAccessTracfin: isFull,
+        canReadParametrage: isFull,
+        canEditParametrage: isFull,
+        isDemo: process.env.DEMO_AUTH === 'true',
+      },
+    });
+  } catch (err) {
+    console.error('Erreur getMeLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
 export async function getTracfinLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (denyIfNoScope(scope, res)) return;
-    const result = await labGetTracfinLab(req.query, scope);
+    if (assertTracfinAccess(scope, res)) return;
+    const result = await labGetTracfinLab(req.query, { isFull: true, idSellsy: scope.idSellsy });
     return res.json(result);
   } catch (err) {
     console.error('Erreur getTracfinLab:', err);
@@ -824,7 +1010,6 @@ export async function getTracfinLab(req, res) {
 
 export async function getParametrageLab(req, res) {
   try {
-    // Paramétrage cabinet (scoring, critères) : réservé aux profils LAB / admin (specs §11).
     const scope = await resolveLabScope(req);
     if (!scope.isFull) {
       return res.status(403).json({ error: 'Accès paramétrage LAB réservé aux administrateurs' });
@@ -832,13 +1017,81 @@ export async function getParametrageLab(req, res) {
     const data = await labGetParametrageLab();
     return res.json({ data });
   } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     console.error('Erreur getParametrageLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function putParametrageLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (!scope.isFull) {
+      return res.status(403).json({ error: 'Accès paramétrage LAB réservé aux administrateurs' });
+    }
+    const userId = await resolveUserId(req);
+    const data = await labUpdateParametrageLab(req.body ?? {}, userId);
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur putParametrageLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+/**
+ * POST /api/lab/jobs/pieces-perimees — scan cabinet (isFull).
+ * Marque les pièces expirées et crée les événements PIECE_PERIMEE manquants.
+ */
+export async function postJobsPiecesPerimeesLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (!scope.isFull) {
+      return res.status(403).json({ error: 'Job pièces périmées réservé à l\'équipe LAB' });
+    }
+    const userId = await resolveUserId(req);
+    const data = await labScanPiecesPerimeesLab(userId || 'JOB_LAB');
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur postJobsPiecesPerimeesLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+/**
+ * POST /api/lab/jobs/revue-annuelle — scan cabinet (isFull).
+ * Crée les événements REVUE_ANNUELLE manquants (échéance dépassée). Pas de notif.
+ */
+export async function postJobsRevueAnnuelleLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (!scope.isFull) {
+      return res.status(403).json({ error: 'Job revue annuelle réservé à l\'équipe LAB' });
+    }
+    const userId = await resolveUserId(req);
+    const data = await labScanRevueAnnuelleLab(userId || 'JOB_LAB');
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur postJobsRevueAnnuelleLab:', err);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }
 
 export async function getEnrichissementLab(req, res) {
   try {
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+
     const siret = req.query.siret;
     const siren = req.query.siren;
     const code_client = req.query.code_client;
@@ -853,8 +1106,6 @@ export async function getEnrichissementLab(req, res) {
     // stockées (getDossierLab) -> on impose le périmètre de l'appelant (anti-IDOR).
     const hasCodeClient = code_client != null && String(code_client).trim() !== '';
     if (hasCodeClient) {
-      const scope = await resolveLabScope(req);
-      if (denyIfNoScope(scope, res)) return;
       await labAssertDossierInScope(code_client, scope);
     }
 
@@ -874,6 +1125,101 @@ export async function getEnrichissementLab(req, res) {
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error('Erreur getEnrichissementLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+function setLabChatNoStore(res) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+}
+
+export async function getConversationLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    const userId = await resolveUserId(req);
+    const data = await labEnsureConversation(req.query, scope, userId);
+    setLabChatNoStore(res);
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur getConversationLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function getMessagesLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    const userId = await resolveUserId(req);
+    const result = await labGetMessages(req.query, scope, userId);
+    setLabChatNoStore(res);
+    return res.json(result);
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur getMessagesLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function postMessageLab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    const userId = await resolveUserId(req);
+    const data = await labCreateMessage(req.body ?? {}, scope, userId);
+    return res.status(201).json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur postMessageLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function putMessageLab(req, res) {
+  try {
+    const id = req.query.id;
+    if (id === undefined || id === null || String(id).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre id requis' });
+    }
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    const userId = await resolveUserId(req);
+    const data = await labUpdateMessage(id, req.body ?? {}, scope, userId);
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur putMessageLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function deleteMessageLab(req, res) {
+  try {
+    const id = req.query.id;
+    if (id === undefined || id === null || String(id).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre id requis' });
+    }
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    const userId = await resolveUserId(req);
+    const data = await labDeleteMessage(id, scope, userId);
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur deleteMessageLab:', err);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }

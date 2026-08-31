@@ -1,0 +1,61 @@
+        <!-- Revues -->
+        <section class="section" id="section-revues">
+          <div class="section-head">
+            <h2 class="section-title">Revues périodiques</h2>
+            <button
+              type="button"
+              class="btn-inline-action"
+              (click)="lancerRevue.emit()"
+              [disabled]="!canLancerRevue"
+              [title]="lancerRevueDisabledReason || ''"
+            >
+              Lancer revue
+            </button>
+          </div>
+          <hr class="separator" />
+
+          <p class="section-note" *ngIf="lancerRevueDisabledReason && !revueEnCours">{{ lancerRevueDisabledReason }}</p>
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Dernière revue</span>
+              <span class="kv-value">{{ lab.date_derniere_revue ? (lab.date_derniere_revue | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Prochaine revue</span>
+              <span class="kv-value">{{ lab.date_prochaine_revue ? (lab.date_prochaine_revue | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Périodicité (mois)</span>
+              <span class="kv-value">{{ val(lab.periodicite_revue_mois) }}</span>
+            </div>
+          </div>
+
+          <table class="table mt" *ngIf="revues.length > 0; else noRevues">
+            <thead>
+            <tr>
+              <th>Revue</th>
+              <th>Date</th>
+              <th>Responsable</th>
+              <th>Statut</th>
+              <th>Conclusion</th>
+              <th>Prochaine échéance</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let r of revues">
+              <td><span class="mono">{{ r.id }}</span></td>
+              <td>{{ r.date | date:'dd/MM/yyyy' }}</td>
+              <td>{{ r.responsable }}</td>
+              <td><span class="badge small" [class]="'badge ' + (r.statut === 'Cloturee' ? 'tone-ok' : 'tone-info')">{{ statutRevueLabel(r.statut) }}</span></td>
+              <td>{{ val(r.conclusion) }}</td>
+              <td>{{ r.prochain_rdv ? (r.prochain_rdv | date:'dd/MM/yyyy') : '—' }}</td>
+            </tr>
+            </tbody>
+          </table>
+          <ng-template #noRevues>
+            <div class="empty-state mt">
+              Aucune revue sur ce dossier.
+            </div>
+          </ng-template>
+        </section>

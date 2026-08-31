@@ -1,4 +1,11 @@
 <div class="page">
+  <nav class="lab-crumb" aria-label="Fil d’Ariane">
+    <a routerLink="/lab/dashboard">Cartographie</a>
+    <span class="lab-crumb-sep">/</span>
+    <a routerLink="/lab/portefeuille">Portefeuille</a>
+    <span class="lab-crumb-sep">/</span>
+    <span>Assistant dossier</span>
+  </nav>
   <div class="hero">
     <div class="hero-accent"></div>
     <div class="hero-main">
@@ -15,7 +22,7 @@
         </div>
         <div class="hero-links">
           <a *ngIf="returnTo === '/dashboard'" routerLink="/dashboard" class="link-back">← Tableau de bord</a>
-          <a routerLink="/lab/dashboard" class="link-back">← Dashboard LAB</a>
+          <a routerLink="/lab/dashboard" class="link-back">← Cartographie cabinet</a>
           <a routerLink="/lab/portefeuille" class="link-back">← Portefeuille</a>
         </div>
       </div>
@@ -23,7 +30,7 @@
         <span *ngIf="loading">Chargement des données existantes…</span>
         <span *ngIf="!loading && errorMessage" class="hero-error">{{ errorMessage }}</span>
         <span *ngIf="!loading && !errorMessage">
-          Préremplissage BDD + enrichissement registres publics (Recherche Entreprises, INSEE, INPI/RNE, BODACC, RNA).
+          Préremplissage depuis la fiche et les registres publics. Les registres publics complètent la fiche.
           <span *ngIf="divergenceCount > 0" class="hero-divergence"> — {{ divergenceCount }} écart(s) à vérifier.</span>
           <span *ngIf="bodaccPendingCritical > 0" class="hero-divergence">
             — {{ bodaccPendingCritical }} annonce(s) BODACC critique(s) à traiter.
@@ -34,14 +41,31 @@
   </div>
 
   <div class="wizard-shell">
-    <nav class="stepper" aria-label="Étapes du formulaire">
+    <div *ngIf="loading" class="wizard-loading">Chargement des données…</div>
+
+    <div *ngIf="!loading && isWizardLocked" class="wizard-locked">
+      <app-lab-carte title="Dossier déjà ouvert" subtitle="Une fiche existe déjà pour ce client">
+        <p class="panel-intro">
+          Ce dossier a déjà une fiche. Lancez une revue depuis le plan &amp; suivi.
+        </p>
+        <a
+          *ngIf="codeClient"
+          class="btn btn--primary"
+          [routerLink]="['/lab/dossier']"
+          [queryParams]="{ code_client: codeClient, returnTo: returnTo || undefined }"
+        >Ouvrir le plan &amp; suivi</a>
+      </app-lab-carte>
+    </div>
+
+    <nav *ngIf="!loading && !isWizardLocked" class="stepper" aria-label="Étapes du formulaire">
       <button
         type="button"
         class="stepper-item"
         *ngFor="let s of steps; let i = index"
         [class.stepper-item--active]="i === stepIndex"
         [class.stepper-item--done]="i < stepIndex"
-        (click)="stepIndex = i"
+        [disabled]="step1Saving || submitting || revueActionBusy"
+        (click)="onStepperSelect(i)"
       >
         <span class="stepper-num">{{ i + 1 }}</span>
         <span class="stepper-text">
@@ -51,565 +75,53 @@
       </button>
     </nav>
 
-    <div *ngIf="loading" class="wizard-loading">Chargement des données…</div>
-    <form class="wizard-form" *ngIf="!loading" (ngSubmit)="$event.preventDefault()">
+    <form class="wizard-form" *ngIf="!loading && !isWizardLocked" (ngSubmit)="$event.preventDefault()">
 
       <!-- Étape 1 — Dossier client (page unique) -->
       <div class="dossier-page" *ngIf="stepIndex === 0">
-        <app-lab-carte class="wizard-card form-section" id="section-identifiants" title="Identifiants & enrichissement" subtitle="Code client, SIREN / SIRET, registres publics">
-          <p class="panel-intro">
-            Référence interne et identification légale. Les registres publics complètent ou comparent les champs vides ou divergents (sans écrasement silencieux).
-          </p>
-          <div class="enrich-toolbar">
-            <button type="button" class="btn btn--primary btn--sm" [disabled]="enriching" (click)="enrichFromPublicApis()">
-              {{ enriching ? 'Enrichissement…' : 'Enrichir depuis registres publics' }}
-            </button>
-            <span class="enrich-hint" *ngIf="enrichmentError">{{ enrichmentError }}</span>
-          </div>
-          <div class="form-grid form-grid--2">
-            <label class="field">
-              <span class="field-label">Code client (réf. cabinet)</span>
-              <input class="field-input" type="text" name="code_client" maxlength="12" [(ngModel)]="m.code_client" autocomplete="off" />
-              <span class="field-hint">Aligné sur <code>clients.code_client</code> (10 car. typiques).</span>
-            </label>
-            <label class="field">
-              <span class="field-label">SIREN</span>
-              <input class="field-input" type="text" name="siren" maxlength="11" [(ngModel)]="m.siren" autocomplete="off" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('siren')" (acceptApi)="acceptApiValue('siren')" />
-            </label>
-            <label class="field field--full">
-              <span class="field-label">SIRET</span>
-              <input class="field-input" type="text" name="siret" maxlength="17" [(ngModel)]="m.siret" (blur)="onSiretBlur()" autocomplete="off" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('siret')" (acceptApi)="acceptApiValue('siret')" />
-            </label>
-          </div>
-        </app-lab-carte>
-
-        <details
-          id="section-bodacc"
-          class="form-section form-section--collapsible"
-          [open]="bodaccSectionOpen"
-          (toggle)="onBodaccSectionToggle($any($event.target).open)"
-        >
-          <summary class="form-section-summary">
-            <span class="form-section-summary-title">Checklist BODACC</span>
-            <span class="form-section-summary-hint">Annonces légales — revue annuelle (non bloquant)</span>
-            <span class="form-section-summary-badge" *ngIf="bodaccPendingCritical > 0">{{ bodaccPendingCritical }} critique(s)</span>
-          </summary>
-          <div class="form-section-body">
-            <p class="panel-intro">
-              Traitez les annonces légales publiées au BODACC pour ce SIREN. Cette section est informative et n’empêche pas de poursuivre.
-            </p>
-            <p class="panel-intro panel-intro--muted" *ngIf="!alertesBodacc.length">
-              Aucune annonce chargée. Saisissez le SIREN/SIRET puis cliquez sur <strong>Enrichir depuis registres publics</strong>.
-            </p>
-            <app-lab-bodacc-checklist
-              #bodaccChecklist
-              [alertes]="alertesBodacc"
-              [codeClient]="m.code_client || codeClient || ''"
-              [siren]="m.siren"
-              (navigateStep)="goToWizardStep($event)"
-              (progressChange)="onBodaccProgressChange($event)"
-            />
-          </div>
-        </details>
-
-        <app-lab-carte class="wizard-card form-section" id="section-identite" title="Identité juridique" subtitle="Immatriculation, activité, capital">
-          <p class="panel-intro" *ngIf="!isPm">
-            Catégorie « personne physique » sélectionnée au bloc KYC : les champs société ci‑dessous restent disponibles si pertinent (ex. entrepreneur individuel).
-          </p>
-          <div class="form-grid form-grid--2">
-            <label class="field field--full">
-              <span class="field-label">Raison sociale / dénomination</span>
-              <input class="field-input" type="text" name="raison_sociale" [(ngModel)]="m.raison_sociale" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('raison_sociale')" (acceptApi)="acceptApiValue('raison_sociale')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Forme juridique</span>
-              <select class="field-input" name="forme_societe" [(ngModel)]="m.forme_societe">
-                <option value="">—</option>
-                <option value="SAS">SAS</option>
-                <option value="SARL">SARL</option>
-                <option value="SA">SA</option>
-                <option value="SCI">SCI</option>
-                <option value="SNC">SNC</option>
-                <option value="EI">EI</option>
-                <option value="SASU">SASU</option>
-                <option value="EURL">EURL</option>
-                <option value="Autre">Autre</option>
-              </select>
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('forme_societe')" (acceptApi)="acceptApiValue('forme_societe')" />
-            </label>
-            <label class="field">
-              <span class="field-label">RCS</span>
-              <input class="field-input" type="text" name="rcs" [(ngModel)]="m.rcs" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('rcs')" (acceptApi)="acceptApiValue('rcs')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Code APE</span>
-              <input class="field-input" type="text" name="ape" [(ngModel)]="m.ape" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('ape')" (acceptApi)="acceptApiValue('ape')" />
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Libellé d’activité</span>
-              <input class="field-input" type="text" name="activite" [(ngModel)]="m.activite" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('activite')" (acceptApi)="acceptApiValue('activite')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Nature (ex. BIC)</span>
-              <input class="field-input" type="text" name="nature" [(ngModel)]="m.nature" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('nature')" (acceptApi)="acceptApiValue('nature')" />
-            </label>
-            <label class="field">
-              <span class="field-label">N° TVA intracommunautaire</span>
-              <input class="field-input" type="text" name="tvaintracom" [(ngModel)]="m.tvaintracom" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('tvaintracom')" (acceptApi)="acceptApiValue('tvaintracom')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Capital social (€)</span>
-              <input class="field-input" type="text" name="montant_capital_social" [(ngModel)]="m.montant_capital_social" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('montant_capital_social')" (acceptApi)="acceptApiValue('montant_capital_social')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Date d’entrée au cabinet</span>
-              <input class="field-input" type="date" name="date_entree_cabinet" [(ngModel)]="m.date_entree_cabinet" />
-            </label>
-          </div>
-        </app-lab-carte>
-
-        <app-lab-carte class="wizard-card form-section" id="section-coordonnees" title="Siège & contacts" subtitle="Adresse et canaux">
-          <div class="form-grid form-grid--2">
-            <label class="field field--full">
-              <span class="field-label">Adresse ligne 1</span>
-              <input class="field-input" type="text" name="adr1" [(ngModel)]="m.adr1_siege" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('adr1_siege')" (acceptApi)="acceptApiValue('adr1_siege')" />
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Adresse ligne 2</span>
-              <input class="field-input" type="text" name="adr2" [(ngModel)]="m.adr2_siege" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('adr2_siege')" (acceptApi)="acceptApiValue('adr2_siege')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Code postal</span>
-              <input class="field-input" type="text" name="cpos" [(ngModel)]="m.cpos_siege" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('cpos_siege')" (acceptApi)="acceptApiValue('cpos_siege')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Ville</span>
-              <input class="field-input" type="text" name="ville" [(ngModel)]="m.ville_siege" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('ville_siege')" (acceptApi)="acceptApiValue('ville_siege')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Pays</span>
-              <input class="field-input" type="text" name="pays" [(ngModel)]="m.pays_siege" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('pays_siege')" (acceptApi)="acceptApiValue('pays_siege')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Téléphone fixe</span>
-              <input class="field-input" type="tel" name="tel_fixe" [(ngModel)]="m.tel_fixe" />
-            </label>
-            <label class="field">
-              <span class="field-label">Portable</span>
-              <input class="field-input" type="tel" name="tel_portable" [(ngModel)]="m.tel_portable" />
-            </label>
-            <label class="field field--full">
-              <span class="field-label">E-mail</span>
-              <input class="field-input" type="email" name="email" [(ngModel)]="m.email" />
-            </label>
-          </div>
-        </app-lab-carte>
-
-        <app-lab-carte class="wizard-card form-section" id="section-fiscal" title="Fiscal & profil" subtitle="Régime, taille, zone, missions">
-          <div class="form-grid form-grid--2">
-            <label class="field">
-              <span class="field-label">Régime fiscal</span>
-              <input class="field-input" type="text" name="regime_fiscal" [(ngModel)]="m.regime_fiscal" />
-            </label>
-            <label class="field">
-              <span class="field-label">Soumis à l’IS</span>
-              <select class="field-input" name="soumis_is" [(ngModel)]="m.soumis_is">
-                <option value="">—</option>
-                <option value="O">Oui</option>
-                <option value="N">Non</option>
-              </select>
-            </label>
-            <label class="field">
-              <span class="field-label">Mois de clôture</span>
-              <select class="field-input" name="mois_cloture" [(ngModel)]="m.mois_cloture">
-                <option value="">—</option>
-                <option *ngFor="let mois of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="mois">{{ mois }}</option>
-              </select>
-            </label>
-            <label class="field">
-              <span class="field-label">Logiciel comptable</span>
-              <input class="field-input" type="text" name="logiciel_compta" [(ngModel)]="m.logiciel_compta" />
-            </label>
-            <label class="field">
-              <span class="field-label">Taille entreprise</span>
-              <select class="field-input" name="taille_entreprise" [(ngModel)]="m.taille_entreprise">
-                <option value="">—</option>
-                <option value="TPE">TPE</option>
-                <option value="PME">PME</option>
-                <option value="ETI">ETI</option>
-                <option value="GE">Grande entreprise</option>
-                <option value="Inconnue">Inconnue</option>
-              </select>
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('taille_entreprise')" (acceptApi)="acceptApiValue('taille_entreprise')" />
-            </label>
-            <label class="field">
-              <span class="field-label">Zone géographique d’activité</span>
-              <input class="field-input" type="text" name="zone_geo" [(ngModel)]="m.zone_geographique_activite" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('zone_geographique_activite')" (acceptApi)="acceptApiValue('zone_geographique_activite')" />
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Volume d’affaires (fourchette)</span>
-              <input class="field-input" type="text" name="volume_ca" [(ngModel)]="m.volume_affaires_fourchette" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('volume_affaires_fourchette')" (acceptApi)="acceptApiValue('volume_affaires_fourchette')" />
-              <span class="field-hint">Indicateur pour le profil LCB‑FT / criticité (saisie libre ou fourchettes internes).</span>
-            </label>
-          </div>
-
-          <div class="subsection">
-            <div class="subsection-title">Nature des missions avec le cabinet</div>
-            <div class="checkbox-grid">
-              <label class="check">
-                <input type="checkbox" name="mission_compta" [(ngModel)]="m.mission_comptabilite" />
-                <span>Comptabilité</span>
-              </label>
-              <label class="check">
-                <input type="checkbox" name="mission_audit" [(ngModel)]="m.mission_audit" />
-                <span>Audit / certification</span>
-              </label>
-              <label class="check">
-                <input type="checkbox" name="mission_social" [(ngModel)]="m.mission_sociale" />
-                <span>Mission sociale</span>
-              </label>
-              <label class="check">
-                <input type="checkbox" name="mission_juridique" [(ngModel)]="m.mission_juridique" />
-                <span>Juridique / conseil</span>
-              </label>
-            </div>
-            <label class="field field--full">
-              <span class="field-label">Précisions relation / missions</span>
-              <textarea class="field-input field-textarea" name="nature_relation_libre" rows="3" [(ngModel)]="m.nature_relation_libre"></textarea>
-            </label>
-          </div>
-        </app-lab-carte>
-
-        <app-lab-carte class="wizard-card form-section" id="section-kyc" title="KYC structuré" subtitle="PEP, risques pays, complexité, origine des fonds">
-          <div class="form-grid form-grid--2">
-            <label class="field">
-              <span class="field-label">Catégorie client</span>
-              <select class="field-input" name="kyc_cat" [(ngModel)]="m.kyc.categorie_client">
-                <option value="">—</option>
-                <option value="Personne_morale">Personne morale</option>
-                <option value="Personne_physique">Personne physique</option>
-              </select>
-            </label>
-            <label class="field" *ngIf="m.kyc.categorie_client === 'Personne_physique'">
-              <span class="field-label">Civilité</span>
-              <select class="field-input" name="kyc_civ" [(ngModel)]="m.kyc.civilite">
-                <option value="">—</option>
-                <option value="M.">M.</option>
-                <option value="Mme">Mme</option>
-                <option value="Autre">Autre</option>
-              </select>
-            </label>
-            <label class="field" *ngIf="m.kyc.categorie_client === 'Personne_physique'">
-              <span class="field-label">Nom</span>
-              <input class="field-input" type="text" name="kyc_nom_pp" [(ngModel)]="m.kyc.nom_physique" />
-            </label>
-            <label class="field" *ngIf="m.kyc.categorie_client === 'Personne_physique'">
-              <span class="field-label">Prénom</span>
-              <input class="field-input" type="text" name="kyc_prenom_pp" [(ngModel)]="m.kyc.prenom_physique" />
-            </label>
-            <label class="field">
-              <span class="field-label">Pays résidence fiscale</span>
-              <input class="field-input" type="text" name="kyc_pays_fisc" [(ngModel)]="m.kyc.pays_residence_fiscale" />
-            </label>
-            <label class="field">
-              <span class="field-label">Pays implantation principale</span>
-              <input class="field-input" type="text" name="kyc_pays_imp" [(ngModel)]="m.kyc.pays_implantation" />
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('kyc.pays_implantation')" (acceptApi)="acceptApiValue('kyc.pays_implantation')" />
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Pays / zones à risque (LCB‑FT)</span>
-              <textarea class="field-input field-textarea" name="kyc_pays_risque" rows="3" [(ngModel)]="m.kyc.pays_a_risque_text"></textarea>
-              <span class="field-hint">Une ligne ou une entrée par pays / zone surveillée.</span>
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Secteurs d’activité (liste ou précisions)</span>
-              <textarea class="field-input field-textarea" name="kyc_secteurs" rows="3" [(ngModel)]="m.kyc.secteurs_text"></textarea>
-              <app-lab-wizard-field-meta [meta]="getFieldMeta('kyc.secteurs_text')" (acceptApi)="acceptApiValue('kyc.secteurs_text')" />
-            </label>
-            <label class="check field--full check--solo">
-              <input type="checkbox" name="kyc_secteur_sensible" [(ngModel)]="m.kyc.secteur_sensible" />
-              <span>Secteur sensible (liste cabinet / réglementaire)</span>
-            </label>
-            <label class="field">
-              <span class="field-label">Statut PEP</span>
-              <select class="field-input" name="kyc_pep" [(ngModel)]="m.kyc.pep_statut">
-                <option value="">—</option>
-                <option value="Oui">Oui</option>
-                <option value="Non">Non</option>
-                <option value="Inconnu">Inconnu</option>
-              </select>
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Détails PEP / lien PEP</span>
-              <textarea class="field-input field-textarea" name="kyc_pep_det" rows="2" [(ngModel)]="m.kyc.pep_details"></textarea>
-            </label>
-            <label class="check field--full check--solo">
-              <input type="checkbox" name="kyc_origine_req" [(ngModel)]="m.kyc.origine_fonds_requise" />
-              <span>Origine des fonds / richesse : collecte requise</span>
-            </label>
-            <label class="field">
-              <span class="field-label">Statut origine des fonds</span>
-              <select class="field-input" name="kyc_origine_statut" [(ngModel)]="m.kyc.origine_fonds_statut">
-                <option value="">—</option>
-                <option value="Renseignee">Renseignée</option>
-                <option value="A_renseigner">À renseigner</option>
-                <option value="Non_applicable">Non applicable</option>
-              </select>
-            </label>
-            <label class="field">
-              <span class="field-label">Complexité structure juridique</span>
-              <select class="field-input" name="kyc_complex" [(ngModel)]="m.kyc.complexite_structure">
-                <option value="">—</option>
-                <option value="Simple">Simple</option>
-                <option value="Moyenne">Moyenne</option>
-                <option value="Complexe">Complexe</option>
-                <option value="Inconnue">Inconnue</option>
-              </select>
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Justification complexité</span>
-              <textarea class="field-input field-textarea" name="kyc_just_complex" rows="2" [(ngModel)]="m.kyc.justification_complexite"></textarea>
-            </label>
-            <label class="field">
-              <span class="field-label">Exposition sanctions / gel des avoirs</span>
-              <select class="field-input" name="kyc_sanctions" [(ngModel)]="m.kyc.exposition_sanctions">
-                <option value="">—</option>
-                <option value="Oui">Oui</option>
-                <option value="Non">Non</option>
-                <option value="Inconnu">Inconnu</option>
-              </select>
-            </label>
-            <label class="field field--full">
-              <span class="field-label">Notes internes KYC</span>
-              <textarea class="field-input field-textarea" name="kyc_notes" rows="4" [(ngModel)]="m.kyc.notes"></textarea>
-            </label>
-          </div>
-        </app-lab-carte>
-
-        <app-lab-carte class="wizard-card form-section" id="section-be" title="Bénéficiaires effectifs" subtitle="Identité, contrôle, PEP / sanctions">
-          <p class="panel-intro">
-            Un ou plusieurs bénéficiaires effectifs conformément au registre ou aux déclarations ; tout changement devra donner lieu à un événement <strong>CHANGEMENT_BE</strong> une fois le workflow relié à la base.
-          </p>
-          <div class="repeat-toolbar">
-            <span class="repeat-toolbar-title">Bénéficiaires ({{ beneficiaires.length }})</span>
-            <button type="button" class="btn btn--ghost btn--sm" (click)="addBeneficiaire()">+ Ajouter un BE</button>
-          </div>
-          <div class="stack">
-            <div class="repeat-card" *ngFor="let be of beneficiaires; trackBy: trackById">
-              <div class="repeat-card-head">
-                <span class="repeat-card-title">Bénéficiaire</span>
-                <button type="button" class="btn btn--ghost btn--sm" (click)="removeBeneficiaire(be.id)" [disabled]="beneficiaires.length === 1">
-                  Retirer
-                </button>
-              </div>
-              <div class="form-grid form-grid--2">
-                <label class="field">
-                  <span class="field-label">Type</span>
-                  <select class="field-input" [name]="'be_type_' + be.id" [(ngModel)]="be.type">
-                    <option value="">—</option>
-                    <option value="Personne_physique">Personne physique</option>
-                    <option value="Personne_morale">Personne morale</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label">Parts / contrôle (%)</span>
-                  <input class="field-input" type="text" [name]="'be_pct_' + be.id" [(ngModel)]="be.pourcentage" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Nom ou dénomination</span>
-                  <input class="field-input" type="text" [name]="'be_nom_' + be.id" [(ngModel)]="be.nom" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Prénom <span class="muted">(si PP)</span></span>
-                  <input class="field-input" type="text" [name]="'be_pre_' + be.id" [(ngModel)]="be.prenom" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Nationalité</span>
-                  <input class="field-input" type="text" [name]="'be_nat_' + be.id" [(ngModel)]="be.nationalite" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Pays résidence</span>
-                  <input class="field-input" type="text" [name]="'be_pay_' + be.id" [(ngModel)]="be.pays_residence" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Mode de contrôle</span>
-                  <select class="field-input" [name]="'be_mode_' + be.id" [(ngModel)]="be.mode_controle">
-                    <option value="">—</option>
-                    <option value="Detention_capital">Détention capital</option>
-                    <option value="Droits_vote">Droits de vote</option>
-                    <option value="Controle_de_fait">Contrôle de fait</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label">PEP</span>
-                  <select class="field-input" [name]="'be_pep_' + be.id" [(ngModel)]="be.pep_statut">
-                    <option value="">—</option>
-                    <option value="Oui">Oui</option>
-                    <option value="Non">Non</option>
-                    <option value="Inconnu">Inconnu</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label">Sanctions / gel</span>
-                  <select class="field-input" [name]="'be_san_' + be.id" [(ngModel)]="be.sanctions_gel">
-                    <option value="">—</option>
-                    <option value="Oui">Oui</option>
-                    <option value="Non">Non</option>
-                    <option value="Inconnu">Inconnu</option>
-                  </select>
-                </label>
-                <label class="field field--full">
-                  <span class="field-label">Commentaire</span>
-                  <textarea class="field-input field-textarea" rows="2" [name]="'be_com_' + be.id" [(ngModel)]="be.commentaire"></textarea>
-                </label>
-              </div>
-            </div>
-          </div>
-        </app-lab-carte>
-
-        <app-lab-carte class="wizard-card form-section" id="section-pieces" title="Pièces KYC" subtitle="Statuts documentaires attendus">
-          <p class="panel-intro">
-            Références documentaires attendues pour le dossier KYC (stockage fichier éventuel hors périmètre). Chaque pièce peut être associée au client, à un BE ou à un dirigeant.
-          </p>
-          <datalist id="piece-presets-lab">
-            <option *ngFor="let t of pieceTypePresets" [value]="t"></option>
-          </datalist>
-          <div class="repeat-toolbar">
-            <span class="repeat-toolbar-title">Pièces ({{ pieces.length }})</span>
-            <button type="button" class="btn btn--ghost btn--sm" (click)="addPiece()">+ Ajouter une pièce</button>
-          </div>
-          <div class="stack">
-            <div class="repeat-card" *ngFor="let p of pieces; trackBy: trackById">
-              <div class="repeat-card-head">
-                <span class="repeat-card-title">Pièce documentaire</span>
-                <button type="button" class="btn btn--ghost btn--sm" (click)="removePiece(p.id)" [disabled]="pieces.length === 1">
-                  Retirer
-                </button>
-              </div>
-              <div class="form-grid form-grid--2">
-                <label class="field">
-                  <span class="field-label">Type de pièce</span>
-                  <input class="field-input" type="text" [name]="'pc_type_' + p.id" [(ngModel)]="p.type_piece" list="piece-presets-lab" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Titulaire</span>
-                  <select class="field-input" [name]="'pc_tit_' + p.id" [(ngModel)]="p.titulaire">
-                    <option value="">—</option>
-                    <option value="Client">Client</option>
-                    <option value="BE">BE</option>
-                    <option value="Dirigeant">Dirigeant</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label">Statut</span>
-                  <select class="field-input" [name]="'pc_st_' + p.id" [(ngModel)]="p.statut">
-                    <option value="">—</option>
-                    <option value="Recue">Reçue</option>
-                    <option value="Manquante">Manquante</option>
-                    <option value="Perimee">Périmée</option>
-                    <option value="Non_requise">Non requise</option>
-                  </select>
-                </label>
-                <label class="field">
-                  <span class="field-label">Référence / lien interne</span>
-                  <input class="field-input" type="text" [name]="'pc_ref_' + p.id" [(ngModel)]="p.reference" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Date délivrance</span>
-                  <input class="field-input" type="date" [name]="'pc_dd_' + p.id" [(ngModel)]="p.date_delivrance" />
-                </label>
-                <label class="field">
-                  <span class="field-label">Date échéance</span>
-                  <input class="field-input" type="date" [name]="'pc_de_' + p.id" [(ngModel)]="p.date_echeance" />
-                </label>
-                <label class="field field--full">
-                  <span class="field-label">Commentaire</span>
-                  <textarea class="field-input field-textarea" rows="2" [name]="'pc_co_' + p.id" [(ngModel)]="p.commentaire"></textarea>
-                </label>
-              </div>
-            </div>
-          </div>
-        </app-lab-carte>
-
-        <app-lab-carte class="wizard-card form-section" id="section-affectation" title="Affectation & premières vérifications" subtitle="Équipe, statuts dossier, dates de revue">
-          <p class="panel-intro">
-            Double regard : le collaborateur complète, le responsable LAB contrôle. Le niveau de risque est évalué à l’étape suivante (ARPEC).
-          </p>
-          <div class="form-note">
-            Contrôle du gel des avoirs (liste DG Trésor) à effectuer avant toute mission — résultat à consigner dans le dossier.
-          </div>
-          <div class="form-grid form-grid--2">
-            <label class="field">
-              <span class="field-label">Statut dossier LAB</span>
-              <select class="field-input" name="statut_dossier" [(ngModel)]="m.statut_dossier">
-                <option value="">—</option>
-                <option value="Actif">Actif</option>
-                <option value="Prospect">Prospect</option>
-                <option value="Cloture">Clôturé</option>
-              </select>
-            </label>
-            <label class="field">
-              <span class="field-label">Statut documentaire KYC</span>
-              <select class="field-input" name="statut_kyc" [(ngModel)]="m.statut_kyc">
-                <option value="">—</option>
-                <option value="Complet">Complet</option>
-                <option value="Incomplet">Incomplet</option>
-                <option value="Pieces_perimees">Pièces périmées</option>
-              </select>
-            </label>
-            <label class="field">
-              <span class="field-label">Date d’entrée en relation</span>
-              <input class="field-input" type="date" name="date_entree_relation" [(ngModel)]="m.date_entree_relation" />
-            </label>
-            <label class="field">
-              <span class="field-label">Dernière revue périodique</span>
-              <input class="field-input" type="date" name="date_derniere_revue" [(ngModel)]="m.date_derniere_revue" />
-            </label>
-            <label class="field">
-              <span class="field-label">Prochaine revue</span>
-              <input class="field-input" type="date" name="date_prochaine_revue" [(ngModel)]="m.date_prochaine_revue" />
-            </label>
-            <label class="field">
-              <span class="field-label">Périodicité revue (mois)</span>
-              <input class="field-input" type="number" name="periodicite_revue_mois" min="1" [(ngModel)]="m.periodicite_revue_mois" />
-            </label>
-            <label class="field">
-              <span class="field-label">Identifiant responsable LAB</span>
-              <input class="field-input" type="text" name="id_responsable_lab" [(ngModel)]="m.id_responsable_lab" />
-            </label>
-            <div class="field">
-              <span class="field-label">Expert-comptable réf.</span>
-              <div class="field-readonly" aria-readonly="true">{{ clientExpertComptableDisplay }}</div>
-              <span class="field-hint">Lecture seule — source <code>clients.expert_comptable</code> (gestion hors wizard LAB).</span>
-            </div>
-            <div class="field field--full">
-              <span class="field-label">Chef de mission réf.</span>
-              <div class="field-readonly" aria-readonly="true">{{ clientChefDeMissionDisplay }}</div>
-              <span class="field-hint">Lecture seule — source <code>clients.chef_de_mission</code> (gestion hors wizard LAB).</span>
-            </div>
-            <label class="field field--full">
-              <span class="field-label">Commentaire synthèse / révision</span>
-              <textarea class="field-input field-textarea" name="commentaire_revision" rows="4" [(ngModel)]="m.commentaire_revision"></textarea>
-            </label>
-          </div>
-        </app-lab-carte>
+        <nav class="wizard-toc" aria-label="Sections du dossier">
+          <a href="#section-identifiants">Identifiants</a>
+          <a href="#section-bodacc">BODACC</a>
+          <a href="#section-identite">Identité</a>
+          <a href="#section-coordonnees">Siège</a>
+          <a href="#section-fiscal">Fiscal</a>
+          <a href="#section-affectation">Affectation</a>
+          <a href="#section-kyc">KYC</a>
+          <a href="#section-be">Bénéficiaires</a>
+          <a href="#section-pieces">Pièces</a>
+        </nav>
+        <app-lab-wizard-identite
+          [m]="m"
+          [fieldMeta]="fieldMeta"
+          [enriching]="enriching"
+          [enrichmentError]="enrichmentError"
+          [alertesBodacc]="alertesBodacc"
+          [bodaccPendingCritical]="bodaccPendingCritical"
+          [bodaccSectionOpen]="bodaccSectionOpen"
+          [codeClient]="codeClient"
+          [clientExpertComptableDisplay]="clientExpertComptableDisplay"
+          [clientChefDeMissionDisplay]="clientChefDeMissionDisplay"
+          (enrich)="enrichFromPublicApis()"
+          (acceptApi)="acceptApiValue($event)"
+          (siretBlur)="onSiretBlur()"
+          (bodaccProgressChange)="onBodaccProgressChange($event)"
+          (bodaccSectionToggle)="onBodaccSectionToggle($event)"
+          (navigateStep)="goToWizardStep($event)"
+        />
+        <app-lab-wizard-kyc
+          [m]="m"
+          [fieldMeta]="fieldMeta"
+          (acceptApi)="acceptApiValue($event)"
+        />
+        <app-lab-wizard-be
+          [(beneficiaires)]="beneficiaires"
+          (removedPersistedId)="onRemovedPersistedBeneficiaire($event)"
+        />
+        <app-lab-wizard-pieces
+          [(pieces)]="pieces"
+          [pieceTypePresets]="pieceTypePresets"
+          (removedPersistedId)="onRemovedPersistedPiece($event)"
+        />
       </div>
 
       <!-- Étape 2 — Évaluation du risque (ARPEC) -->
@@ -646,7 +158,7 @@
           >
             {{ step1Saving ? 'Enregistrement…' : 'Continuer vers l\'évaluation du risque →' }}
           </button>
-          <button type="button" class="btn btn--primary" *ngIf="isLastStep" (click)="submitWizard()" [disabled]="submitting || step1Saving || revueActionBusy">
+          <button type="button" class="btn btn--primary" *ngIf="isLastStep" (click)="submitWizard()" [disabled]="submitting || step1Saving || revueActionBusy || arpecQuestionnaireBlocked">
             {{ submitting ? 'Enregistrement…' : 'Valider et ouvrir le plan de vigilance →' }}
           </button>
         </div>

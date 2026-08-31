@@ -1,0 +1,145 @@
+        <!-- Plan de vigilance · diligences -->
+        <section class="section" id="section-diligences">
+          <div class="section-head">
+            <h2 class="section-title">
+              Plan de vigilance · diligences
+              <span class="section-counter">({{ diligences.length }})</span>
+            </h2>
+          </div>
+          <hr class="separator" />
+
+          <table class="table" *ngIf="diligences.length > 0; else noDiligences">
+            <thead>
+            <tr>
+              <th>Diligence</th>
+              <th>Origine</th>
+              <th>Statut</th>
+              <th>Responsable</th>
+              <th>Échéance</th>
+              <th>Retard</th>
+              <th>Preuve</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let d of diligences" [class.row-late]="isDiligenceLate(d)">
+              <td>
+                <div class="cell-title">{{ d.intitule }}</div>
+                <div class="cell-sub" *ngIf="d.commentaire">{{ d.commentaire }}</div>
+              </td>
+              <td>
+                <span [class]="getDiligenceOrigineClass(d)">{{ getDiligenceOrigineLabel(d) }}</span>
+              </td>
+              <td><span class="badge small" [class]="'badge tone-' + getDiligenceTone(d.statut)">{{ diligenceStatutLabel(d.statut) }}</span></td>
+              <td>{{ d.responsable }}</td>
+              <td>{{ d.date_echeance ? (d.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>
+                <span class="badge small" [class]="'badge ' + (isDiligenceLate(d) ? 'tone-danger' : 'tone-neutral')">
+                  {{ isDiligenceLate(d) ? 'En retard' : '—' }}
+                </span>
+              </td>
+              <td>
+                <span class="mono">{{ val(d.preuve) }}</span>
+                <button
+                  type="button"
+                  class="link-action link-action--inline"
+                  (click)="openDiligenceDiscussion(d)"
+                >
+                  Discussion
+                </button>
+                <button
+                  type="button"
+                  class="link-action link-action--inline"
+                  *ngIf="d.statut !== 'Realisee' && d.statut !== 'Abandonnee'"
+                  (click)="openEditDiligenceModal(d)"
+                >
+                  Modifier
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+          <ng-template #noDiligences>
+            <div class="empty-state">
+              Aucune diligence sur ce dossier.
+            </div>
+          </ng-template>
+        </section>
+
+<app-modal
+  [isOpen]="diligenceModalMode !== null"
+  [title]="diligenceModalTitle"
+  (closeEvent)="closeDiligenceModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <ng-container *ngIf="diligenceModalMode === 'create'">
+      <p class="lab-modal-hint" *ngIf="selectedEvenement">
+        Événement&nbsp;: {{ getEvenementTypeLabel(selectedEvenement.type) }}
+      </p>
+      <label class="lab-field">
+        <span class="lab-field-label">Intitulé *</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="diligenceForm.intitule" maxlength="200" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="diligenceForm.date_echeance" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="diligenceModalMode === 'edit'">
+      <label class="lab-field">
+        <span class="lab-field-label">Statut</span>
+        <select class="lab-field-input" [(ngModel)]="diligenceForm.statut">
+          <option *ngFor="let s of allowedDiligenceStatuts(selectedDiligence?.statut ?? diligenceForm.statut)" [value]="s">
+            {{ diligenceStatutLabel(s) }}
+          </option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="diligenceForm.date_echeance" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Commentaires</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="diligenceForm.commentaires"></textarea>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Référence preuve</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="diligenceForm.ref_piece_jointe" maxlength="500" />
+      </label>
+      <label class="lab-field" *ngIf="diligenceForm.statut === 'Abandonnee'">
+        <span class="lab-field-label">Motif abandon *</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="2" [(ngModel)]="diligenceForm.motif_abandon"></textarea>
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="diligenceModalMode === 'discussion' && selectedDiligence">
+      <p class="lab-modal-hint">{{ selectedDiligence.intitule }}</p>
+    </ng-container>
+
+    <app-lab-chat-dossier
+      *ngIf="diligenceModalMode !== 'create' && selectedDiligence && codeClient"
+      [codeClient]="codeClient"
+      [filterIdDiligence]="selectedDiligence.id"
+      [evenements]="evenements"
+      [diligences]="diligences"
+      [lockFilter]="true"
+      [compact]="true"
+    ></app-lab-chat-dossier>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closeDiligenceModal()" [disabled]="actionBusy">
+      {{ diligenceModalMode === 'discussion' ? 'Fermer' : 'Annuler' }}
+    </button>
+    <button
+      type="button"
+      class="lab-btn lab-btn--primary"
+      *ngIf="diligenceModalMode !== 'discussion'"
+      (click)="saveDiligenceModal()"
+      [disabled]="actionBusy"
+    >
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>

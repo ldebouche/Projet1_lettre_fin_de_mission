@@ -1,22 +1,12 @@
 <div class="page">
-  <div class="tabs">
-    <a class="tab" routerLink="/lab/dashboard">Tableau de bord</a>
-    <a class="tab" routerLink="/lab/portefeuille">Portefeuille</a>
-    <a class="tab" routerLink="/lab/evenements">Événements</a>
-    <span class="tab tab--on">Diligences</span>
-  </div>
+  <app-lab-shell
+    title="Diligences du cabinet"
+    pill="Cabinet"
+    [subtitle]="errorMessage || 'Suivi des diligences — retards et accès au plan & suivi.'"
+  >
+  <a shell-cta routerLink="/lab/evenements" class="hero-cta--ghost">Voir les événements</a>
 
-  <app-lab-carte>
-    <div class="head">
-      <div class="head-titles">
-        <h1>Diligences du cabinet</h1>
-        <p class="head-sub">
-          {{ errorMessage || 'Vue cabinet des diligences — filtres, retards et accès au plan & suivi.' }}
-        </p>
-      </div>
-      <a routerLink="/lab/evenements" class="btn btn--ghost">Voir les événements</a>
-    </div>
-
+  <app-lab-carte title="Synthèse" subtitle="Liste affichée">
     <div class="sum">
       <div class="sum-item"><b>{{ total }}</b><span>diligence(s) affichée(s)</span></div>
       <div class="sum-item"><b>{{ aFaireCount }}</b><span>à faire / en cours</span></div>
@@ -24,30 +14,22 @@
     </div>
   </app-lab-carte>
 
-  <app-lab-carte>
-    <div class="filters-head">
+  <app-lab-cabinet-liste>
+    <div liste-head class="filters-head">
       <div>
         <h2 class="filters-title">Filtres</h2>
         <p class="filters-sub">
-          Statut, client et événement côté serveur ; retard et recherche sur la liste chargée.
+          Statut, client et événement — retard et recherche sur la liste.
         </p>
       </div>
     </div>
 
-    <div class="filters">
+    <div liste-filters class="filters">
       <input
         class="filter-input"
         type="text"
-        placeholder="Code client…"
+        placeholder="Client…"
         [(ngModel)]="codeClient"
-        (keyup.enter)="applyFilters()"
-        (change)="applyFilters()"
-      />
-      <input
-        class="filter-input"
-        type="text"
-        placeholder="Id événement…"
-        [(ngModel)]="idEvenement"
         (keyup.enter)="applyFilters()"
         (change)="applyFilters()"
       />
@@ -71,80 +53,91 @@
         (change)="applyFilters()"
       />
       <button class="btn-link" type="button" *ngIf="search" (click)="clearSearch()">Effacer recherche</button>
-      <button class="btn-link" type="button" *ngIf="codeClient" (click)="clearCodeClient()">Effacer code</button>
-      <button class="btn-link" type="button" *ngIf="idEvenement" (click)="clearIdEvenement()">Effacer événement</button>
+      <button class="btn-link" type="button" *ngIf="codeClient" (click)="clearCodeClient()">Effacer client</button>
+      <button class="btn-link" type="button" *ngIf="idEvenement" (click)="clearIdEvenement()">
+        Retirer le filtre {{ eventFilterLabel }}
+      </button>
     </div>
 
-    <div class="meta">
+    <div liste-meta>
       <span *ngIf="loading">Chargement des diligences…</span>
       <span *ngIf="!loading && !errorMessage && total > 0">{{ total }} diligence(s)</span>
       <span *ngIf="!loading && !errorMessage && total === 0">Aucune diligence</span>
       <span *ngIf="errorMessage" class="meta--error">{{ errorMessage }}</span>
     </div>
 
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Client</th>
-            <th>Intitulé</th>
-            <th>Type</th>
-            <th>Événement</th>
-            <th>Statut</th>
-            <th>Échéance</th>
-            <th>Réalisation</th>
-            <th>Responsable</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of rows" [class.row-late]="isLate(row)">
-            <td>
-              <button
-                type="button"
-                class="client-link"
-                *ngIf="row.code_client"
-                (click)="openPlanSuivi(row)"
-              >
-                {{ displayValue(row.client) }}
-              </button>
-              <span class="td-strong" *ngIf="!row.code_client">{{ displayValue(row.client) }}</span>
-              <div class="code" *ngIf="row.code_client">{{ row.code_client }}</div>
-            </td>
-            <td>{{ displayValue(row.intitule) }}</td>
-            <td>{{ typeLabel(row.type_diligence) }}</td>
-            <td>
-              <a
-                class="event-link"
-                [routerLink]="['/lab/evenements']"
-                [queryParams]="eventLinkParams(row)"
-              >
-                #{{ row.id_evenement }} · {{ typeLabel(row.type_evenement) }}
-              </a>
-            </td>
-            <td>
-              <span [ngClass]="statutClass(row)">{{ statutLabel(row.statut) }}</span>
-              <span class="pill pill--red" *ngIf="isLate(row)">Retard</span>
-            </td>
-            <td>{{ row.date_echeance ? (row.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
-            <td>{{ row.date_realisation ? (row.date_realisation | date:'dd/MM/yyyy') : '—' }}</td>
-            <td>{{ displayValue(row.responsable) }}</td>
-            <td>
-              <button
-                type="button"
-                class="row-action"
-                *ngIf="row.code_client"
-                (click)="openPlanSuivi(row)"
-              >
-                Plan & suivi
-              </button>
-            </td>
-          </tr>
+    <table liste-body class="table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Intitulé</th>
+          <th class="col-hide-tablet">Type</th>
+          <th>Événement</th>
+          <th>Statut</th>
+          <th>Échéance</th>
+          <th class="col-hide-tablet">Réalisation</th>
+          <th class="col-hide-tablet">Responsable</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows" [class.row-late]="isLate(row)">
+          <td>
+            <button
+              type="button"
+              class="client-link"
+              *ngIf="row.code_client"
+              (click)="openPlanSuivi(row)"
+            >
+              {{ displayValue(row.client) }}
+            </button>
+            <span class="td-strong" *ngIf="!row.code_client">{{ displayValue(row.client) }}</span>
+          </td>
+          <td>{{ displayValue(row.intitule) }}</td>
+          <td class="col-hide-tablet">{{ typeLabel(row.type_diligence) }}</td>
+          <td>
+            <a
+              class="event-link"
+              [routerLink]="['/lab/evenements']"
+              [queryParams]="eventLinkParams(row)"
+            >
+              {{ typeEvenementLabel(row.type_evenement) }}
+            </a>
+          </td>
+          <td>
+            <span [ngClass]="statutClass(row)">{{ statutLabel(row.statut) }}</span>
+            <span class="pill pill--red" *ngIf="isLate(row)">Retard</span>
+          </td>
+          <td>{{ row.date_echeance ? (row.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
+          <td class="col-hide-tablet">{{ row.date_realisation ? (row.date_realisation | date:'dd/MM/yyyy') : '—' }}</td>
+          <td class="col-hide-tablet">{{ displayValue(row.responsable) }}</td>
+          <td>
+            <button
+              type="button"
+              class="row-action"
+              *ngIf="row.code_client"
+              (click)="openPlanSuivi(row)"
+            >
+              Plan & suivi
+            </button>
+            <button
+              type="button"
+              class="row-action"
+              *ngIf="row.code_client"
+              (click)="openDiscussion(row)"
+            >
+              Discussion
+            </button>
+          </td>
+        </tr>
           <tr *ngIf="!loading && rows.length === 0">
-            <td colspan="9" class="empty-cell">Aucune diligence ne correspond à ces filtres.</td>
+            <td colspan="9" class="empty-cell">
+              <p>Aucune diligence ne correspond à ces filtres.</p>
+              <button type="button" class="btn-link" *ngIf="hasActiveFilters" (click)="resetFilters()">Réinitialiser les filtres</button>
+            </td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-  </app-lab-carte>
+      </tbody>
+    </table>
+  </app-lab-cabinet-liste>
+  </app-lab-shell>
 </div>

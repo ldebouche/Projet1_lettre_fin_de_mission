@@ -8,7 +8,7 @@ axiosRetry(axios, {
   retryCondition: error => error.response?.status === 429
 });
 
-const prompts = JSON.parse(fs.readFileSync('./config/prompts.json', 'utf-8'));
+const prompts = JSON.parse(fs.readFileSync('./src/config/prompts.json', 'utf-8'));
 
 export function fillTemplate(template, variables) {
   if (typeof template === "string") {

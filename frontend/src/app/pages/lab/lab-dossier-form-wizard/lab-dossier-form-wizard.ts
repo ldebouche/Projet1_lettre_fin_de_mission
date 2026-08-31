@@ -5,92 +5,42 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { LabCarteComponent } from '../lab-carte/lab-carte';
 import {
-  LabBeneficiaireEffectif,
   LabBodaccAlerte,
-  LabClientBloc,
-  LabDossierBloc,
+  LabCreateDossierRequest,
   LabDossierResponse,
   LabEnrichissementResponse,
   LabFieldMeta,
-  LabCreateBeneficiaireRequest,
-  LabCreateDossierRequest,
-  LabCreatePieceRequest,
-  LabKycBloc,
-  LabPieceKyc,
   LabService,
-  LabUpdateBeneficiaireRequest,
-  LabUpdateClientRequest,
-  LabUpdateDossierRequest,
-  LabUpdateKycRequest,
-  LabUpdatePieceRequest,
-  LabWizardSupplement,
+  LabWizardFormModel,
+  WizardBeRow,
+  WizardPieceRow,
 } from '../../../services/lab-service';
-import { LabWizardFieldMetaComponent } from '../lab-wizard-field-meta/lab-wizard-field-meta';
-import { LabBodaccChecklistComponent } from '../lab-bodacc-checklist/lab-bodacc-checklist';
 import { LabEvaluationRisqueComponent } from '../lab-evaluation-risque/lab-evaluation-risque';
-
-/** Ligne bénéficiaire effectif — alignée sur le mock `LabBeneficiaireEffectif` du dossier LAB. */
-export type WizardBeRow = {
-  id: string;
-  nom: string;
-  prenom: string;
-  type: '' | 'Personne_physique' | 'Personne_morale';
-  nationalite: string;
-  pays_residence: string;
-  pourcentage: string;
-  mode_controle: '' | 'Detention_capital' | 'Droits_vote' | 'Controle_de_fait' | 'Autre';
-  pep_statut: '' | 'Oui' | 'Non' | 'Inconnu';
-  sanctions_gel: '' | 'Oui' | 'Non' | 'Inconnu';
-  commentaire: string;
-};
-
-/** Ligne pièce KYC — alignée sur `LabPieceKyc`. */
-export type WizardPieceRow = {
-  id: string;
-  type_piece: string;
-  titulaire: '' | 'Client' | 'BE' | 'Dirigeant';
-  statut: '' | 'Recue' | 'Manquante' | 'Perimee' | 'Non_requise';
-  date_delivrance: string;
-  date_echeance: string;
-  reference: string;
-  commentaire: string;
-};
-
-function toInputDate(value: string | Date | null | undefined): string {
-  if (value == null) return '';
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
-  }
-  const s = String(value).trim();
-  if (!s) return '';
-  return s.length >= 10 ? s.slice(0, 10) : s;
-}
-
-function toInputStr(value: unknown): string {
-  if (value == null) return '';
-  return String(value).trim();
-}
-
-function extractSiren(siret: string | null | undefined): string {
-  const s = toInputStr(siret).replace(/\s/g, '');
-  return s.length >= 9 ? s.slice(0, 9) : s;
-}
-
-function mapNiveauRisqueForForm(niveau: string | null | undefined): string {
-  const n = toInputStr(niveau);
-  if (n === 'Eleve' || n === 'Élevé' || n === 'Elevé') return 'Élevé';
-  if (n === 'Moyen') return 'Moyen';
-  if (n === 'Faible') return 'Faible';
-  return n;
-}
-
-function extractVolumeFromNotes(notes: string | null | undefined): string {
-  if (!notes) return '';
-  const match = notes.match(/Volume d'affaires estime:\s*(.+?)(?:\s*\||$)/i);
-  return match ? match[1].trim() : '';
-}
+import { LabWizardIdentiteComponent } from '../lab-wizard-identite/lab-wizard-identite';
+import { LabWizardKycComponent } from '../lab-wizard-kyc/lab-wizard-kyc';
+import { LabWizardBeComponent } from '../lab-wizard-be/lab-wizard-be';
+import { LabWizardPiecesComponent } from '../lab-wizard-pieces/lab-wizard-pieces';
+import { LabCarteComponent } from '../lab-carte/lab-carte';
+import {
+  applyLocalKycPrefill,
+  buildClientPayload,
+  buildKycPayload,
+  buildLabPayload,
+  createEmptyWizardForm,
+  emptyBe,
+  emptyPiece,
+  genWizardId,
+  getBeneficiairesToCreate,
+  getBeneficiairesToUpdate,
+  getPiecesToCreate,
+  getPiecesToUpdate,
+  hydrateFromDossier as hydrateWizardData,
+  isPersistedId,
+  mapBeToUpdate,
+  mapPieceToUpdate,
+  toInputStr,
+} from './lab-wizard-hydrate';
 
 const ENRICHABLE_STRING_FIELDS = [
   'siren',
@@ -129,10 +79,12 @@ function isEnrichableStringField(key: string): key is EnrichableStringField {
     CommonModule,
     FormsModule,
     RouterLink,
-    LabCarteComponent,
-    LabWizardFieldMetaComponent,
-    LabBodaccChecklistComponent,
+    LabWizardIdentiteComponent,
+    LabWizardKycComponent,
+    LabWizardBeComponent,
+    LabWizardPiecesComponent,
     LabEvaluationRisqueComponent,
+    LabCarteComponent,
   ],
   templateUrl: './lab-dossier-form-wizard.html',
   styleUrls: ['./lab-dossier-form-wizard.scss'],
@@ -146,7 +98,7 @@ export class LabDossierFormWizardComponent implements OnInit {
   codeClient: string | null = null;
   returnTo: string | null = null;
   idRevue: string | null = null;
-  /** Entrée depuis dashboard « dossiers en attente » — revue/acceptation sans id_revue obligatoire. */
+  /** Entrée depuis dashboard « Prospects » — revue/acceptation sans id_revue obligatoire. */
   isAcceptationMode = false;
   loading = false;
   enriching = false;
@@ -165,8 +117,12 @@ export class LabDossierFormWizardComponent implements OnInit {
   bodaccPendingCritical = 0;
   private loadedCode: string | null = null;
 
-  @ViewChild('bodaccChecklist') bodaccChecklist?: LabBodaccChecklistComponent;
+  @ViewChild(LabWizardIdentiteComponent) identiteCmp?: LabWizardIdentiteComponent;
   @ViewChild('evalRisque') evalRisque?: LabEvaluationRisqueComponent;
+
+  get bodaccChecklist() {
+    return this.identiteCmp?.bodaccChecklist;
+  }
 
   bodaccSectionOpen = false;
 
@@ -183,12 +139,6 @@ export class LabDossierFormWizardComponent implements OnInit {
     lab: 'section-affectation',
   };
 
-  private uid = 0;
-  private genId(prefix: string): string {
-    this.uid += 1;
-    return `${prefix}-${this.uid}`;
-  }
-
   stepIndex = 0;
 
   readonly steps: { id: string; label: string; hint: string }[] = [
@@ -200,7 +150,7 @@ export class LabDossierFormWizardComponent implements OnInit {
     {
       id: 'evaluation-risque',
       label: 'Évaluation du risque',
-      hint: 'Questionnaire ARPEC D1–D5 (NPLAB)',
+      hint: 'Questionnaire ARPEC — 5 axes',
     },
   ];
 
@@ -208,84 +158,31 @@ export class LabDossierFormWizardComponent implements OnInit {
     'Extrait KBIS / INSEE',
     'Statuts à jour',
     'Pièce d’identité dirigeant',
+    'RBE (registre des bénéficiaires effectifs)',
     'RIB',
     'Organigramme / chaîne de détention',
     'Justificatif domicile',
     'Autre',
   ];
 
-  m = {
-    code_client: '',
-    siren: '',
-    siret: '',
-    raison_sociale: '',
-    forme_societe: '',
-    rcs: '',
-    ape: '',
-    activite: '',
-    nature: '',
-    tvaintracom: '',
-    montant_capital_social: '',
-    date_entree_cabinet: '',
-    adr1_siege: '',
-    adr2_siege: '',
-    cpos_siege: '',
-    ville_siege: '',
-    pays_siege: '',
-    tel_fixe: '',
-    tel_portable: '',
-    email: '',
-    regime_fiscal: '',
-    soumis_is: '',
-    mois_cloture: '',
-    logiciel_compta: '',
-    taille_entreprise: '',
-    zone_geographique_activite: '',
-    volume_affaires_fourchette: '',
-    mission_comptabilite: false,
-    mission_audit: false,
-    mission_sociale: false,
-    mission_juridique: false,
-    nature_relation_libre: '',
-    kyc: {
-      categorie_client: '' as '' | 'Personne_morale' | 'Personne_physique',
-      civilite: '',
-      nom_physique: '',
-      prenom_physique: '',
-      pays_residence_fiscale: '',
-      pays_implantation: '',
-      pays_a_risque_text: '',
-      secteur_sensible: false,
-      secteurs_text: '',
-      pep_statut: '' as '' | 'Oui' | 'Non' | 'Inconnu',
-      pep_details: '',
-      origine_fonds_requise: false,
-      origine_fonds_statut: '' as '' | 'Renseignee' | 'A_renseigner' | 'Non_applicable',
-      complexite_structure: '' as '' | 'Simple' | 'Moyenne' | 'Complexe' | 'Inconnue',
-      justification_complexite: '',
-      exposition_sanctions: '' as '' | 'Oui' | 'Non' | 'Inconnu',
-      notes: '',
-    },
-    statut_dossier: '',
-    statut_kyc: '',
-    niveau_risque: '',
-    justification_risque_override: '',
-    date_entree_relation: '',
-    date_derniere_revue: '',
-    date_prochaine_revue: '',
-    periodicite_revue_mois: '',
-    id_responsable_lab: '',
-    commentaire_revision: '',
-  };
+  m: LabWizardFormModel = createEmptyWizardForm();
 
   /** Libellés équipe cabinet — lecture seule, source table clients (hors périmètre wizard). */
   clientExpertComptableDisplay = '—';
   clientChefDeMissionDisplay = '—';
 
-  beneficiaires: WizardBeRow[] = [this.emptyBe()];
-  pieces: WizardPieceRow[] = [this.emptyPiece()];
-  private deletedBeneficiaireIds: string[] = [];
-  private deletedPieceIds: string[] = [];
+  beneficiaires: WizardBeRow[] = [emptyBe(genWizardId('be'))];
+  pieces: WizardPieceRow[] = [emptyPiece(genWizardId('pc'))];
+  deletedBeneficiaireIds: string[] = [];
+  deletedPieceIds: string[] = [];
+
+  onRemovedPersistedBeneficiaire(id: string): void {
+    this.deletedBeneficiaireIds = [...this.deletedBeneficiaireIds, id];
+  }
+
+  onRemovedPersistedPiece(id: string): void {
+    this.deletedPieceIds = [...this.deletedPieceIds, id];
+  }
 
   ngOnInit(): void {
     this.route.queryParamMap
@@ -342,17 +239,16 @@ export class LabDossierFormWizardComponent implements OnInit {
   }
 
   private hydrateFromDossier(data: LabDossierResponse): void {
-    this.hasExistingLabDossier = data.lab != null;
+    const result = hydrateWizardData(this.m, data, genWizardId);
+    this.hasExistingLabDossier = result.hasExistingLabDossier;
     this.deletedBeneficiaireIds = [];
     this.deletedPieceIds = [];
-    this.hydrateClient(data.client);
-    if (data.lab) {
-      this.hydrateLab(data.lab);
-    }
-    this.hydrateKyc(data.kyc);
-    this.hydrateBeneficiaires(data.beneficiaires ?? []);
-    this.hydratePieces(data.pieces ?? []);
+    if (result.beneficiaires) this.beneficiaires = result.beneficiaires;
+    if (result.pieces) this.pieces = result.pieces;
+    this.clientExpertComptableDisplay = result.clientExpertComptableDisplay;
+    this.clientChefDeMissionDisplay = result.clientChefDeMissionDisplay;
     this.initFieldMetaFromForm();
+    applyLocalKycPrefill(this.m);
   }
 
   private initFieldMetaFromForm(): void {
@@ -459,13 +355,20 @@ export class LabDossierFormWizardComponent implements OnInit {
 
     const kycMerged = merged['kyc'] as Record<string, unknown> | undefined;
     if (kycMerged) {
-      if (kycMerged['pays_implantation']) {
+      if (kycMerged['pays_implantation'] && !this.m.kyc.pays_implantation) {
         this.m.kyc.pays_implantation = String(kycMerged['pays_implantation']);
       }
-      if (kycMerged['secteurs_text']) {
+      if (kycMerged['secteurs_text'] && !this.m.kyc.secteurs_text) {
         this.m.kyc.secteurs_text = String(kycMerged['secteurs_text']);
       }
+      if (kycMerged['pays_a_risque_text'] && !this.m.kyc.pays_a_risque_text.trim()) {
+        this.m.kyc.pays_a_risque_text = String(kycMerged['pays_a_risque_text']);
+      }
+      if (kycMerged['secteur_sensible'] === true) {
+        this.m.kyc.secteur_sensible = true;
+      }
     }
+    applyLocalKycPrefill(this.m);
   }
 
   private applyMergedValue(field: EnrichableStringField, value: unknown): void {
@@ -508,277 +411,6 @@ export class LabDossierFormWizardComponent implements OnInit {
     }
   }
 
-  private hydrateClient(client: LabClientBloc): void {
-    const siret = toInputStr(client.siret);
-    this.m.code_client = toInputStr(client.code_client) || this.m.code_client;
-    this.m.siret = siret;
-    this.m.siren = extractSiren(siret);
-    this.m.raison_sociale = toInputStr(client.raison_sociale);
-    this.m.forme_societe = toInputStr(client.forme_societe);
-    this.m.rcs = toInputStr(client.rcs);
-    this.m.ape = toInputStr(client.ape);
-    this.m.activite = toInputStr(client.activite);
-    this.m.nature = toInputStr(client.nature);
-    this.m.tvaintracom = toInputStr(client.tvaintracom);
-    this.m.montant_capital_social = client.montant_capital_social != null
-      ? String(client.montant_capital_social)
-      : '';
-    this.m.date_entree_cabinet = toInputDate(client.date_entree_cabinet);
-    this.m.adr1_siege = toInputStr(client.adr1_siege);
-    this.m.adr2_siege = toInputStr(client.adr2_siege);
-    this.m.cpos_siege = toInputStr(client.cpos_siege);
-    this.m.ville_siege = toInputStr(client.ville_siege);
-    this.m.tel_fixe = toInputStr(client.tel_fixe);
-    this.m.tel_portable = toInputStr(client.tel_portable);
-    this.m.email = toInputStr(client.email);
-    this.m.regime_fiscal = toInputStr(client.regime_fiscal);
-    this.m.soumis_is = toInputStr(client.soumis_is);
-    this.m.mois_cloture = client.mois_cloture != null ? String(client.mois_cloture) : '';
-    this.m.logiciel_compta = toInputStr(client.logiciel_compta);
-    this.clientExpertComptableDisplay = this.formatCollaborateur(
-      client.expert_comptable_prenom,
-      client.expert_comptable_nom,
-    );
-    this.clientChefDeMissionDisplay = this.formatCollaborateur(
-      client.chef_de_mission_prenom,
-      client.chef_de_mission_nom,
-    );
-  }
-
-  private hydrateLab(lab: LabDossierBloc): void {
-    this.m.statut_dossier = toInputStr(lab.statut_dossier);
-    this.m.statut_kyc = toInputStr(lab.statut_kyc);
-    this.m.niveau_risque = mapNiveauRisqueForForm(lab.niveau_risque);
-    this.m.date_entree_relation = toInputDate(lab.date_entree_relation);
-    this.m.date_derniere_revue = toInputDate(lab.date_derniere_revue);
-    this.m.date_prochaine_revue = toInputDate(lab.date_prochaine_revue);
-    this.m.periodicite_revue_mois = lab.periodicite_revue_mois != null
-      ? String(lab.periodicite_revue_mois)
-      : '';
-    this.m.id_responsable_lab = toInputStr(lab.id_responsable_lab);
-    if (!this.m.date_entree_relation) {
-      this.m.date_entree_relation = this.m.date_entree_cabinet;
-    }
-  }
-
-  private hydrateKyc(kyc: LabKycBloc | null): void {
-    if (!kyc) return;
-
-    const k = this.m.kyc;
-    if (kyc.categorie_client) {
-      k.categorie_client = kyc.categorie_client;
-    }
-    k.pays_residence_fiscale = toInputStr(kyc.pays_residence_fiscale);
-    k.pays_implantation = toInputStr(kyc.pays_implantation);
-    if (kyc.pays_a_risque?.length) {
-      k.pays_a_risque_text = kyc.pays_a_risque.join('\n');
-    }
-    k.secteur_sensible = !!kyc.secteur_sensible;
-    if (kyc.secteurs?.length) {
-      k.secteurs_text = kyc.secteurs.join('\n');
-    }
-    if (kyc.pep_statut) {
-      k.pep_statut = kyc.pep_statut;
-    }
-    k.pep_details = toInputStr(kyc.pep_details);
-    k.origine_fonds_requise = !!kyc.origine_fonds_requise;
-    if (kyc.origine_fonds_statut) {
-      k.origine_fonds_statut = kyc.origine_fonds_statut;
-    }
-    if (kyc.complexite_structure) {
-      k.complexite_structure = kyc.complexite_structure;
-    }
-    k.justification_complexite = toInputStr(kyc.justification_complexite);
-    if (kyc.exposition_sanctions) {
-      k.exposition_sanctions = kyc.exposition_sanctions;
-    }
-    k.notes = toInputStr(kyc.notes);
-
-    if (!this.m.zone_geographique_activite && kyc.pays_implantation) {
-      this.m.zone_geographique_activite = toInputStr(kyc.pays_implantation);
-    }
-    const volume = extractVolumeFromNotes(kyc.notes);
-    if (volume) {
-      this.m.volume_affaires_fourchette = volume;
-    }
-
-    this.hydrateWizardSupplement(kyc.wizard_supplement);
-  }
-
-  private hydrateWizardSupplement(supplement: LabWizardSupplement | null | undefined): void {
-    if (!supplement) return;
-
-    if (supplement.pays_siege) {
-      this.m.pays_siege = toInputStr(supplement.pays_siege);
-    }
-    if (supplement.taille_entreprise) {
-      this.m.taille_entreprise = toInputStr(supplement.taille_entreprise);
-    }
-    if (supplement.mission_comptabilite != null) {
-      this.m.mission_comptabilite = !!supplement.mission_comptabilite;
-    }
-    if (supplement.mission_audit != null) {
-      this.m.mission_audit = !!supplement.mission_audit;
-    }
-    if (supplement.mission_sociale != null) {
-      this.m.mission_sociale = !!supplement.mission_sociale;
-    }
-    if (supplement.mission_juridique != null) {
-      this.m.mission_juridique = !!supplement.mission_juridique;
-    }
-    if (supplement.nature_relation_libre) {
-      this.m.nature_relation_libre = toInputStr(supplement.nature_relation_libre);
-    }
-    if ('commentaire_revision' in supplement) {
-      this.m.commentaire_revision = toInputStr(supplement.commentaire_revision);
-    }
-
-    const k = this.m.kyc;
-    if (supplement.categorie_client === 'Personne_morale' || supplement.categorie_client === 'Personne_physique') {
-      k.categorie_client = supplement.categorie_client;
-    }
-    if (supplement.civilite) {
-      k.civilite = toInputStr(supplement.civilite);
-    }
-    if (supplement.nom_physique) {
-      k.nom_physique = toInputStr(supplement.nom_physique);
-    }
-    if (supplement.prenom_physique) {
-      k.prenom_physique = toInputStr(supplement.prenom_physique);
-    }
-    if (supplement.pays_residence_fiscale) {
-      k.pays_residence_fiscale = toInputStr(supplement.pays_residence_fiscale);
-    }
-  }
-
-  private hydrateBeneficiaires(rows: LabBeneficiaireEffectif[]): void {
-    if (!rows.length) return;
-
-    this.beneficiaires = rows.map((be) => this.mapBeneficiaire(be));
-  }
-
-  private mapBeneficiaire(be: LabBeneficiaireEffectif): WizardBeRow {
-    const type = be.type === 'Personne_morale' ? 'Personne_morale' : 'Personne_physique';
-    const pep = be.pep_statut === 'Oui' || be.pep_statut === 'Non' || be.pep_statut === 'Inconnu'
-      ? be.pep_statut
-      : '';
-    const sanctions = be.sanctions_gel === 'Oui' || be.sanctions_gel === 'Non' || be.sanctions_gel === 'Inconnu'
-      ? be.sanctions_gel
-      : '';
-    const mode = be.mode_controle === 'Detention_capital'
-      || be.mode_controle === 'Droits_vote'
-      || be.mode_controle === 'Controle_de_fait'
-      || be.mode_controle === 'Autre'
-      ? be.mode_controle
-      : '';
-
-    return {
-      id: be.id,
-      nom: toInputStr(be.nom),
-      prenom: toInputStr(be.prenom),
-      type,
-      nationalite: toInputStr(be.nationalite),
-      pays_residence: toInputStr(be.pays_residence),
-      pourcentage: be.pourcentage != null ? String(be.pourcentage) : '',
-      mode_controle: mode,
-      pep_statut: pep,
-      sanctions_gel: sanctions,
-      commentaire: toInputStr(be.commentaire),
-    };
-  }
-
-  private hydratePieces(rows: LabPieceKyc[]): void {
-    if (!rows.length) return;
-
-    this.pieces = rows.map((piece) => this.mapPiece(piece));
-  }
-
-  private mapPiece(piece: LabPieceKyc): WizardPieceRow {
-    const titulaire = piece.titulaire === 'Client'
-      || piece.titulaire === 'BE'
-      || piece.titulaire === 'Dirigeant'
-      ? piece.titulaire
-      : '';
-    const statut = piece.statut === 'Recue'
-      || piece.statut === 'Manquante'
-      || piece.statut === 'Perimee'
-      || piece.statut === 'Non_requise'
-      ? piece.statut
-      : '';
-
-    return {
-      id: piece.id,
-      type_piece: toInputStr(piece.type_piece),
-      titulaire,
-      statut,
-      date_delivrance: toInputDate(piece.date_delivrance),
-      date_echeance: toInputDate(piece.date_echeance),
-      reference: toInputStr(piece.reference),
-      commentaire: toInputStr(piece.commentaire),
-    };
-  }
-
-  get isPm(): boolean {
-    return this.m.kyc.categorie_client !== 'Personne_physique';
-  }
-
-  emptyBe(): WizardBeRow {
-    return {
-      id: this.genId('be'),
-      nom: '',
-      prenom: '',
-      type: '',
-      nationalite: '',
-      pays_residence: '',
-      pourcentage: '',
-      mode_controle: '',
-      pep_statut: '',
-      sanctions_gel: '',
-      commentaire: '',
-    };
-  }
-
-  emptyPiece(): WizardPieceRow {
-    return {
-      id: this.genId('pc'),
-      type_piece: '',
-      titulaire: '',
-      statut: '',
-      date_delivrance: '',
-      date_echeance: '',
-      reference: '',
-      commentaire: '',
-    };
-  }
-
-  addBeneficiaire(): void {
-    this.beneficiaires = [...this.beneficiaires, this.emptyBe()];
-  }
-
-  removeBeneficiaire(id: string): void {
-    if (this.isPersistedId(id)) {
-      this.deletedBeneficiaireIds = [...this.deletedBeneficiaireIds, id];
-    }
-    const next = this.beneficiaires.filter((b) => b.id !== id);
-    this.beneficiaires = next.length ? next : [this.emptyBe()];
-  }
-
-  addPiece(): void {
-    this.pieces = [...this.pieces, this.emptyPiece()];
-  }
-
-  removePiece(id: string): void {
-    if (this.isPersistedId(id)) {
-      this.deletedPieceIds = [...this.deletedPieceIds, id];
-    }
-    const next = this.pieces.filter((p) => p.id !== id);
-    this.pieces = next.length ? next : [this.emptyPiece()];
-  }
-
-  trackById(_index: number, row: { id: string }): string {
-    return row.id;
-  }
-
   get isFirstStep(): boolean {
     return this.stepIndex <= 0;
   }
@@ -787,12 +419,30 @@ export class LabDossierFormWizardComponent implements OnInit {
     return this.stepIndex >= this.steps.length - 1;
   }
 
+  /** Dossier LAB déjà en base : il faut une revue (`id_revue`) ou le mode acceptation. */
+  get isWizardLocked(): boolean {
+    return this.hasExistingLabDossier && !this.idRevue && !this.isAcceptationMode;
+  }
+
   goPrev(): void {
-    if (!this.isFirstStep) this.stepIndex--;
+    if (this.isWizardLocked || this.isFirstStep) return;
+    this.stepIndex--;
+  }
+
+  async onStepperSelect(targetIndex: number): Promise<void> {
+    if (this.isWizardLocked || this.step1Saving || this.submitting || this.revueActionBusy) return;
+    if (targetIndex === this.stepIndex) return;
+    if (targetIndex < this.stepIndex) {
+      this.stepIndex = targetIndex;
+      return;
+    }
+    if (targetIndex === this.stepIndex + 1) {
+      await this.goNext();
+    }
   }
 
   async goNext(): Promise<void> {
-    if (this.isLastStep || this.step1Saving) return;
+    if (this.isWizardLocked || this.isLastStep || this.step1Saving) return;
 
     if (this.stepIndex === 0) {
       const pending = this.bodaccChecklist?.pendingCriticalCount ?? this.bodaccPendingCritical;
@@ -832,6 +482,7 @@ export class LabDossierFormWizardComponent implements OnInit {
   }
 
   goToWizardStep(stepId: string): void {
+    if (this.isWizardLocked) return;
     this.stepIndex = 0;
     const anchor = this.sectionAnchorByWizardStep[stepId] ?? `section-${stepId}`;
     if (anchor === 'section-bodacc') {
@@ -846,196 +497,15 @@ export class LabDossierFormWizardComponent implements OnInit {
     this.bodaccSectionOpen = open;
   }
 
-  private isPersistedId(id: string): boolean {
-    return /^\d+$/.test(String(id).trim());
-  }
-
-  private buildLabPayload(): LabCreateDossierRequest['lab'] & LabUpdateDossierRequest['lab'] {
-    const periodicite = this.m.periodicite_revue_mois.trim()
-      ? Number(this.m.periodicite_revue_mois)
-      : undefined;
-    const payload: LabCreateDossierRequest['lab'] & LabUpdateDossierRequest['lab'] = {
-      statut_dossier: this.m.statut_dossier.trim() || 'Actif',
-      statut_kyc: this.m.statut_kyc.trim() || 'Incomplet',
-      id_responsable_lab: this.m.id_responsable_lab.trim() || null,
-      date_entree_relation: this.m.date_entree_relation.trim() || null,
-      periodicite_revue_mois: Number.isFinite(periodicite) ? periodicite : undefined,
-    };
-    if (!this.idRevue) {
-      payload.date_derniere_revue = this.m.date_derniere_revue.trim() || null;
-      payload.date_prochaine_revue = this.m.date_prochaine_revue.trim() || null;
-    }
-    return payload;
-  }
-
-  private buildClientPayload(): LabUpdateClientRequest {
-    const capitalRaw = this.m.montant_capital_social.trim();
-    const capital = capitalRaw ? Number(capitalRaw.replace(/\s/g, '').replace(',', '.')) : null;
-    const moisRaw = this.m.mois_cloture.trim();
-    const mois = moisRaw ? Number(moisRaw) : null;
-
-    return {
-      client: {
-        siret: this.m.siret.trim() || null,
-        raison_sociale: this.m.raison_sociale.trim() || null,
-        forme_societe: this.m.forme_societe.trim() || null,
-        rcs: this.m.rcs.trim() || null,
-        ape: this.m.ape.trim() || null,
-        activite: this.m.activite.trim() || null,
-        nature: this.m.nature.trim() || null,
-        tvaintracom: this.m.tvaintracom.trim() || null,
-        montant_capital_social: capital != null && Number.isFinite(capital) ? capital : null,
-        date_entree_cabinet: this.m.date_entree_cabinet.trim() || null,
-        adr1_siege: this.m.adr1_siege.trim() || null,
-        adr2_siege: this.m.adr2_siege.trim() || null,
-        cpos_siege: this.m.cpos_siege.trim() || null,
-        ville_siege: this.m.ville_siege.trim() || null,
-        tel_fixe: this.m.tel_fixe.trim() || null,
-        tel_portable: this.m.tel_portable.trim() || null,
-        email: this.m.email.trim() || null,
-        regime_fiscal: this.m.regime_fiscal.trim() || null,
-        soumis_is: this.m.soumis_is.trim() || null,
-        mois_cloture: mois != null && Number.isFinite(mois) ? mois : null,
-        logiciel_compta: this.m.logiciel_compta.trim() || null,
-      },
-    };
-  }
-
-  private buildWizardSupplement(): LabWizardSupplement {
-    const k = this.m.kyc;
-    return {
-      pays_siege: this.m.pays_siege.trim() || null,
-      taille_entreprise: this.m.taille_entreprise.trim() || null,
-      mission_comptabilite: this.m.mission_comptabilite,
-      mission_audit: this.m.mission_audit,
-      mission_sociale: this.m.mission_sociale,
-      mission_juridique: this.m.mission_juridique,
-      nature_relation_libre: this.m.nature_relation_libre.trim() || null,
-      commentaire_revision: this.m.commentaire_revision.trim() || null,
-      categorie_client: k.categorie_client || null,
-      civilite: k.civilite.trim() || null,
-      nom_physique: k.nom_physique.trim() || null,
-      prenom_physique: k.prenom_physique.trim() || null,
-      pays_residence_fiscale: k.pays_residence_fiscale.trim() || null,
-    };
-  }
-
-  private buildKycPayload(): LabUpdateKycRequest {
-    const k = this.m.kyc;
-    const secteurs = k.secteurs_text
-      .split(/[;\n]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const paysRisque = k.pays_a_risque_text
-      .split(/[;\n]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const kyc: LabUpdateKycRequest['kyc'] = {
-      categorie_client: k.categorie_client || undefined,
-      pays_implantation: k.pays_implantation.trim() || this.m.zone_geographique_activite.trim() || undefined,
-      pays_a_risque: paysRisque,
-      secteur_sensible: k.secteur_sensible,
-      secteurs,
-      pep_statut: k.pep_statut || undefined,
-      pep_details: k.pep_details.trim() || null,
-      origine_fonds_requise: k.origine_fonds_requise,
-      origine_fonds_statut: k.origine_fonds_statut || undefined,
-      complexite_structure: k.complexite_structure || undefined,
-      justification_complexite: k.justification_complexite.trim() || null,
-      exposition_sanctions: k.exposition_sanctions || undefined,
-      notes: k.notes.trim() || null,
-      volume_affaires_estime: this.m.volume_affaires_fourchette.trim() || undefined,
-    };
-
-    return {
-      kyc,
-      lab: {
-        statut_kyc: this.m.statut_kyc.trim() || 'Incomplet',
-      },
-      options: {
-        zone_geographique_activite: this.m.zone_geographique_activite.trim() || undefined,
-        volume_affaires_fourchette: this.m.volume_affaires_fourchette.trim() || undefined,
-        secteur_activite: secteurs[0],
-        wizard_supplement: this.buildWizardSupplement(),
-      },
-    };
-  }
-
-  private mapBeToUpdate(row: WizardBeRow): LabUpdateBeneficiaireRequest {
-    return {
-      nom: row.nom.trim(),
-      prenom: row.prenom.trim() || null,
-      nationalite: row.nationalite.trim() || null,
-      pays_residence: row.pays_residence.trim() || null,
-      pourcentage: row.pourcentage.trim() ? Number(row.pourcentage) : null,
-      mode_controle: row.mode_controle || 'Autre',
-      pep_statut: row.pep_statut || 'Non',
-      sanctions_gel: row.sanctions_gel || 'Non',
-      commentaire: row.commentaire.trim() || null,
-      options: { creer_evenement_changement_be: true },
-    };
-  }
-
-  private mapPieceToUpdate(row: WizardPieceRow): LabUpdatePieceRequest {
-    return {
-      type_piece: row.type_piece.trim(),
-      statut: row.statut || 'Manquante',
-      date_delivrance: row.date_delivrance.trim() || null,
-      date_echeance: row.date_echeance.trim() || null,
-      reference: row.reference.trim() || null,
-      titulaire: row.titulaire || 'Client',
-      commentaire: row.commentaire.trim() || null,
-    };
-  }
-
-  private getBeneficiairesToUpdate(): WizardBeRow[] {
-    return this.beneficiaires.filter((row) => this.isPersistedId(row.id) && row.nom.trim());
-  }
-
-  private getPiecesToUpdate(): WizardPieceRow[] {
-    return this.pieces.filter((row) => this.isPersistedId(row.id) && row.type_piece.trim());
-  }
-
-  private getBeneficiairesToCreate(): LabCreateBeneficiaireRequest[] {
-    const code = (this.m.code_client || this.codeClient || '').trim();
-    return this.beneficiaires
-      .filter((row) => !this.isPersistedId(row.id) && row.nom.trim())
-      .map((row) => ({
-        code_client: code,
-        nom: row.nom.trim(),
-        prenom: row.prenom.trim() || null,
-        nationalite: row.nationalite.trim() || null,
-        pays_residence: row.pays_residence.trim() || null,
-        pourcentage: row.pourcentage.trim() ? Number(row.pourcentage) : null,
-        mode_controle: row.mode_controle || 'Autre',
-        pep_statut: row.pep_statut || 'Non',
-        sanctions_gel: row.sanctions_gel || 'Non',
-        commentaire: row.commentaire.trim() || null,
-        options: { creer_evenement_changement_be: true },
-      }));
-  }
-
-  private getPiecesToCreate(): LabCreatePieceRequest[] {
-    const code = (this.m.code_client || this.codeClient || '').trim();
-    return this.pieces
-      .filter((row) => !this.isPersistedId(row.id) && row.type_piece.trim())
-      .map((row) => ({
-        code_client: code,
-        type_piece: row.type_piece.trim(),
-        statut: row.statut || 'Manquante',
-        date_delivrance: row.date_delivrance.trim() || null,
-        date_echeance: row.date_echeance.trim() || null,
-        reference: row.reference.trim() || null,
-        titulaire: row.titulaire || 'Client',
-        commentaire: row.commentaire.trim() || null,
-      }));
-  }
-
   private async persistStep1(codeClient: string): Promise<void> {
-    await firstValueFrom(this.labService.updateClientLab(codeClient, this.buildClientPayload()));
+    if (this.isWizardLocked) {
+      throw new Error(
+        'Révision impossible : lancez ou reprenez la revue depuis le plan & suivi.',
+      );
+    }
+    await firstValueFrom(this.labService.updateClientLab(codeClient, buildClientPayload(this.m)));
 
-    const lab = this.buildLabPayload();
+    const lab = buildLabPayload(this.m, this.idRevue);
 
     if (this.hasExistingLabDossier) {
       await firstValueFrom(this.labService.updateDossierLab(codeClient, { lab }));
@@ -1049,21 +519,21 @@ export class LabDossierFormWizardComponent implements OnInit {
       this.hasExistingLabDossier = true;
     }
 
-    await firstValueFrom(this.labService.updateKycLab(codeClient, this.buildKycPayload()));
+    await firstValueFrom(this.labService.updateKycLab(codeClient, buildKycPayload(this.m)));
 
     for (const beId of this.deletedBeneficiaireIds) {
       await firstValueFrom(this.labService.deleteBeneficiaireLab(beId));
     }
     this.deletedBeneficiaireIds = [];
 
-    for (const row of this.getBeneficiairesToUpdate()) {
-      await firstValueFrom(this.labService.updateBeneficiaireLab(row.id, this.mapBeToUpdate(row)));
+    for (const row of getBeneficiairesToUpdate(this.beneficiaires)) {
+      await firstValueFrom(this.labService.updateBeneficiaireLab(row.id, mapBeToUpdate(row)));
     }
 
-    for (const be of this.getBeneficiairesToCreate()) {
+    for (const be of getBeneficiairesToCreate(this.beneficiaires, codeClient)) {
       const res = await firstValueFrom(this.labService.createBeneficiaireLab(be));
       if (res.data?.beneficiaire?.id) {
-        const match = this.beneficiaires.find((r) => r.nom.trim() === be.nom && !this.isPersistedId(r.id));
+        const match = this.beneficiaires.find((r) => r.nom.trim() === be.nom && !isPersistedId(r.id));
         if (match) match.id = res.data.beneficiaire.id;
       }
     }
@@ -1073,14 +543,14 @@ export class LabDossierFormWizardComponent implements OnInit {
     }
     this.deletedPieceIds = [];
 
-    for (const row of this.getPiecesToUpdate()) {
-      await firstValueFrom(this.labService.updatePieceLab(row.id, this.mapPieceToUpdate(row)));
+    for (const row of getPiecesToUpdate(this.pieces)) {
+      await firstValueFrom(this.labService.updatePieceLab(row.id, mapPieceToUpdate(row)));
     }
 
-    for (const piece of this.getPiecesToCreate()) {
+    for (const piece of getPiecesToCreate(this.pieces, codeClient)) {
       const res = await firstValueFrom(this.labService.createPieceLab(piece));
       if (res.data?.piece?.id) {
-        const match = this.pieces.find((r) => r.type_piece.trim() === piece.type_piece && !this.isPersistedId(r.id));
+        const match = this.pieces.find((r) => r.type_piece.trim() === piece.type_piece && !isPersistedId(r.id));
         if (match) match.id = res.data.piece.id;
       }
     }
@@ -1089,6 +559,12 @@ export class LabDossierFormWizardComponent implements OnInit {
   private async persistStep2(codeClient: string): Promise<void> {
     if (!this.evalRisque) {
       throw new Error('Évaluation du risque indisponible');
+    }
+    if (this.evalRisque.questionnaireBlocked) {
+      throw new Error(
+        this.evalRisque.questionnaireError ||
+          'Questionnaire ARPEC indisponible — impossible d’enregistrer l’évaluation.',
+      );
     }
     const payload = this.evalRisque.getSubmitPayload();
     payload.code_client = codeClient;
@@ -1117,6 +593,10 @@ export class LabDossierFormWizardComponent implements OnInit {
 
   get isRevisionSession(): boolean {
     return !!this.idRevue;
+  }
+
+  get arpecQuestionnaireBlocked(): boolean {
+    return this.evalRisque?.questionnaireBlocked === true;
   }
 
   async annulerRevue(): Promise<void> {
@@ -1148,6 +628,7 @@ export class LabDossierFormWizardComponent implements OnInit {
   }
 
   async submitWizard(): Promise<void> {
+    if (this.isWizardLocked) return;
     this.submitError = null;
 
     const pendingCritical = this.bodaccChecklist?.pendingCriticalCount ?? this.bodaccPendingCritical;
@@ -1160,11 +641,18 @@ export class LabDossierFormWizardComponent implements OnInit {
     }
 
     const evalCmp = this.evalRisque;
+    if (evalCmp?.questionnaireBlocked) {
+      this.stepIndex = this.steps.length - 1;
+      this.submitError =
+        evalCmp.questionnaireError ??
+        'Questionnaire ARPEC indisponible — impossible de valider.';
+      return;
+    }
     if (!evalCmp?.validateEvaluation()) {
       this.stepIndex = this.steps.length - 1;
       this.submitError =
         evalCmp?.validationError ??
-        'Complétez le questionnaire ARPEC (54 questions OUI/NON) avant de valider.';
+        'Complétez le questionnaire ARPEC (toutes les questions OUI/NON) avant de valider.';
       return;
     }
 
@@ -1216,13 +704,5 @@ export class LabDossierFormWizardComponent implements OnInit {
     } finally {
       this.submitting = false;
     }
-  }
-
-  /** Formate un nom de collaborateur (prénom + nom) — aligné sur lab-dossier. */
-  formatCollaborateur(prenom: string | null | undefined, nom: string | null | undefined): string {
-    const p = prenom != null ? String(prenom).trim() : '';
-    const n = nom != null ? String(nom).trim() : '';
-    const full = [p, n].filter((x) => x !== '').join(' ');
-    return full !== '' ? full : '—';
   }
 }

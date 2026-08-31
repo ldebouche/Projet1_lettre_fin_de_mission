@@ -1,0 +1,63 @@
+<app-lab-carte class="wizard-card form-section" id="section-pieces" title="Pièces KYC" subtitle="Statuts documentaires attendus">
+  <p class="panel-intro">
+    Références documentaires attendues pour le dossier KYC (stockage fichier éventuel hors périmètre). Chaque pièce peut être associée au client, à un BE ou à un dirigeant.
+  </p>
+  <datalist id="piece-presets-lab">
+    <option *ngFor="let t of pieceTypePresets" [value]="t"></option>
+  </datalist>
+  <div class="repeat-toolbar">
+    <span class="repeat-toolbar-title">Pièces ({{ pieces.length }})</span>
+    <button type="button" class="btn btn--ghost btn--sm" (click)="addPiece()">+ Ajouter une pièce</button>
+  </div>
+  <div class="stack">
+    <div class="repeat-card" *ngFor="let p of pieces; trackBy: trackById">
+      <div class="repeat-card-head">
+        <span class="repeat-card-title">Pièce documentaire</span>
+        <button type="button" class="btn btn--ghost btn--sm" (click)="removePiece(p.id)" [disabled]="pieces.length === 1">
+          Retirer
+        </button>
+      </div>
+      <div class="form-grid form-grid--2">
+        <label class="field">
+          <span class="field-label">Type de pièce</span>
+          <input class="field-input" type="text" [name]="'pc_type_' + p.id" [(ngModel)]="p.type_piece" list="piece-presets-lab" />
+        </label>
+        <label class="field">
+          <span class="field-label">Titulaire</span>
+          <select class="field-input" [name]="'pc_tit_' + p.id" [(ngModel)]="p.titulaire">
+            <option value="">—</option>
+            <option value="Client">Client</option>
+            <option value="BE">BE</option>
+            <option value="Dirigeant">Dirigeant</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Statut</span>
+          <select class="field-input" [name]="'pc_st_' + p.id" [(ngModel)]="p.statut">
+            <option value="">—</option>
+            <option value="Recue">Reçue</option>
+            <option value="Manquante">Manquante</option>
+            <option value="Perimee">Périmée</option>
+            <option value="Non_requise">Non requise</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Référence / lien interne</span>
+          <input class="field-input" type="text" [name]="'pc_ref_' + p.id" [(ngModel)]="p.reference" />
+        </label>
+        <label class="field">
+          <span class="field-label">Date délivrance</span>
+          <input class="field-input" type="date" [name]="'pc_dd_' + p.id" [(ngModel)]="p.date_delivrance" />
+        </label>
+        <label class="field">
+          <span class="field-label">Date échéance</span>
+          <input class="field-input" type="date" [name]="'pc_de_' + p.id" [(ngModel)]="p.date_echeance" />
+        </label>
+        <label class="field field--full">
+          <span class="field-label">Commentaire</span>
+          <textarea class="field-input field-textarea" rows="2" [name]="'pc_co_' + p.id" [(ngModel)]="p.commentaire"></textarea>
+        </label>
+      </div>
+    </div>
+  </div>
+</app-lab-carte>

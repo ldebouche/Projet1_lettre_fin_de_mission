@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
-import { LabService } from '../../services/lab-service';
+import { LabDossierAttenteItem, LabService } from '../../services/lab-service';
 import { RolesService } from '../../services/roles-service';
 import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
 import { ModalComponent } from '../../shared/modal/modal';
@@ -71,9 +71,11 @@ export class DashboardComponent implements OnInit {
   isHistoriqueModalOpen = false;
   selectedCodeClient: string | null = null;
 
-  dossiersEnAttente: any[] = [];
+  dossiersEnAttente: LabDossierAttenteItem[] = [];
+  dossiersAttenteTotal = 0;
+  dossiersAttenteLoading = false;
   isModalAttenteOpen = false;
-  selectedDossierAttente: any | null = null;
+  selectedDossierAttente: LabDossierAttenteItem | null = null;
 
   risqueMap: Map<string, any> = new Map();
   isLabUser: boolean = false;
@@ -88,43 +90,9 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.collaborateur = JSON.parse(localStorage.getItem('collaborateur') || 'null');
-    this.loadData();
-
     this.isLabUser = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ['admin', 'informatique', 'lab']);
-
-    //données test 
-    this.dossiersEnAttente = [
-      {
-        code_client: 'CLT-4587',
-        raison_sociale: 'Les Garçons Coiffeurs',
-        forme_societe: 'SAS',
-        civilite: null,
-        nom: null,
-        prenom: null,
-        date_creation: '2024-11-12',
-        statut: 'EN_ATTENTE'
-      },
-      {
-        code_client: 'CLT-4621',
-        raison_sociale: 'Boulangerie du Centre',
-        forme_societe: 'SARL',
-        civilite: null,
-        nom: null,
-        prenom: null,
-        date_creation: '2024-12-03',
-        statut: 'EN_ATTENTE'
-      },
-      {
-        code_client: 'CLT-4709',
-        raison_sociale: null,
-        forme_societe: null,
-        civilite: 'M.',
-        nom: 'Durand',
-        prenom: 'Lucas',
-        date_creation: '2025-01-08',
-        statut: 'EN_ATTENTE'
-      }
-    ];
+    this.loadData();
+    this.loadDossiersAttente();
   }
 
   private prepareData(data: any[]): Dossier[] {
@@ -325,16 +293,43 @@ export class DashboardComponent implements OnInit {
     this.selectedCodeClient = null;
   }
 
+  private loadDossiersAttente(selectFirst = false): void {
+    if (!this.collaborateur) {
+      this.dossiersEnAttente = [];
+      this.dossiersAttenteTotal = 0;
+      this.selectedDossierAttente = null;
+      return;
+    }
+
+    this.dossiersAttenteLoading = true;
+    this.labService.getDossiersAttenteLab({ page: 1, pageSize: 200 }).subscribe({
+      next: (res) => {
+        this.dossiersEnAttente = res.data || [];
+        this.dossiersAttenteTotal = res.total ?? this.dossiersEnAttente.length;
+        this.dossiersAttenteLoading = false;
+        if (selectFirst) {
+          this.selectedDossierAttente = this.dossiersEnAttente[0] ?? null;
+        }
+      },
+      error: () => {
+        this.dossiersEnAttente = [];
+        this.dossiersAttenteTotal = 0;
+        this.dossiersAttenteLoading = false;
+        this.selectedDossierAttente = null;
+      },
+    });
+  }
+
   openModalAttente() {
     this.isModalAttenteOpen = true;
-    this.dossiersEnAttente ? this.selectedDossierAttente = this.dossiersEnAttente[0] : null;
+    this.loadDossiersAttente(true);
   }
 
   closeModalAttente() {
     this.isModalAttenteOpen = false;
   }
 
-  selectDossierAttente(d: any) {
+  selectDossierAttente(d: LabDossierAttenteItem) {
     this.selectedDossierAttente = d;
   }
 

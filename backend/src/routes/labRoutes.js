@@ -22,11 +22,15 @@ import {
   postPlanVigilanceGenerer,
   getDashboardLab,
   getDossiersLab,
+  getDossiersAttenteLab,
+  getPortefeuilleExportLab,
   getEvenementsLab,
   getDiligencesLab,
   postEvenementLab,
   putEvenementLab,
   cloturerEvenementLabHandler,
+  demanderClotureEvenementLabHandler,
+  refuserClotureEvenementLabHandler,
   postDiligenceLab,
   putDiligenceLab,
   getRevuesLab,
@@ -34,9 +38,18 @@ import {
   cloturerRevueLabHandler,
   annulerRevueLabHandler,
   getTransactionsLab,
+  getMeLab,
   getTracfinLab,
   getParametrageLab,
+  putParametrageLab,
   getEnrichissementLab,
+  postJobsPiecesPerimeesLab,
+  postJobsRevueAnnuelleLab,
+  getConversationLab,
+  getMessagesLab,
+  postMessageLab,
+  putMessageLab,
+  deleteMessageLab,
 } from '../controllers/labController.js';
 
 const router = express.Router();
@@ -46,9 +59,12 @@ const pieceUpload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
 });
 
+router.get('/me', authMiddlewareCollaborateur, getMeLab);
 router.post('/dossiers-risque', authMiddlewareCollaborateur, postDossiersRisque);
 router.get('/dashboard', authMiddlewareCollaborateur, getDashboardLab);
 router.get('/dossiers', authMiddlewareCollaborateur, getDossiersLab);
+router.get('/dossiers-attente', authMiddlewareCollaborateur, getDossiersAttenteLab);
+router.get('/portefeuille/export', authMiddlewareCollaborateur, getPortefeuilleExportLab);
 router.get('/resume', authMiddlewareCollaborateur, getResumeLab);
 router.get('/dossier', authMiddlewareCollaborateur, getDossierLab);
 router.post('/dossier', authMiddlewareCollaborateur, postDossierLab);
@@ -67,7 +83,9 @@ router.get('/arpec/evaluation', authMiddlewareCollaborateur, getArpecEvaluation)
 router.post('/arpec/evaluation', authMiddlewareCollaborateur, postArpecEvaluation);
 router.post('/plan-vigilance/generer', authMiddlewareCollaborateur, postPlanVigilanceGenerer);
 router.get('/evenements', authMiddlewareCollaborateur, getEvenementsLab);
+router.post('/evenements/demander-cloture', authMiddlewareCollaborateur, demanderClotureEvenementLabHandler);
 router.post('/evenements/cloturer', authMiddlewareCollaborateur, cloturerEvenementLabHandler);
+router.post('/evenements/refuser-cloture', authMiddlewareCollaborateur, refuserClotureEvenementLabHandler);
 router.post('/evenements', authMiddlewareCollaborateur, postEvenementLab);
 router.put('/evenements', authMiddlewareCollaborateur, putEvenementLab);
 router.get('/diligences', authMiddlewareCollaborateur, getDiligencesLab);
@@ -80,7 +98,15 @@ router.post('/revues', authMiddlewareCollaborateur, postRevueLab);
 router.get('/transactions', authMiddlewareCollaborateur, getTransactionsLab);
 router.get('/tracfin', authMiddlewareCollaborateur, getTracfinLab);
 router.get('/parametrage', authMiddlewareCollaborateur, getParametrageLab);
+router.put('/parametrage', authMiddlewareCollaborateur, putParametrageLab);
+router.post('/jobs/pieces-perimees', authMiddlewareCollaborateur, postJobsPiecesPerimeesLab);
+router.post('/jobs/revue-annuelle', authMiddlewareCollaborateur, postJobsRevueAnnuelleLab);
 router.get('/enrichissement', authMiddlewareCollaborateur, getEnrichissementLab);
+router.get('/conversation', authMiddlewareCollaborateur, getConversationLab);
+router.get('/messages', authMiddlewareCollaborateur, getMessagesLab);
+router.post('/messages', authMiddlewareCollaborateur, postMessageLab);
+router.put('/messages', authMiddlewareCollaborateur, putMessageLab);
+router.delete('/messages', authMiddlewareCollaborateur, deleteMessageLab);
 
 export default router;
 

@@ -19,7 +19,7 @@
           [(ngModel)]="selectedActivite"
           (ngModelChange)="onActiviteChange()"
           aria-label="Mon activité">
-          <option value="">Mon activité</option>
+          <option value="" disabled hidden>Mon activité</option>
           <option *ngFor="let opt of activiteOptions" [value]="opt.key">{{ opt.label }}</option>
         </select>
       </label>
@@ -72,7 +72,17 @@
           routerLinkActive="is-active"
           [routerLinkActiveOptions]="{ exact: true }" 
           (click)="closeAdminMenu()">
-          Dashboard LAB
+          Cartographie cabinet
+        </a>
+
+        <a
+          *ngIf="hasRoleLab"
+          class="dd-link"
+          [routerLink]="['/lab/parametrage']"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="closeAdminMenu()">
+          Modulation cabinet
         </a>
       </div>
 

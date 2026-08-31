@@ -125,6 +125,11 @@ export class NavbarComponent implements OnInit {
       return;
     }
 
+    if (this.currentUrl.startsWith('/lab/parametrage')) {
+      this.router.navigate(['/lab/dashboard']);
+      return;
+    }
+
     if (this.currentUrl.startsWith('/lab/dashboard')) {
       this.router.navigate(['/accueil-intranet']);
       return;

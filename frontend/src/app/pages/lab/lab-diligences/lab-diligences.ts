@@ -4,7 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { LabCarteComponent } from '../lab-carte/lab-carte';
+import { LabCabinetListeComponent } from '../lab-cabinet-liste/lab-cabinet-liste';
+import { LabShellComponent } from '../lab-shell/lab-shell';
 import { LabDiligenceListItem, LabService } from '../../../services/lab-service';
+import {
+  statutDiligenceLabel,
+  typeDiligenceLabel,
+  typeEvenementLabel,
+} from '../lab-labels';
 
 type StatutFilter = '' | 'A_faire' | 'En_cours' | 'Realisee' | 'Abandonnee';
 type RetardFilter = '' | 'late';
@@ -12,7 +19,7 @@ type RetardFilter = '' | 'late';
 @Component({
   selector: 'app-lab-diligences',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent, LabShellComponent, LabCabinetListeComponent],
   templateUrl: './lab-diligences.html',
   styleUrls: ['./lab-diligences.scss'],
 })
@@ -36,6 +43,24 @@ export class LabDiligencesComponent implements OnInit {
   get aFaireCount(): number {
     return this.rows.filter((r) => r.statut === 'A_faire' || r.statut === 'En_cours').length;
   }
+
+  get hasActiveFilters(): boolean {
+    return !!(
+      this.codeClient.trim() ||
+      this.statutFilter ||
+      this.idEvenement.trim() ||
+      this.retardFilter ||
+      this.search.trim()
+    );
+  }
+
+  get eventFilterLabel(): string {
+    const row = this.rows[0];
+    if (row?.type_evenement) return typeEvenementLabel(row.type_evenement);
+    return 'événement';
+  }
+
+  typeEvenementLabel = typeEvenementLabel;
 
   constructor(
     private labService: LabService,
@@ -151,10 +176,30 @@ export class LabDiligencesComponent implements OnInit {
     this.applyFilters();
   }
 
+  resetFilters(): void {
+    this.codeClient = '';
+    this.statutFilter = '';
+    this.idEvenement = '';
+    this.retardFilter = '';
+    this.search = '';
+    this.applyFilters();
+  }
+
   openPlanSuivi(row: LabDiligenceListItem): void {
     if (!row.code_client) return;
     this.router.navigate(['/lab/dossier'], {
       queryParams: { code_client: row.code_client },
+    });
+  }
+
+  openDiscussion(row: LabDiligenceListItem): void {
+    if (!row.code_client) return;
+    this.router.navigate(['/lab/dossier'], {
+      queryParams: {
+        code_client: row.code_client,
+        id_diligence: String(row.id),
+        chat: '1',
+      },
     });
   }
 
@@ -184,11 +229,7 @@ export class LabDiligencesComponent implements OnInit {
   }
 
   statutLabel(value: string | null | undefined): string {
-    if (value === 'A_faire') return 'À faire';
-    if (value === 'En_cours') return 'En cours';
-    if (value === 'Realisee') return 'Réalisée';
-    if (value === 'Abandonnee') return 'Abandonnée';
-    return this.displayValue(value);
+    return statutDiligenceLabel(value);
   }
 
   statutClass(row: LabDiligenceListItem): string {
@@ -200,8 +241,6 @@ export class LabDiligencesComponent implements OnInit {
   }
 
   typeLabel(value: string | null | undefined): string {
-    const v = value != null ? String(value).trim() : '';
-    if (!v) return '—';
-    return v.replace(/_/g, ' ');
+    return typeDiligenceLabel(value);
   }
 }

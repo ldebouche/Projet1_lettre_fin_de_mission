@@ -27,12 +27,12 @@
             <button
                 class="primary-action-button"
                 type="button"
-                *ngIf="isLabUser"
+                *ngIf="collaborateur"
                 (click)="openModalAttente()">
-                Dossiers en attente
+                Prospects
                 <app-rond-notif
-                    *ngIf="dossiersEnAttente.length > 0"
-                    [value]="dossiersEnAttente.length"
+                    *ngIf="dossiersAttenteTotal > 0"
+                    [value]="dossiersAttenteTotal"
                     top="0"
                     right="0"
                     translateX="50%"
@@ -299,14 +299,18 @@
     </div>
 </app-modal>
 
-<app-modal [isOpen]="isModalAttenteOpen" title="Dossiers en attente d'acceptation" [isLarge]="false"
+<app-modal [isOpen]="isModalAttenteOpen" title="Prospects" [isLarge]="false"
     (closeEvent)="closeModalAttente()">
     <div modal-body>
-        <div class="attente-empty" *ngIf="!dossiersEnAttente?.length">
-            Aucun dossier en attente d'acceptation
+        <div class="attente-empty" *ngIf="dossiersAttenteLoading">
+            Chargement des prospects…
         </div>
 
-        <div class="attente-list" *ngIf="dossiersEnAttente?.length">
+        <div class="attente-empty" *ngIf="!dossiersAttenteLoading && !dossiersEnAttente?.length">
+            Aucun prospect
+        </div>
+
+        <div class="attente-list" *ngIf="!dossiersAttenteLoading && dossiersEnAttente?.length">
             <button type="button" class="attente-item" *ngFor="let d of dossiersEnAttente"
                 (click)="selectDossierAttente(d)" [class.selected]="selectedDossierAttente === d">
                 <div class="attente-main">
@@ -326,7 +330,8 @@
             Fermer
         </button>
 
-        <button class="btn" type="button" *ngIf="dossiersEnAttente?.length" [disabled]="!selectedDossierAttente"
+        <button class="btn" type="button" *ngIf="!dossiersAttenteLoading && dossiersEnAttente?.length"
+            [disabled]="!selectedDossierAttente"
             (click)="openDossierAcceptation()">
             Ouvrir
         </button>

@@ -1,0 +1,205 @@
+        <!-- Événements LAB -->
+        <section class="section" id="section-evenements">
+          <div class="section-head">
+            <h2 class="section-title">
+              Événements LAB
+              <span class="section-counter">({{ nbEvenementsOuverts }} ouvert(s))</span>
+            </h2>
+            <button type="button" class="btn-inline-action" (click)="onCreerEvenement()">+ Créer un événement</button>
+          </div>
+          <hr class="separator" />
+
+          <div class="revue-blocker" *ngIf="evenementsBloquantsRevue.length > 0">
+            <strong>Revue bloquée</strong> — événements encore ouverts&nbsp;:
+            <span class="mono" *ngFor="let b of evenementsBloquantsRevue; let last = last">
+              {{ getEvenementTypeLabel(b.type) }} ({{ getEvenementStatutLabel(b.statut) }})<span *ngIf="!last">, </span>
+            </span>
+          </div>
+
+          <div class="timeline" *ngIf="evenements.length > 0; else noEvenements">
+            <div class="t-item" *ngFor="let e of evenements">
+              <div class="t-dot" [class]="'dot tone-' + getEvenementTone(e.criticite)"></div>
+              <div class="t-body">
+                <div class="t-top">
+                  <div class="t-title">
+                    <span class="mono">{{ getEvenementTypeLabel(e.type) }}</span>
+                    <span class="badge small" [class]="'badge tone-' + getEvenementTone(e.criticite)">{{ criticiteLabel(e.criticite) }}</span>
+                    <span class="badge small" [class]="'badge ' + getEvenementStatutTone(e.statut)">{{ getEvenementStatutLabel(e.statut) }}</span>
+                  </div>
+                  <div class="t-actions">
+                    <button type="button" class="link-action" (click)="openEvenementDiscussion(e)">Discussion</button>
+                  </div>
+                  <div class="t-actions" *ngIf="isEvenementEditable(e)">
+                    <button type="button" class="link-action" (click)="openEditEvenementModal(e)">Modifier</button>
+                    <button type="button" class="link-action" *ngIf="canValiderCloture" (click)="openCloseEvenementModal(e)">Clôturer</button>
+                    <button type="button" class="link-action" *ngIf="!canValiderCloture" (click)="openCloseEvenementModal(e)">Demander la clôture</button>
+                    <button type="button" class="link-action" *ngIf="isEvenementOpen(e)" (click)="createDiligence.emit(e)">+ Diligence</button>
+                  </div>
+                  <div class="t-actions" *ngIf="isEvenementPendingValidation(e) && canValiderCloture">
+                    <button type="button" class="link-action" (click)="openValidateEvenementModal(e)">Valider</button>
+                    <button type="button" class="link-action" (click)="openRefuseEvenementModal(e)">Refuser</button>
+                  </div>
+                  <div class="t-date">{{ e.date_creation | date:'dd/MM/yyyy' }}</div>
+                </div>
+                <div class="t-desc">{{ e.resume }}</div>
+                <div class="t-meta" *ngIf="e.statut === 'A_VALIDER'">
+                  En attente de validation par le responsable du dossier.
+                </div>
+                <div class="t-meta">
+                  <span><b>Responsable</b>&nbsp;: {{ e.responsable }}</span>
+                  <span class="sep">•</span>
+                  <span><b>Échéance</b>&nbsp;: {{ e.echeance ? (e.echeance | date:'dd/MM/yyyy') : '—' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noEvenements>
+            <div class="empty-state">
+              Aucun événement sur ce dossier.
+              <button type="button" class="btn-inline-action" (click)="onCreerEvenement()">Ajouter</button>
+            </div>
+          </ng-template>
+        </section>
+
+<app-modal
+  [isOpen]="evenementModalMode !== null"
+  [title]="evenementModalTitle"
+  (closeEvent)="closeEvenementModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <ng-container *ngIf="evenementModalMode === 'create'">
+      <label class="lab-field">
+        <span class="lab-field-label">Type</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.type_evenement">
+          <option *ngFor="let t of manualEventTypes" [ngValue]="t">{{ getEvenementTypeLabel(t) }}</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Libellé</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="evenementForm.libelle" maxlength="200" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Criticité</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.criticite">
+          <option value="Faible">Faible</option>
+          <option value="Moyenne">Moyenne</option>
+          <option value="Elevee">Élevée</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="evenementForm.date_echeance" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Diligence initiale (optionnel)</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="evenementForm.diligence_intitule" maxlength="200" />
+      </label>
+      <label class="lab-field" *ngIf="evenementForm.diligence_intitule.trim()">
+        <span class="lab-field-label">Échéance diligence</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="evenementForm.diligence_echeance" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'edit'">
+      <label class="lab-field">
+        <span class="lab-field-label">Libellé</span>
+        <input class="lab-field-input" type="text" [(ngModel)]="evenementForm.libelle" maxlength="200" />
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Criticité</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.criticite">
+          <option value="Faible">Faible</option>
+          <option value="Moyenne">Moyenne</option>
+          <option value="Elevee">Élevée</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Statut</span>
+        <select class="lab-field-input" [(ngModel)]="evenementForm.statut">
+          <option value="Ouvert">Ouvert</option>
+          <option value="En_cours">En cours</option>
+        </select>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Échéance</span>
+        <input class="lab-field-input" type="date" [(ngModel)]="evenementForm.date_echeance" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'close'">
+      <p class="lab-modal-hint" *ngIf="!canValiderCloture">
+        Le responsable du dossier devra valider cette clôture.
+      </p>
+      <label class="lab-field">
+        <span class="lab-field-label">Conclusion *</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="4" [(ngModel)]="evenementForm.conclusion"></textarea>
+      </label>
+      <ng-container *ngIf="selectedEvenement?.type === 'TRANSACTION_ATYPIQUE'">
+        <label class="lab-field">
+          <span class="lab-field-label">TRACFIN déclaré *</span>
+          <select class="lab-field-input" [(ngModel)]="evenementForm.tracfin_declare">
+            <option value="">—</option>
+            <option value="O">Oui</option>
+            <option value="N">Non</option>
+          </select>
+        </label>
+        <label class="lab-field" *ngIf="evenementForm.tracfin_declare === 'O'">
+          <span class="lab-field-label">Commentaire TRACFIN *</span>
+          <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="evenementForm.tracfin_commentaire"></textarea>
+        </label>
+      </ng-container>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'validate'">
+      <p class="lab-modal-hint">Valider la demande de clôture de cet événement.</p>
+      <label class="lab-field">
+        <span class="lab-field-label">Conclusion</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="4" [(ngModel)]="evenementForm.conclusion"></textarea>
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'refuse'">
+      <p class="lab-modal-hint">L'événement repassera en cours. La conclusion est conservée.</p>
+      <label class="lab-field" *ngIf="evenementForm.conclusion.trim()">
+        <span class="lab-field-label">Conclusion actuelle</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="3" [ngModel]="evenementForm.conclusion" disabled></textarea>
+      </label>
+      <label class="lab-field">
+        <span class="lab-field-label">Motif de refus *</span>
+        <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="evenementForm.motif_refus" maxlength="500"></textarea>
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="evenementModalMode === 'discussion' && selectedEvenement">
+      <p class="lab-modal-hint">
+        {{ getEvenementTypeLabel(selectedEvenement.type) }} — {{ selectedEvenement.resume }}
+      </p>
+    </ng-container>
+
+    <app-lab-chat-dossier
+      *ngIf="evenementModalMode !== 'create' && selectedEvenement && codeClient"
+      [codeClient]="codeClient"
+      [filterIdEvenement]="selectedEvenement.id"
+      [evenements]="evenements"
+      [diligences]="diligences"
+      [lockFilter]="true"
+      [compact]="true"
+    ></app-lab-chat-dossier>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closeEvenementModal()" [disabled]="actionBusy">
+      {{ evenementModalMode === 'discussion' ? 'Fermer' : 'Annuler' }}
+    </button>
+    <button
+      type="button"
+      class="lab-btn lab-btn--primary"
+      *ngIf="evenementModalMode !== 'discussion'"
+      (click)="saveEvenementModal()"
+      [disabled]="actionBusy"
+    >
+      {{ evenementModalSubmitLabel }}
+    </button>
+  </div>
+</app-modal>

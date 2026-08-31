@@ -1,0 +1,71 @@
+        <!-- KYC structuré -->
+        <section class="section" id="section-kyc" *ngIf="kyc">
+          <div class="section-head">
+            <h2 class="section-title">KYC structuré</h2>
+            <div class="badges-row">
+              <span class="badge" [class]="'badge tone-' + getPepTone(kyc.pep_statut)">PEP&nbsp;: {{ kyc.pep_statut }}</span>
+              <span class="badge" [class]="'badge tone-' + getSanctionsTone(kyc.exposition_sanctions)">Sanctions / gel&nbsp;: {{ kyc.exposition_sanctions }}</span>
+              <span class="badge" [class]="'badge tone-' + (kyc.secteur_sensible ? 'warn' : 'ok')">Secteur sensible&nbsp;: {{ kyc.secteur_sensible ? 'Oui' : 'Non' }}</span>
+              <span class="badge tone-info" *ngIf="kyc.pays_a_risque.length > 0">Pays à risque&nbsp;: {{ kyc.pays_a_risque.length }}</span>
+            </div>
+          </div>
+          <hr class="separator" />
+
+          <div class="kv-grid">
+            <div class="kv-item">
+              <span class="kv-label">Catégorie</span>
+              <span class="kv-value">{{ kyc.categorie_client === 'Personne_morale' ? 'Personne morale' : 'Personne physique' }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Résidence fiscale</span>
+              <span class="kv-value">{{ val(kyc.pays_residence_fiscale) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Pays d’implantation</span>
+              <span class="kv-value">{{ val(kyc.pays_implantation) }}</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-label">Complexité structure</span>
+              <span class="kv-value">{{ kyc.complexite_structure }}</span>
+            </div>
+            <div class="kv-item kv-item-wide">
+              <span class="kv-label">Secteurs</span>
+              <span class="kv-value">
+                <span class="chips">
+                  <span class="chip" *ngFor="let s of kyc.secteurs">{{ s }}</span>
+                </span>
+              </span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.pays_a_risque.length > 0">
+              <span class="kv-label">Pays / zones à risque</span>
+              <span class="kv-value">
+                <span class="chips">
+                  <span class="chip chip-warn" *ngFor="let p of kyc.pays_a_risque">{{ p }}</span>
+                </span>
+              </span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.pep_details">
+              <span class="kv-label">Détail PEP</span>
+              <span class="kv-value">{{ kyc.pep_details }}</span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.justification_complexite">
+              <span class="kv-label">Justification complexité</span>
+              <span class="kv-value">{{ kyc.justification_complexite }}</span>
+            </div>
+            <div class="kv-item kv-item-wide" *ngIf="kyc.notes">
+              <span class="kv-label">Notes</span>
+              <span class="kv-value">{{ kyc.notes }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" *ngIf="!kyc">
+          <div class="section-head">
+            <h2 class="section-title">KYC structuré</h2>
+          </div>
+          <hr class="separator" />
+          <div class="empty-state">
+            Aucun détail KYC sur ce dossier.
+            <span>Utilisez « Réviser le dossier » pour renseigner la fiche.</span>
+          </div>
+        </section>

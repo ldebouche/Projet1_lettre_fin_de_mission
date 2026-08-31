@@ -1,0 +1,107 @@
+<section class="chat" [class.chat--compact]="compact" aria-label="Discussion">
+  <header class="chat-head">
+    <div>
+      <h3 class="chat-title">Discussion</h3>
+      <p class="chat-sub">{{ subtitle }}</p>
+    </div>
+    <button
+      type="button"
+      class="mini"
+      *ngIf="showFilters && hasActiveFilter"
+      (click)="clearFilters()"
+    >
+      Tout voir
+    </button>
+  </header>
+
+  <div class="chat-filters" *ngIf="showFilters">
+    <span class="people-label">Filtrer</span>
+    <button
+      type="button"
+      class="chip chip--btn"
+      [class.chip--on]="!hasActiveFilter"
+      (click)="clearFilters()"
+    >
+      Tout
+    </button>
+    <button
+      type="button"
+      class="chip chip--btn"
+      *ngFor="let e of evenements"
+      [class.chip--on]="isEventSelected(e.id)"
+      (click)="toggleEventFilter(e.id)"
+    >
+      {{ evenementChipLabel(e) }}
+    </button>
+    <button
+      type="button"
+      class="chip chip--btn"
+      *ngFor="let d of diligences"
+      [class.chip--on]="isDiligenceSelected(d.id)"
+      (click)="toggleDiligenceFilter(d.id)"
+    >
+      {{ d.intitule }}
+    </button>
+  </div>
+
+  <div class="chat-people" *ngIf="conversation?.participants?.length">
+    <span class="people-label">Personnes du dossier</span>
+    <span class="chip" *ngFor="let p of conversation!.participants">
+      {{ participantLabel(p) }}
+      <small>{{ roleLabel(p.role) }}</small>
+    </span>
+  </div>
+
+  <p class="chat-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="chat-hint" *ngIf="loading && messages.length === 0">Chargement de la discussion…</p>
+
+  <div class="chat-thread" #thread>
+    <p class="chat-empty" *ngIf="!loading && messages.length === 0">
+      Aucun message pour l’instant. Écrivez le premier.
+    </p>
+    <article
+      class="bubble"
+      *ngFor="let m of messages; trackBy: trackMessage"
+      [class.bubble--mine]="isMine(m)"
+    >
+      <div class="bubble-meta">
+        <strong>{{ auteurLabel(m) }}</strong>
+        <time>{{ m.date_creation | date:'dd/MM/yyyy HH:mm' }}</time>
+        <span class="ctx" *ngIf="messageContextLabel(m)">{{ messageContextLabel(m) }}</span>
+        <span class="edited" *ngIf="m.edite">modifié</span>
+      </div>
+      <ng-container *ngIf="editingId !== m.id">
+        <p class="bubble-text">{{ m.contenu }}</p>
+        <div class="bubble-actions">
+          <button type="button" class="mini" *ngIf="canEdit(m)" (click)="startEdit(m)">Modifier</button>
+          <button type="button" class="mini" *ngIf="canDelete(m)" (click)="remove(m)">Supprimer</button>
+        </div>
+      </ng-container>
+      <div class="edit-box" *ngIf="editingId === m.id">
+        <textarea class="composer-input" rows="3" maxlength="4000" [(ngModel)]="editDraft"></textarea>
+        <div class="bubble-actions">
+          <button type="button" class="mini mini--primary" (click)="saveEdit(m)" [disabled]="sending || !editDraft.trim()">Enregistrer</button>
+          <button type="button" class="mini" (click)="cancelEdit()" [disabled]="sending">Annuler</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <footer class="composer">
+    <textarea
+      class="composer-input"
+      rows="3"
+      maxlength="4000"
+      [(ngModel)]="draft"
+      (keydown.enter)="onComposerEnter($event)"
+      placeholder="Écrire un message (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)"
+      [disabled]="sending"
+    ></textarea>
+    <div class="composer-bar">
+      <span class="counter">{{ draft.trim().length }} / 4000</span>
+      <button type="button" class="send" (click)="send()" [disabled]="!canSend">
+        {{ sending ? 'Envoi…' : 'Envoyer' }}
+      </button>
+    </div>
+  </footer>
+</section>

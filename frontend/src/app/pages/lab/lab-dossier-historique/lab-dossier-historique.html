@@ -1,0 +1,42 @@
+        <!-- Historique du risque -->
+        <section class="section" id="section-risque-historique">
+          <div class="section-head">
+            <h2 class="section-title">Historique du risque</h2>
+          </div>
+          <hr class="separator" />
+
+          <table class="table" *ngIf="risqueHistorique.length > 0; else noRisqueHistorique">
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Niveau</th>
+              <th>Origine</th>
+              <th>Utilisateur</th>
+              <th>Justification</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let h of risqueHistorique">
+              <td>{{ h.date | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="badge small"
+                      [class]="
+                        'badge ' +
+                        (h.niveau === 'Eleve' ? 'tone-danger' :
+                         h.niveau === 'Moyen' ? 'tone-warn' : 'tone-ok')
+                      ">
+                  {{ h.niveau === 'Eleve' ? 'Élevé' : h.niveau }}
+                </span>
+              </td>
+              <td><span class="mono">{{ h.origine }}</span></td>
+              <td>{{ h.utilisateur }}</td>
+              <td>{{ val(h.justification) }}</td>
+            </tr>
+            </tbody>
+          </table>
+          <ng-template #noRisqueHistorique>
+            <div class="empty-state">
+              Aucun historique de risque sur ce dossier.
+            </div>
+          </ng-template>
+        </section>

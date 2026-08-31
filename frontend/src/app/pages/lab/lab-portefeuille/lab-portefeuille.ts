@@ -2,8 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TimeoutError } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 
 import { LabCarteComponent } from '../lab-carte/lab-carte';
+import { LabShellComponent } from '../lab-shell/lab-shell';
 import { LabDossierListItem, LabDossiersQuery, LabEvenement, LabService } from '../../../services/lab-service';
 
 type RevueFilter = '' | 'late' | 'soon';
@@ -20,12 +23,13 @@ type PortefeuilleRow = LabDossierListItem & {
 @Component({
   selector: 'app-lab-portefeuille',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent, LabShellComponent],
   templateUrl: './lab-portefeuille.html',
   styleUrls: ['./lab-portefeuille.scss'],
 })
 export class LabPortefeuilleComponent implements OnInit {
   loading = false;
+  exporting = false;
   errorMessage: string | null = null;
 
   search = '';
@@ -159,6 +163,89 @@ export class LabPortefeuilleComponent implements OnInit {
   applyFilters(): void {
     this.page = 1;
     this.loadDossiers();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(
+      this.search.trim() ||
+      this.niveauFilter ||
+      this.vigilanceFilter ||
+      this.revueFilter ||
+      this.kycFilter ||
+      this.secteurFilter ||
+      this.paysFilter
+    );
+  }
+
+  resetFilters(): void {
+    this.search = '';
+    this.niveauFilter = '';
+    this.vigilanceFilter = '';
+    this.revueFilter = '';
+    this.kycFilter = '';
+    this.secteurFilter = null;
+    this.paysFilter = null;
+    this.applyFilters();
+  }
+
+  /** Query filtres sans pagination — pour export PDF/CSV du résultat filtré (ou entier). */
+  private buildExportQuery(): LabDossiersQuery {
+    const query = this.buildQuery();
+    delete query.page;
+    delete query.pageSize;
+    return query;
+  }
+
+  exportPortefeuille(format: 'pdf' | 'csv'): void {
+    if (this.exporting) return;
+    this.exporting = true;
+    this.errorMessage = null;
+    this.labService
+      .exportPortefeuilleLab(this.buildExportQuery(), format)
+      .pipe(timeout(300000))
+      .subscribe({
+      next: (blob) => {
+        if (!blob || blob.size === 0) {
+          this.errorMessage = 'Export vide reçu du serveur.';
+          this.exporting = false;
+          return;
+        }
+        // Si le backend renvoie une erreur JSON en blob, éviter de télécharger un faux PDF.
+        if (blob.type && blob.type.includes('application/json')) {
+          this.errorMessage =
+            format === 'pdf'
+              ? 'Impossible de générer le PDF du portefeuille.'
+              : 'Impossible de générer le CSV du portefeuille.';
+          this.exporting = false;
+          return;
+        }
+        const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        this.downloadBlob(blob, `lab-portefeuille-${stamp}.${format}`);
+        this.exporting = false;
+      },
+      error: (err) => {
+        console.error('Erreur export portefeuille LAB:', err);
+        if (err instanceof TimeoutError) {
+          this.errorMessage =
+            'Export trop long (délai dépassé). Réessaie, ou utilise le CSV pour tout le portefeuille.';
+        } else {
+          this.errorMessage =
+            format === 'pdf'
+              ? 'Impossible de générer le PDF du portefeuille (connexion interrompue). Réessaie ou exporte en CSV.'
+              : 'Impossible de générer le CSV du portefeuille.';
+        }
+        this.exporting = false;
+      },
+    });
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   clearSearch(): void {

@@ -1,37 +1,12 @@
 <div class="eval-page" [class.eval-page--embedded]="embedded">
-  <div class="hero" *ngIf="!embedded">
-    <div class="hero-accent"></div>
-    <div class="hero-main">
-      <div class="hero-top">
-        <div class="hero-title">
-          <span class="hero-name">Évaluation du risque · {{ clientLabel }}</span>
-        </div>
-        <a routerLink="/lab/portefeuille" class="link-back">← Portefeuille LAB</a>
-      </div>
-      <div class="hero-meta">
-        Questionnaire ARPEC 2019 — {{ questionTotal }} questions · méthode NPLAB (sans score chiffré).
-        <span class="hero-provisional">Vous pouvez préparer l’évaluation, la modulation et la justification sur cet écran.</span>
-      </div>
-    </div>
-  </div>
-
   <div class="eval-layout">
     <div class="eval-main">
-      <app-lab-carte
-        *ngIf="!embedded"
-        title="Évaluation du risque"
-        [subtitle]="'Répondez OUI / NON sur les 5 axes ARPEC · ' + answeredCount + ' / ' + questionTotal + ' réponses'"
-      >
-        <p class="panel-intro">
-          Niveau et vigilance se recalculent en direct selon la règle du plus fort axe.
-          Les critères <span class="pill pill--red pill--xs">déclencheur</span> imposent un axe Élevé (règle NPLAB).
-        </p>
-        <div class="panel-tip">
-          Conseil de saisie : complétez d'abord les questions certaines, puis revenez sur les points à confirmer avec le cabinet.
-        </div>
-      </app-lab-carte>
+      <p class="eval-blocking-alert" *ngIf="questionnaireError" role="alert">
+        {{ questionnaireError }}
+      </p>
+      <p class="eval-loading" *ngIf="loadingQuestionnaire">Chargement du questionnaire ARPEC…</p>
 
-      <p class="panel-intro panel-intro--embedded" *ngIf="embedded">
+      <p class="panel-intro panel-intro--embedded">
         Évaluation ARPEC pour <strong>{{ clientLabel }}</strong> —
         <ng-container *ngIf="!loadingEvaluation">{{ answeredCount }} / {{ questionTotal }} réponses · niveau calculé :
         <span [class]="niveauPillClass(evaluation.niveauCalcule)">{{ evaluation.niveauCalcule }}</span></ng-container>
@@ -41,6 +16,7 @@
         {{ validationError }}
       </p>
 
+      <ng-container *ngIf="!questionnaireBlocked">
       <app-lab-carte
         *ngFor="let axe of axes"
         [title]="axe.code + ' — ' + axe.libelle"
@@ -79,20 +55,10 @@
           </div>
         </div>
       </app-lab-carte>
+      </ng-container>
 
-      <app-lab-carte title="Opérations atypiques (axe D5)" subtitle="Complément du parcours LAB">
-        <div class="d5-link">
-          <div>
-            <div class="d5-link-title">Opérations atypiques</div>
-            <p class="d5-link-desc">
-              Cet espace regroupera la qualification des opérations atypiques et leur suivi dédié.
-            </p>
-          </div>
-          <span class="btn btn--ghost btn--sm btn--disabled">Bientôt disponible</span>
-        </div>
-      </app-lab-carte>
-
-      <app-lab-carte title="Modulation cabinet (override ARPEC)" subtitle="Hausse ou baisse justifiée du niveau calculé">
+      <ng-container *ngIf="!questionnaireBlocked">
+      <app-lab-carte title="Ajuster le niveau" subtitle="Hausse ou baisse justifiée du niveau calculé">
         <p class="panel-intro">
           Le cabinet peut retenir un niveau différent du calcul automatique. Toute hausse ou baisse doit être justifiée et tracée.
         </p>
@@ -117,7 +83,7 @@
             rows="3"
             [(ngModel)]="justification"
             (ngModelChange)="onJustificationChange()"
-            placeholder="Obligatoire si hausse ou baisse. Ex. : override temporaire en attendant les documents UBO."
+            placeholder="Justification obligatoire si le niveau retenu diffère du calcul."
           ></textarea>
         </label>
         <p class="justification-hint" *ngIf="showJustificationHint">
@@ -126,10 +92,11 @@
       </app-lab-carte>
 
       <p class="save-notice" *ngIf="saveNotice">{{ saveNotice }}</p>
+      </ng-container>
     </div>
 
-    <aside class="eval-side">
-      <app-lab-carte title="Synthèse risque" subtitle="Calcul NPLAB · 3 niveaux">
+    <aside class="eval-side" *ngIf="!questionnaireBlocked">
+      <app-lab-carte title="Synthèse risque" subtitle="Niveau retenu selon le questionnaire du cabinet">
         <div class="summary-kv">
           <span class="summary-k">Niveau calculé</span>
           <span [class]="niveauPillClass(evaluation.niveauCalcule)">{{ evaluation.niveauCalcule }}</span>
@@ -167,20 +134,5 @@
         </div>
       </app-lab-carte>
     </aside>
-  </div>
-
-  <div class="eval-foot" *ngIf="!embedded">
-    <div class="eval-foot-main">
-      <p class="eval-submit-error" *ngIf="submitError">{{ submitError }}</p>
-      <span class="muted">Une fois validée, l'évaluation servira de point d'entrée vers le plan de vigilance du dossier.</span>
-    </div>
-    <button
-      type="button"
-      class="btn btn--primary"
-      [disabled]="submitting"
-      (click)="openPlanSuivi()"
-    >
-      {{ submitting ? 'Enregistrement…' : 'Valider et ouvrir le plan de vigilance →' }}
-    </button>
   </div>
 </div>

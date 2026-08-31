@@ -1,7 +1,6 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { LabCarteComponent } from '../lab-carte/lab-carte';
@@ -25,29 +24,27 @@ interface StoredArpecState {
 }
 
 /**
- * Écran ARPEC — questionnaire 5 axes / 54 questions.
- * Aligné maquette 02 sans score /100 ni niveau « Très élevé ».
+ * Écran ARPEC — questionnaire chargé via GET /api/lab/arpec/questionnaire.
+ * En production, l’échec de l’API est bloquant (pas de jeu local 2019).
  */
 @Component({
   selector: 'app-lab-evaluation-risque',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LabCarteComponent],
+  imports: [CommonModule, FormsModule, LabCarteComponent],
   templateUrl: './lab-evaluation-risque.html',
   styleUrls: ['./lab-evaluation-risque.scss'],
 })
 export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private labService = inject(LabService);
 
   @Input() codeClient = '';
   @Input() raisonSociale = '';
-  /** Mode intégré dans le wizard (masque le hero interne). */
-  @Input() embedded = false;
+  /** Mode intégré dans le wizard (seul usage : plus de page autonome). */
+  @Input() embedded = true;
 
   @Output() evaluationChange = new EventEmitter<ReturnType<typeof computeArpecEvaluation>>();
 
-  axes: readonly ArpecAxeDef[] = ARPEC_AXES_FALLBACK;
+  axes: readonly ArpecAxeDef[] = [];
 
   reponses: Record<string, ArpecReponse> = {};
   modulation: ArpecModulation = 0;
@@ -56,26 +53,21 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
   showCompletenessHint = false;
   validationError: string | null = null;
   saveNotice: string | null = null;
-  submitError: string | null = null;
-  submitting = false;
+  /** Alerte bloquante si le référentiel API est indisponible (prod) ou vide. */
+  questionnaireError: string | null = null;
+  questionnaireBlocked = false;
   loadingEvaluation = false;
   loadingQuestionnaire = false;
-  returnTo: string | null = null;
   /** true si les réponses proviennent de l'évaluation active en base (prioritaire sur le brouillon local). */
   private hydratedFromServer = false;
 
   ngOnInit(): void {
-    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo')?.trim() || null;
-    if (!this.codeClient) {
-      const code = this.route.snapshot.queryParamMap.get('code_client')?.trim();
-      if (code) this.codeClient = code;
-    }
     void this.initializeComponent();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['codeClient'] && !changes['codeClient'].firstChange) {
-      void this.loadState();
+      void this.initializeComponent();
     }
   }
 
@@ -86,21 +78,71 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
 
   private async loadQuestionnaire(): Promise<void> {
     this.loadingQuestionnaire = true;
+    this.questionnaireError = null;
+    this.questionnaireBlocked = false;
+    const allowLocalFallback = await this.resolveAllowLocalFallback();
+    const code = (this.codeClient || '').trim();
+    if (!code) {
+      this.applyQuestionnaireFailure(
+        'code_client requis pour charger le questionnaire ARPEC filtré.',
+        allowLocalFallback,
+      );
+      this.loadingQuestionnaire = false;
+      return;
+    }
     try {
-      const res = await firstValueFrom(this.labService.getArpecQuestionnaire());
-      const axes = Array.isArray(res.data?.axes) ? res.data.axes : [];
+      const res = await firstValueFrom(this.labService.getArpecQuestionnaire(code));
+      const axesRaw = Array.isArray(res.data?.axes) ? res.data.axes : [];
+      const axes = axesRaw
+        .map((axe) => ({
+          ...axe,
+          questions: (axe.questions ?? []).filter((q) => q.visible !== false),
+        }))
+        .filter((axe) => axe.questions.length > 0);
       if (axes.length > 0) {
         this.axes = axes;
-      } else {
-        this.saveNotice = 'Référentiel ARPEC API vide — version locale utilisée.';
+        return;
       }
+      this.applyQuestionnaireFailure(
+        'Aucune question ARPEC visible pour ce dossier (référentiel vide ou non filtré).',
+        allowLocalFallback,
+      );
     } catch (err) {
       console.error('Erreur chargement questionnaire ARPEC:', err);
-      this.axes = ARPEC_AXES_FALLBACK;
-      this.saveNotice = 'Référentiel ARPEC API indisponible — version locale utilisée.';
+      this.applyQuestionnaireFailure(
+        'Le questionnaire ARPEC n’a pas pu être chargé.',
+        allowLocalFallback,
+      );
     } finally {
       this.loadingQuestionnaire = false;
     }
+  }
+
+  /**
+   * Fallback local uniquement en `ng serve` (isDevMode) ou si l’API signale DEMO_AUTH.
+   * Production : jamais.
+   */
+  private async resolveAllowLocalFallback(): Promise<boolean> {
+    if (isDevMode()) return true;
+    try {
+      const me = await firstValueFrom(this.labService.getMeLab());
+      return me.data?.isDemo === true;
+    } catch {
+      return false;
+    }
+  }
+
+  private applyQuestionnaireFailure(reason: string, allowLocalFallback: boolean): void {
+    if (allowLocalFallback && ARPEC_AXES_FALLBACK.length > 0) {
+      this.axes = ARPEC_AXES_FALLBACK;
+      this.saveNotice = `${reason} Fallback local (dev/DEMO) — ne pas utiliser en production.`;
+      return;
+    }
+    this.axes = [];
+    this.questionnaireBlocked = true;
+    this.questionnaireError = allowLocalFallback
+      ? `${reason} Le fallback local ne contient plus le questionnaire 2019. Vérifiez l’API et les tables lab_arpec_*.`
+      : `${reason} L’évaluation est bloquée : le référentiel doit venir de la base. Contactez l’équipe LAB / informatique.`;
   }
 
   private initReponses(): void {
@@ -219,50 +261,6 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
     return this.raisonSociale?.trim() || this.codeClient?.trim() || 'Client';
   }
 
-  async openPlanSuivi(): Promise<void> {
-    this.submitError = null;
-
-    if (!this.validateEvaluation()) {
-      this.submitError = this.validationError;
-      return;
-    }
-
-    const code = (this.codeClient || '').trim();
-    if (!code) {
-      this.submitError = 'Code client requis pour enregistrer l’évaluation.';
-      return;
-    }
-
-    this.submitting = true;
-    try {
-      const payload = this.getSubmitPayload();
-      payload.code_client = code;
-      await firstValueFrom(this.labService.saveArpecEvaluation(payload));
-      try {
-        localStorage.removeItem(this.storageKey());
-      } catch {
-        // ignore
-      }
-      const queryParams: Record<string, string> = { code_client: code };
-      if (this.returnTo) queryParams['returnTo'] = this.returnTo;
-      await this.router.navigate(['/lab/dossier'], { queryParams });
-    } catch (err: unknown) {
-      console.error('Erreur enregistrement ARPEC:', err);
-      const apiErr = err as { error?: { error?: string }; message?: string; status?: number };
-      const message = apiErr?.error?.error || apiErr?.message || 'Enregistrement impossible.';
-      if (apiErr?.status === 503) {
-        this.submitError = `${message} — Le schéma lab_arpec_* doit être appliqué en base pour persister l’évaluation.`;
-      } else if (apiErr?.status === 400 && message.toLowerCase().includes('justification')) {
-        this.showJustificationHint = true;
-        this.submitError = message;
-      } else {
-        this.submitError = message;
-      }
-    } finally {
-      this.submitting = false;
-    }
-  }
-
   setReponse(code: string, value: ArpecReponse): void {
     if (this.hydratedFromServer) {
       this.hydratedFromServer = false;
@@ -323,6 +321,13 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
     this.validationError = null;
     this.showJustificationHint = false;
     this.showCompletenessHint = false;
+
+    if (this.questionnaireBlocked || this.axes.length === 0) {
+      this.validationError =
+        this.questionnaireError ||
+        'Questionnaire ARPEC indisponible — impossible de valider.';
+      return false;
+    }
 
     const completeness = assessQuestionnaireCompleteness(this.reponses, this.axes);
     if (!completeness.complete) {

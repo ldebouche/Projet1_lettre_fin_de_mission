@@ -1,20 +1,12 @@
 <div class="page">
-  <div class="tabs">
-    <a class="tab" routerLink="/lab/dashboard">Tableau de bord</a>
-    <span class="tab tab--on">Portefeuille</span>
-    <a class="tab" routerLink="/lab/evenements">Événements</a>
-    <a class="tab" routerLink="/lab/diligences">Diligences</a>
-  </div>
+  <app-lab-shell
+    title="Portefeuille clients"
+    pill="Cabinet"
+    [subtitle]="errorMessage || 'Créer, revoir et prioriser les dossiers du cabinet.'"
+  >
+  <a shell-cta routerLink="/lab/dossier/formulaire">Créer ou réviser un dossier</a>
 
-  <app-lab-carte>
-    <div class="head">
-      <div class="head-titles">
-        <h1>Portefeuille clients</h1>
-        <p class="head-sub">{{ errorMessage || 'Vue opérationnelle pour créer, revoir et prioriser les dossiers LAB.' }}</p>
-      </div>
-      <a routerLink="/lab/dossier/formulaire" class="btn">Créer ou réviser un dossier</a>
-    </div>
-
+  <app-lab-carte title="Synthèse" subtitle="Portefeuille dans le périmètre">
     <div class="sum">
       <div class="sum-item"><b>{{ summary.total }}</b><span>clients suivis</span></div>
       <div class="sum-item"><b>{{ summary.risqueEleve }}</b><span>risque élevé</span></div>
@@ -28,7 +20,25 @@
     <div class="filters-head">
       <div>
         <h2 class="filters-title">Filtres du portefeuille</h2>
-        <p class="filters-sub">Affinez la liste puis ouvrez le dossier ou la révision adaptée.</p>
+        <p class="filters-sub">Affinez la liste puis ouvrez le dossier ou la révision adaptée. L’export reprend les filtres actifs (ou tout le portefeuille).</p>
+      </div>
+      <div class="export-actions">
+        <button
+          class="btn btn--secondary"
+          type="button"
+          [disabled]="exporting || loading"
+          (click)="exportPortefeuille('pdf')"
+        >
+          {{ exporting ? 'Export…' : 'Exporter PDF' }}
+        </button>
+        <button
+          class="btn btn--ghost"
+          type="button"
+          [disabled]="exporting || loading"
+          (click)="exportPortefeuille('csv')"
+        >
+          CSV
+        </button>
       </div>
     </div>
 
@@ -36,7 +46,7 @@
       <input
         class="filter-input"
         type="text"
-        placeholder="Rechercher un client, un code, un secteur…"
+        placeholder="Rechercher un client, un secteur…"
         [(ngModel)]="search"
         (keyup.enter)="applyFilters()"
         (change)="applyFilters()"
@@ -91,28 +101,24 @@
         <thead>
           <tr>
             <th>Client</th>
-            <th>Secteur</th>
-            <th>Pays</th>
+            <th class="col-hide-tablet">Secteur</th>
+            <th class="col-hide-tablet">Pays</th>
             <th>Niveau</th>
             <th>Vigilance</th>
             <th>KYC</th>
             <th>Prochaine revue</th>
             <th class="center">Diligences</th>
-            <th>Resp. LAB</th>
+            <th class="col-hide-tablet">Resp. LAB</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of rows">
             <td>
-              <a class="client-link" (click)="openDossier(row)">{{ dossierName(row) }}</a>
-              <div class="code">{{ row.code_client }}</div>
-              <div class="row-actions">
-                <button type="button" class="row-revise" (click)="openDossier(row)">Ouvrir le plan & suivi</button>
-                <button type="button" class="row-revise" (click)="openRevisionForm(row)">Réviser le dossier</button>
-              </div>
+              <a class="client-link" (click)="openDossier(row)" [title]="row.code_client">{{ dossierName(row) }}</a>
             </td>
-            <td>{{ displayValue(row.secteur_activite) }}</td>
-            <td>{{ displayValue(row.zone_geographique_principale) }}</td>
+            <td class="col-hide-tablet">{{ displayValue(row.secteur_activite) }}</td>
+            <td class="col-hide-tablet">{{ displayValue(row.zone_geographique_principale) }}</td>
             <td>
               <span [ngClass]="risqueClass(row.niveau_risque)">{{ displayValue(row.niveau_risque) }}</span>
             </td>
@@ -133,10 +139,18 @@
                 {{ diligencesLabel(row) }}
               </span>
             </td>
-            <td>{{ displayValue(row.responsable_lab) }}</td>
+            <td class="col-hide-tablet">{{ displayValue(row.responsable_lab) }}</td>
+            <td class="row-actions">
+              <button type="button" class="row-revise" (click)="openDossier(row)">Plan</button>
+              <button type="button" class="row-revise" (click)="openRevisionForm(row)">Réviser</button>
+            </td>
           </tr>
           <tr *ngIf="!loading && rows.length === 0">
-            <td colspan="9" class="empty-cell">Aucun client ne correspond à ces filtres.</td>
+            <td colspan="10" class="empty-cell">
+              <p>Aucun client ne correspond à ces filtres.</p>
+              <button type="button" class="btn-link" *ngIf="hasActiveFilters" (click)="resetFilters()">Réinitialiser les filtres</button>
+              <a routerLink="/lab/dossier/formulaire">Créer un dossier</a>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -148,4 +162,5 @@
       <button class="pager-btn" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Suivant ›</button>
     </div>
   </app-lab-carte>
+  </app-lab-shell>
 </div>

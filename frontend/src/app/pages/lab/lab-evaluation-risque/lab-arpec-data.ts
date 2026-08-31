@@ -1,4 +1,8 @@
-/** Référentiel ARPEC provisoire (frontend) — aligné sur docs/contrat-lab-evaluation-risque-arpec.md et schema-bdd-lab.sql seeds. */
+/**
+ * Types et calcul ARPEC (règle déclencheur + axe le plus fort).
+ * Le référentiel questions n’est plus embarqué : source = GET /api/lab/arpec/questionnaire.
+ * ARPEC_AXES_FALLBACK est volontairement vide (plus de 54 Q 2019) — livrable 5.1b.
+ */
 
 export type ArpecNiveau = 'Faible' | 'Moyen' | 'Élevé';
 export type ArpecVigilance = 'Standard' | 'Renforcée';
@@ -8,6 +12,7 @@ export interface ArpecQuestionDef {
   code: string;
   libelle: string;
   sousAxe?: string;
+  visible?: boolean;
   estDeclencheur: boolean;
   niveauSiOui: 'Moyen' | 'Élevé';
 }
@@ -28,92 +33,8 @@ const NIVEAU_RANK: Record<ArpecNiveau, number> = {
 
 const NIVEAU_BY_RANK: ArpecNiveau[] = ['Faible', 'Moyen', 'Élevé'];
 
-export const ARPEC_AXES_FALLBACK: readonly ArpecAxeDef[] = [
-  {
-    code: 'D1',
-    libelle: 'Caractéristiques du client',
-    questions: [
-      { code: 'D1-Q01', libelle: 'Association culturelle, cultuelle ou humanitaire recevant ou versant des fonds à l\'étranger ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q02', libelle: 'Association dirigée par un élu (ou un proche) recevant > 25 k€ de subventions publiques de sa collectivité ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q03', libelle: 'Société à prépondérance immobilière détenue via une cascade de véhicules étrangers non régulés ou un fonds d\'investissement alternatif (AIFM) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q04', libelle: 'Société ayant son siège dans une société de domiciliation ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q05', libelle: 'Parti politique ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q06', libelle: 'Client ou bénéficiaire effectif ayant le statut de PPE (personne politiquement exposée) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q07', libelle: 'Société en difficulté susceptible d\'une procédure collective dans les 6 mois ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q08', libelle: 'Groupe utilisant une superposition d\'entités étrangères qui complexifie l\'identification du BE ou de l\'origine des fonds ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q09', libelle: 'Présence d\'une fiducie ou d\'un trust dans le groupe ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q10', libelle: 'Recours à des montages fiscaux complexes (transnationaux ou non) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D1-Q11', libelle: 'Personne physique contrôlant d\'autres sociétés (hors SCI) sans lien juridique mais avec des liens économiques ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-    ],
-  },
-  {
-    code: 'D2',
-    libelle: 'Activités du client',
-    questions: [
-      { code: 'D2-Q01', libelle: 'BTP avec chiffre d\'affaires HT > 500 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q02', libelle: 'Casse automobile ou ferrailleur ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q03', libelle: 'Vente de véhicules d\'occasion (marge > 1/3 de la marge totale) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q04', libelle: 'Changeur manuel ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q05', libelle: 'Import/export ou négoce international de matières premières ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q06', libelle: 'Promotion immobilière > 500 k€ HT ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q07', libelle: 'Marchand de biens immobiliers > 500 k€ HT ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q08', libelle: 'Point de vente Française des Jeux / PMU ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q09', libelle: 'Buraliste (hors FDJ/PMU) avec CA HT > 300 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q10', libelle: 'Établissement de nuit (discothèque, bar…) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q11', libelle: 'Hôtel, café, restaurant avec CA HT > 500 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q12', libelle: 'Commerce de proximité / marché avec CA HT > 500 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q13', libelle: 'Antiquaire, brocanteur ou galerie d\'art ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q14', libelle: 'Bijoutier / métaux précieux / pierres précieuses avec CA HT > 500 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q15', libelle: 'E-commerce vers l\'étranger ou encaissement de créances à l\'étranger ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q16', libelle: 'Prestataire de transmission de fonds en espèces depuis/vers l\'étranger ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q17', libelle: 'Entreprise participant à des transferts dans le sport professionnel ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q18', libelle: 'Négoce de matières premières (hors import/export déjà visé) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q19', libelle: 'Sécurité privée / gardiennage / nettoyage avec CA HT > 500 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q20', libelle: 'Taxi / VTC dont les recettes ne passent pas par une plateforme ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D2-Q21', libelle: 'Agriculture ou transport routier avec recours significatif à la main-d\'œuvre étrangère ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-    ],
-  },
-  {
-    code: 'D3',
-    libelle: 'Localisation (client et fonds)',
-    questions: [
-      { code: 'D3-1-Q01', libelle: 'Client / représentant légal / BE domicilié dans un pays liste GAFI ou liste UE à haut risque ?', sousAxe: 'D3-1', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D3-1-Q02', libelle: 'Établissement, filiale ou société-mère situé dans un de ces pays ?', sousAxe: 'D3-1', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D3-1-Q03', libelle: 'Transferts de fonds depuis ou vers un de ces pays ?', sousAxe: 'D3-1', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D3-2-Q01', libelle: 'Client / représentant légal / BE domicilié dans un pays liste noire UE fiscale ou ETNC France ?', sousAxe: 'D3-2', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D3-2-Q02', libelle: 'Établissement, filiale ou société-mère situé dans un de ces pays ?', sousAxe: 'D3-2', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D3-2-Q03', libelle: 'Transferts de fonds depuis ou vers un de ces pays ?', sousAxe: 'D3-2', estDeclencheur: true, niveauSiOui: 'Élevé' },
-    ],
-  },
-  {
-    code: 'D4',
-    libelle: 'Nature des missions',
-    questions: [
-      { code: 'D4-Q01', libelle: 'Création/reprise financée par apports personnels d\'un BE > 50 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q02', libelle: 'Prise de participation financée par apports d\'un investisseur personne physique > 100 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q03', libelle: 'Restructuration juridique/financière avec injection de fonds personnels (> 50 k€ BE ou > 100 k€ investisseur) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q04', libelle: 'Transmission universelle de patrimoine (TUP) transnationale ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q05', libelle: 'Paiement des dettes fournisseurs (mandat de paiement — loi PACTE) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q06', libelle: 'Recouvrement amiable des créances (loi PACTE) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q07', libelle: 'Comptes de campagne électorale ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q08', libelle: 'Conseil ou montages fiscaux > 5 % des honoraires du portefeuille ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q09', libelle: 'Conseil en gestion de patrimoine > 5 % des honoraires ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D4-Q10', libelle: 'Conseil en recherche de financement / gestion de trésorerie > 5 % des honoraires ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-    ],
-  },
-  {
-    code: 'D5',
-    libelle: 'Opérations particulières',
-    questions: [
-      { code: 'D5-Q01', libelle: 'Prêts de non-associés (non-établissements financiers) > 100 k€ ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D5-Q02', libelle: 'Financements à conditions anormales (taux hors marché, sans garantie, prêteur inhabituel) ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D5-Q03', libelle: 'Financements > 100 k€ via crowdfunding ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D5-Q04', libelle: 'Opération en crypto-actif / crypto-monnaie ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D5-Q05', libelle: 'ICO ou émission de jetons de titres ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-      { code: 'D5-Q06', libelle: 'Société domiciliée hors UE sans justification économique ?', estDeclencheur: true, niveauSiOui: 'Élevé' },
-    ],
-  },
-];
+/** Fallback local : vide. Un jeu 2019 ne doit plus jamais s’afficher si l’API échoue. */
+export const ARPEC_AXES_FALLBACK: readonly ArpecAxeDef[] = [];
 
 export interface ArpecAxeResult {
   code: string;
@@ -211,15 +132,19 @@ export interface ArpecCompletenessResult {
   incompleteAxes: ArpecAxeCompleteness[];
 }
 
-/** Complétude questionnaire ARPEC — 54 réponses OUI/NON, contrôle global et par axe (§4.1 specs-lab). */
+/** Complétude questionnaire ARPEC — questions visibles renvoyées par l’API (cachées = NON serveur). */
 export function assessQuestionnaireCompleteness(
   reponses: Record<string, ArpecReponse>,
   axes: readonly ArpecAxeDef[] = ARPEC_AXES_FALLBACK,
 ): ArpecCompletenessResult {
-  const totalCount = totalQuestions(axes);
+  const visibleAxes = axes.map((axe) => ({
+    ...axe,
+    questions: axe.questions.filter((q) => q.visible !== false),
+  }));
+  const totalCount = totalQuestions(visibleAxes);
   const incompleteAxes: ArpecAxeCompleteness[] = [];
 
-  for (const axe of axes) {
+  for (const axe of visibleAxes) {
     const total = axe.questions.length;
     const answered = axe.questions.filter(
       (q) => reponses[q.code] === 'O' || reponses[q.code] === 'N',
@@ -229,9 +154,13 @@ export function assessQuestionnaireCompleteness(
     }
   }
 
-  const answeredCount = countAnswered(reponses);
+  const answeredCount = visibleAxes.reduce(
+    (sum, axe) =>
+      sum + axe.questions.filter((q) => reponses[q.code] === 'O' || reponses[q.code] === 'N').length,
+    0,
+  );
   return {
-    complete: answeredCount === totalCount && incompleteAxes.length === 0,
+    complete: totalCount > 0 && answeredCount === totalCount && incompleteAxes.length === 0,
     answeredCount,
     totalCount,
     incompleteAxes,
@@ -240,6 +169,10 @@ export function assessQuestionnaireCompleteness(
 
 export function buildCompletenessValidationMessage(result: ArpecCompletenessResult): string {
   if (result.complete) return '';
+
+  if (result.totalCount === 0) {
+    return 'Questionnaire ARPEC indisponible — aucune question chargée. Impossible de valider.';
+  }
 
   if (result.incompleteAxes.length === 1) {
     const axe = result.incompleteAxes[0];

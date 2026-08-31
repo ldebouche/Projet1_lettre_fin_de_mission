@@ -76,6 +76,12 @@ export const routes: Routes = [
     canActivate: [MsalGuard],
   },
   {
+    path: 'lab/parametrage',
+    loadComponent: () =>
+      import('./pages/lab/lab-parametrage/lab-parametrage').then((m) => m.LabParametrageComponent),
+    canActivate: [MsalGuard],
+  },
+  {
     path: 'lab/dossier/formulaire',
     loadComponent: () =>
       import('./pages/lab/lab-dossier-form-wizard/lab-dossier-form-wizard').then(

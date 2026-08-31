@@ -1,0 +1,140 @@
+        <!-- Bénéficiaires effectifs -->
+        <section class="section" id="section-beneficiaires">
+          <div class="section-head">
+            <h2 class="section-title">
+              Bénéficiaires effectifs
+              <span class="section-counter">({{ beneficiaires.length }})</span>
+            </h2>
+            <button type="button" class="btn-inline-action" (click)="onAjouterBeneficiaire()">+ Ajouter un BE</button>
+          </div>
+          <hr class="separator" />
+
+          <div class="be-grid" *ngIf="beneficiaires.length > 0; else noBeneficiaires">
+            <div class="be-chart">
+              <div class="chart-title">Répartition (détention/contrôle)</div>
+              <div class="chart-sub">Total déclaré&nbsp;: {{ getBeneficiairesTotalPct() }}%</div>
+              <div class="donut">
+                <svg viewBox="0 0 36 36" class="donut-svg" aria-hidden="true">
+                  <path class="donut-ring" d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="donut-segment" [attr.stroke-dasharray]="donutDasharray(getBeneficiairePrincipalPct(), 100)" d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="donut-center">
+                  <div class="donut-value">{{ getBeneficiairePrincipalPct() }}%</div>
+                  <div class="donut-label">BE principal</div>
+                </div>
+              </div>
+              <div class="chart-hint" *ngIf="getBeneficiairesHasUnknown()">
+                Certains statuts PEP/sanctions sont “Inconnu” — vérification recommandée.
+              </div>
+            </div>
+
+            <div class="be-list">
+              <table class="table">
+                <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Type</th>
+                  <th>%</th>
+                  <th>Nationalité</th>
+                  <th>PEP</th>
+                  <th>Sanctions</th>
+                  <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr *ngFor="let b of beneficiaires">
+                  <td>
+                    <div class="cell-title">{{ b.prenom ? (b.prenom + ' ') : '' }}{{ b.nom }}</div>
+                    <div class="cell-sub">{{ b.mode_controle }}</div>
+                  </td>
+                  <td>{{ b.type === 'Personne_physique' ? 'Physique' : 'Morale' }}</td>
+                  <td><span class="mono">{{ b.pourcentage == null ? '—' : (b.pourcentage + '%') }}</span></td>
+                  <td>{{ val(b.nationalite) }}</td>
+                  <td><span class="badge small" [class]="'badge tone-' + getPepTone(b.pep_statut)">{{ b.pep_statut }}</span></td>
+                  <td><span class="badge small" [class]="'badge tone-' + getSanctionsTone(b.sanctions_gel)">{{ b.sanctions_gel }}</span></td>
+                  <td>
+                    <button type="button" class="link-action link-action--inline" (click)="openEditBeneficiaireModal(b)">Modifier</button>
+                    <button type="button" class="link-action link-action--inline" (click)="deleteBeneficiaire(b)" [disabled]="actionBusy">Supprimer</button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <ng-template #noBeneficiaires>
+            <div class="empty-state">
+              Aucun bénéficiaire effectif sur ce dossier.
+              <button type="button" class="btn-inline-action" (click)="onAjouterBeneficiaire()">Ajouter</button>
+            </div>
+          </ng-template>
+        </section>
+
+<app-modal
+  [isOpen]="beneficiaireModalMode !== null"
+  [title]="beneficiaireModalTitle"
+  (closeEvent)="closeBeneficiaireModal()"
+>
+  <div modal-body class="lab-modal-form">
+    <p class="lab-modal-error" *ngIf="actionError">{{ actionError }}</p>
+
+    <label class="lab-field">
+      <span class="lab-field-label">Nom *</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.nom" maxlength="50" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Prénom</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.prenom" maxlength="30" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Nationalité</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.nationalite" maxlength="40" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Pays de résidence</span>
+      <input class="lab-field-input" type="text" [(ngModel)]="beneficiaireForm.pays_residence" maxlength="40" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Parts / contrôle (%)</span>
+      <input class="lab-field-input" type="number" min="0" max="100" step="0.1" [(ngModel)]="beneficiaireForm.pourcentage" />
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Mode de contrôle</span>
+      <select class="lab-field-input" [(ngModel)]="beneficiaireForm.mode_controle">
+        <option value="Detention_capital">Détention capital</option>
+        <option value="Droits_vote">Droits de vote</option>
+        <option value="Controle_de_fait">Contrôle de fait</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">PEP</span>
+      <select class="lab-field-input" [(ngModel)]="beneficiaireForm.pep_statut">
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+        <option value="Inconnu">Inconnu</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Sanctions / gel</span>
+      <select class="lab-field-input" [(ngModel)]="beneficiaireForm.sanctions_gel">
+        <option value="Oui">Oui</option>
+        <option value="Non">Non</option>
+        <option value="Inconnu">Inconnu</option>
+      </select>
+    </label>
+    <label class="lab-field">
+      <span class="lab-field-label">Commentaire</span>
+      <textarea class="lab-field-input lab-field-textarea" rows="3" [(ngModel)]="beneficiaireForm.commentaire" maxlength="500"></textarea>
+    </label>
+  </div>
+  <div modal-footer class="lab-modal-footer">
+    <button type="button" class="lab-btn lab-btn--ghost" (click)="closeBeneficiaireModal()" [disabled]="actionBusy">Annuler</button>
+    <button type="button" class="lab-btn lab-btn--primary" (click)="saveBeneficiaireModal()" [disabled]="actionBusy">
+      {{ actionBusy ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</app-modal>

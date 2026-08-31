@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { getDossierLab } from './labService.js';
+import { getDossierLab } from './lab-dossier-service.js';
 import { getMsHttpsAgent } from '../utils/msHttpsAgent.js';
+import { poolPromise } from '../config/db.js';
 
 const HTTP_TIMEOUT_MS = 12_000;
 
@@ -219,6 +220,120 @@ function mergeFields(bddFlat, apiFlat, fetchedAt) {
   }
 
   return { fields, merged };
+}
+
+function normalizeApeCode(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/\./g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+}
+
+function apeMatchesPrefixes(clientApe, prefixesStr) {
+  const ape = normalizeApeCode(clientApe);
+  if (!ape || !prefixesStr) return false;
+  const prefixes = String(prefixesStr)
+    .split(';')
+    .map((p) => normalizeApeCode(p))
+    .filter(Boolean);
+  return prefixes.some((prefix) => ape.startsWith(prefix));
+}
+
+function normalizePaysLabel(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function markSuggestedField(fields, field, value, fetchedAt) {
+  if (!value) return;
+  const current = fields[field];
+  if (current?.value) return;
+  fields[field] = {
+    value,
+    source: 'NAF',
+    sourceLabel: 'Code NAF / référentiel LAB',
+    fetchedAt,
+    status: 'prefilled',
+    bddValue: current?.bddValue ?? null,
+    apiValue: value,
+    apiSource: 'NAF',
+    apiSourceLabel: 'Code NAF / référentiel LAB',
+  };
+}
+
+async function applyKycReferentielSuggestions(merged, fields, fetchedAt) {
+  if (!merged || typeof merged !== 'object') return;
+  if (!merged.kyc || typeof merged.kyc !== 'object') merged.kyc = {};
+
+  const ape = cleanText(merged.ape);
+  const activite = cleanText(merged.activite);
+  const paysSiege = cleanText(merged.pays_siege);
+  const paysImp = cleanText(merged.kyc.pays_implantation);
+  const secteurs = cleanText(merged.kyc.secteurs_text);
+
+  if (!secteurs && activite) {
+    merged.kyc.secteurs_text = activite;
+    markSuggestedField(fields, 'kyc.secteurs_text', activite, fetchedAt);
+  }
+  if (!paysImp && paysSiege) {
+    merged.kyc.pays_implantation = paysSiege;
+    markSuggestedField(fields, 'kyc.pays_implantation', paysSiege, fetchedAt);
+  }
+  if (!cleanText(merged.zone_geographique_activite) && paysSiege) {
+    merged.zone_geographique_activite = paysSiege;
+    markSuggestedField(fields, 'zone_geographique_activite', paysSiege, fetchedAt);
+  }
+
+  try {
+    const pool = await poolPromise;
+    if (ape) {
+      const apeResult = await pool.request().query(`
+        SELECT ape_prefixes
+        FROM lab_arpec_questions
+        WHERE ape_prefixes IS NOT NULL
+          AND RTRIM(LTRIM(ape_prefixes)) <> N''
+          AND RTRIM(LTRIM(actif)) = N'O'
+      `);
+      for (const row of apeResult.recordset || []) {
+        if (apeMatchesPrefixes(ape, row.ape_prefixes)) {
+          merged.kyc.secteur_sensible = true;
+          break;
+        }
+      }
+    }
+
+    const paysCandidates = [paysSiege, paysImp].filter(Boolean);
+    if (paysCandidates.length) {
+      const paysResult = await pool.request().query(`
+        SELECT liste, libelle_pays
+        FROM lab_arpec_pays
+      `);
+      const hits = [];
+      for (const pays of paysCandidates) {
+        const nPays = normalizePaysLabel(pays);
+        if (!nPays) continue;
+        for (const row of paysResult.recordset || []) {
+          const lib = cleanText(row.libelle_pays);
+          const nLib = normalizePaysLabel(lib);
+          if (!nLib) continue;
+          if (nPays === nLib || nLib.includes(nPays) || nPays.includes(nLib)) {
+            if (!hits.includes(lib)) hits.push(lib);
+          }
+        }
+      }
+      if (hits.length && !cleanText(merged.kyc.pays_a_risque_text)) {
+        merged.kyc.pays_a_risque_text = hits.join('\n');
+      }
+    }
+  } catch (err) {
+    if (err?.number !== 208 && err?.number !== 207) {
+      console.error('Enrichissement LAB : suggestions NAF / pays indisponibles', err);
+    }
+  }
 }
 
 function extractBddFlatFromDossier(dossier) {
@@ -707,6 +822,7 @@ export async function getLabEnrichissement(params = {}) {
   }
 
   const { fields, merged } = mergeFields(bddFlat, apiFlat, fetchedAt);
+  await applyKycReferentielSuggestions(merged, fields, fetchedAt);
 
   const divergences = Object.entries(fields)
     .filter(([, meta]) => meta.status === 'divergence')
