@@ -28,7 +28,12 @@
       </div>
 
       <div class="table-wrap" *ngIf="parametres.length > 0">
-        <table class="table">
+        <table class="table table--params">
+          <colgroup>
+            <col />
+            <col class="col-valeur" />
+            <col class="col-version" />
+          </colgroup>
           <thead>
             <tr>
               <th>Paramètre</th>
@@ -70,7 +75,14 @@
         <h3 class="axe-title" [title]="axe.code">{{ axe.libelle }}</h3>
 
         <div class="table-wrap">
-          <table class="table">
+          <table class="table table--questions">
+            <colgroup>
+              <col />
+              <col class="col-select" />
+              <col class="col-select" />
+              <col class="col-ordre" />
+              <col class="col-select" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Libellé</th>

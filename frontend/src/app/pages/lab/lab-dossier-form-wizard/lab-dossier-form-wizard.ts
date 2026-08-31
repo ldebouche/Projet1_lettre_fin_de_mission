@@ -282,7 +282,7 @@ export class LabDossierFormWizardComponent implements OnInit {
       this.fieldMeta[key] = {
         value: v,
         source: 'BDD',
-        sourceLabel: 'BDD',
+        sourceLabel: 'Fiche client',
         fetchedAt: now,
         status: 'bdd',
         bddValue: v,

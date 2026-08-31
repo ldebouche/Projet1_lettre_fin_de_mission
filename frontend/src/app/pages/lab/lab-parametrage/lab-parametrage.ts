@@ -17,6 +17,23 @@ import {
 type OuiNon = 'Oui' | 'Non';
 type NiveauRisqueOui = 'Moyen' | 'Élevé';
 
+const PARAMETRES_CABINET_CODES = new Set([
+  'PERIODICITE_REVUE_FAIBLE_MOIS',
+  'PERIODICITE_REVUE_MOYEN_MOIS',
+  'PERIODICITE_REVUE_ELEVE_MOIS',
+  'SLA_DILIGENCE_JOURS',
+  'SLA_REVUE_ALERTE_JOURS',
+  'VERSION_REFERENTIEL',
+  'ARPEC_D3_3_1',
+  'ARPEC_D3_3_2',
+  'ARPEC_D3_3_3',
+  'ARPEC_D3_3_4',
+  'ARPEC_D3_3_5',
+  'ARPEC_D3_3_6',
+  'ARPEC_D4_8',
+  'CHAT_CONSERVATION_MOIS',
+]);
+
 interface ParametreRow {
   code_param: string;
   libelle: string;
@@ -164,7 +181,7 @@ export class LabParametrageComponent implements OnInit {
     const byCode = new Map<string, LabParametreItem[]>();
     for (const item of items) {
       const code = (item.code_param || '').trim();
-      if (!code) continue;
+      if (!code || !PARAMETRES_CABINET_CODES.has(code)) continue;
       const group = byCode.get(code) || [];
       group.push(item);
       byCode.set(code, group);

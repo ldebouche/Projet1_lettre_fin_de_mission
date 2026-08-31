@@ -114,6 +114,28 @@ function asArrayOrThrow(value, fieldName) {
   return value;
 }
 
+/** Codes cabinet ARPEC 2026 — hors ancien scoring pondéré. */
+const PARAMETRES_CABINET_CODES = new Set([
+  'PERIODICITE_REVUE_FAIBLE_MOIS',
+  'PERIODICITE_REVUE_MOYEN_MOIS',
+  'PERIODICITE_REVUE_ELEVE_MOIS',
+  'SLA_DILIGENCE_JOURS',
+  'SLA_REVUE_ALERTE_JOURS',
+  'VERSION_REFERENTIEL',
+  'ARPEC_D3_3_1',
+  'ARPEC_D3_3_2',
+  'ARPEC_D3_3_3',
+  'ARPEC_D3_3_4',
+  'ARPEC_D3_3_5',
+  'ARPEC_D3_3_6',
+  'ARPEC_D4_8',
+  'CHAT_CONSERVATION_MOIS',
+]);
+
+function isParametreCabinetCode(code) {
+  return PARAMETRES_CABINET_CODES.has(code);
+}
+
 /**
  * Paramétrage cabinet (Écran 11) : lab_parametrage + référentiel ARPEC.
  * Toutes les versions de code_param sont renvoyées (historique) ; le FE édite
@@ -166,16 +188,18 @@ export async function getParametrageLab() {
   }
 
   return {
-    parametrage: (paramsResult.recordset || []).map((row) => ({
-      id: row.id,
-      code_param: cleanText(row.code_param),
-      libelle: cleanText(row.libelle),
-      valeur: cleanText(row.valeur),
-      version: row.version ?? null,
-      actif: yesNoUnknown(row.actif),
-      date_modification: row.date_modification ?? null,
-      modifie_par: cleanText(row.modifie_par),
-    })),
+    parametrage: (paramsResult.recordset || [])
+      .map((row) => ({
+        id: row.id,
+        code_param: cleanText(row.code_param),
+        libelle: cleanText(row.libelle),
+        valeur: cleanText(row.valeur),
+        version: row.version ?? null,
+        actif: yesNoUnknown(row.actif),
+        date_modification: row.date_modification ?? null,
+        modifie_par: cleanText(row.modifie_par),
+      }))
+      .filter((row) => isParametreCabinetCode(row.code_param)),
     axes: (axesResult.recordset || []).map((row) => ({
       id: row.id,
       code: cleanText(row.code),
@@ -237,6 +261,9 @@ export async function updateParametrageLab(body = {}, userId = null) {
         const code = cleanText(item?.code_param);
         if (!code) {
           throw new LabDossierError('code_param requis', 400);
+        }
+        if (!isParametreCabinetCode(code)) {
+          continue;
         }
         const valeur = parseParamValeur(item?.valeur);
         byIncomingCode.set(code, valeur);

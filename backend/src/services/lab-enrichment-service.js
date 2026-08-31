@@ -15,7 +15,7 @@ function axiosConfig(extra = {}) {
 }
 
 const SOURCE_LABELS = {
-  BDD: 'BDD',
+  BDD: 'Fiche client',
   RECHERCHE_ENTREPRISES: 'Recherche Entreprises',
   INSEE: 'INSEE',
   INPI_RNE: 'INPI / RNE',
