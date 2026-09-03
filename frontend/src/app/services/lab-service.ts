@@ -63,9 +63,11 @@ export class LabService {
   private static readonly EMPTY_ME: LabMeResponse = {
     isFull: false,
     id_sellsy: null,
+    canAccessCartographie: false,
     canAccessTracfin: false,
     canReadParametrage: false,
     canEditParametrage: false,
+    canSeeProspects: false,
     isDemo: false,
   };
 

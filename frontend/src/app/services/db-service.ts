@@ -12,8 +12,8 @@ export class DbService {
     return this.http.post<{ collaborateur: any }>(`/api/db/verifCollaborateur`, {});
   }
 
-  GetListeDossiers(id_sellsy: any, statut: any) {
-    return this.http.get(`/api/db/getListeDossiers`, { params: { id_sellsy, statut } })
+  GetListeDossiers() {
+    return this.http.get(`/api/db/getListeDossiers`)
   }
 
   VerifDossier(code_client: any, dateFinEx: Date, dateDebutEx: Date) {

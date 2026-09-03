@@ -39,7 +39,7 @@
   <div class="admin-dropdown" [class.open]="adminMenuOpen" [attr.aria-hidden]="!adminMenuOpen">
     <div class="dropdown-inner">
 
-      <div class="col">
+      <div class="col" *ngIf="hasRoleAdmin">
         <div class="col-title">Gestion d’outils</div>
 
         <a class="dd-link" [routerLink]="['/chatbot-settings']" routerLinkActive="is-active"
@@ -53,7 +53,7 @@
         </a>
       </div>
 
-      <div class="col">
+      <div class="col" *ngIf="hasRoleAdmin">
         <div class="col-title">Comptes rendus</div>
 
         <a class="dd-link" [routerLink]="['/pilotage-equipe']" routerLinkActive="is-active"
@@ -62,11 +62,10 @@
         </a>
       </div>
 
-      <div class="col">
+      <div class="col" *ngIf="hasRoleLab">
         <div class="col-title">Conformité LAB</div>
       
         <a 
-          *ngIf="hasRoleLab"
           class="dd-link" 
           [routerLink]="['/lab/dashboard']" 
           routerLinkActive="is-active"
@@ -76,7 +75,6 @@
         </a>
 
         <a
-          *ngIf="hasRoleLab"
           class="dd-link"
           [routerLink]="['/lab/parametrage']"
           routerLinkActive="is-active"

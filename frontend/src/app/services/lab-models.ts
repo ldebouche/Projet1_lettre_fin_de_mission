@@ -740,9 +740,11 @@ export interface LabTracfinItem {
 export interface LabMeResponse {
   isFull: boolean;
   id_sellsy: string | null;
+  canAccessCartographie: boolean;
   canAccessTracfin: boolean;
   canReadParametrage: boolean;
   canEditParametrage: boolean;
+  canSeeProspects: boolean;
   /** true si DEMO_AUTH=true côté API — autorise le fallback ARPEC local (jamais en prod). */
   isDemo: boolean;
 }

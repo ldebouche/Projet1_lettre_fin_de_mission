@@ -159,7 +159,7 @@ export class LabDashboardComponent implements OnInit {
   private loadMeAccess(): void {
     this.labService.getMeLab().subscribe({
       next: (res) => {
-        this.isFull = !!res.data?.isFull;
+        this.isFull = !!res.data?.canAccessCartographie;
         const id = res.data?.id_sellsy != null ? String(res.data.id_sellsy).trim() : '';
         this.meIdSellsy = id || null;
         this.meLabel = this.buildMeLabel(id);

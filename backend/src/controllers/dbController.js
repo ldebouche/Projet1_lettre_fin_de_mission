@@ -1,10 +1,16 @@
 import dbService, { selectSite } from '../services/dbService.js';
 import { comptesMapping } from '../utils/comptesMapping.js';
+import { resolveCollaborateurContext } from '../services/collaborateurContext.js';
 
 export const GetListeDossiers = async (req, res) => {
   try {
-    const { id_sellsy, statut } = req.query;
-    const { dossiers, dossiersEquipe } = await dbService.GetListeDossiers(id_sellsy, statut);
+    const ctx = await resolveCollaborateurContext(req);
+    if (!ctx.canSeeAllDossiers && !ctx.idSellsy) {
+      return res.status(403).json({ error: 'Accès dossiers non autorisé' });
+    }
+    const { dossiers, dossiersEquipe } = await dbService.GetListeDossiers(ctx.idSellsy, {
+      seeAll: ctx.canSeeAllDossiers,
+    });
     res.json({ dossiers, dossiersEquipe });
   } catch (err) {
     console.error(err);

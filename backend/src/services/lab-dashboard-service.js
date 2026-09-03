@@ -38,6 +38,7 @@ import {
   buildScopeClause,
   sqlIsClient,
   sqlIsProspect,
+  sqlClientLinkedTo,
   assertDossierInScope,
   defaultLibelleEvenement,
   normalizeModulation,
@@ -95,17 +96,13 @@ export async function getDashboardLab(filters = {}, scope = { isFull: true, idSe
     };
 
     // Prédicats RBAC + filtre collaborateur appliqués à un couple (lab_dossier, clients).
-    const ownershipClauses = (dAlias, cAlias) => {
+    const ownershipClauses = (_dAlias, cAlias) => {
       const c = [sqlIsClient(cAlias)];
       if (!isFull) {
-        c.push(`(RTRIM(LTRIM(${cAlias}.expert_comptable)) = @scope_id
-          OR RTRIM(LTRIM(${cAlias}.chef_de_mission)) = @scope_id
-          OR RTRIM(LTRIM(${dAlias}.id_responsable_lab)) = @scope_id)`);
+        c.push(sqlClientLinkedTo(cAlias));
       }
       if (hasCollab) {
-        c.push(`(RTRIM(LTRIM(${cAlias}.expert_comptable)) = @collab_id
-          OR RTRIM(LTRIM(${cAlias}.chef_de_mission)) = @collab_id
-          OR RTRIM(LTRIM(${dAlias}.id_responsable_lab)) = @collab_id)`);
+        c.push(sqlClientLinkedTo(cAlias, 'collab_id'));
       }
       return c;
     };
@@ -393,16 +390,11 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
     const where = [];
     const inputs = [];
 
-    // RBAC : périmètre restreint -> uniquement les dossiers dont l'appelant est
-    // expert-comptable, chef de mission ou responsable LAB.
+    // RBAC : périmètre restreint -> dossiers liés (union des colonnes équipe).
     if (!scope?.isFull) {
       const scopeId = scope?.idSellsy != null ? String(scope.idSellsy).trim() : '';
       inputs.push({ name: 'scope_id', type: sql.NVarChar(20), value: scopeId });
-      where.push(`(
-        RTRIM(LTRIM(c.expert_comptable)) = @scope_id
-        OR RTRIM(LTRIM(c.chef_de_mission)) = @scope_id
-        OR RTRIM(LTRIM(d.id_responsable_lab)) = @scope_id
-      )`);
+      where.push(sqlClientLinkedTo('c'));
     }
 
     where.push(sqlIsClient('c'));
@@ -559,11 +551,12 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
 }
 
 /**
- * Prospects (clients.prospect) visibles par l'EC lié ou par isFull (équipe LAB).
+ * Prospects (clients.prospect) : tous si canSeeAllProspects (informatique/copil/admin),
+ * sinon dossiers liés de l'EC. Les autres statuts n'ont pas accès.
  * Source = table clients, pas lab_dossier (un prospect peut ne pas encore avoir de dossier LAB).
  *
  * @param {object} filters  query : search, page, pageSize
- * @param {{ isFull: boolean, idSellsy: string|null }} scope
+ * @param {{ isFull: boolean, idSellsy: string|null, canSeeAllProspects?: boolean, canSeeProspects?: boolean }} scope
  * @returns {Promise<{ data: object[], total: number, page: number, pageSize: number }>}
  */
 export async function getDossiersAttenteLab(filters = {}, scope = { isFull: true, idSellsy: null }) {
@@ -571,11 +564,15 @@ export async function getDossiersAttenteLab(filters = {}, scope = { isFull: true
     const pool = await poolPromise;
     const where = [sqlIsProspect('c')];
     const inputs = [];
+    const seeAll = scope?.canSeeAllProspects === true || scope?.isFull === true;
+    const seeProspects = seeAll || scope?.canSeeProspects === true;
 
-    if (!scope?.isFull) {
+    if (!seeProspects) {
+      where.push('1 = 0');
+    } else if (!seeAll) {
       const scopeId = scope?.idSellsy != null ? String(scope.idSellsy).trim() : '';
       inputs.push({ name: 'scope_id', type: sql.NVarChar(20), value: scopeId });
-      where.push(`RTRIM(LTRIM(c.expert_comptable)) = @scope_id`);
+      where.push(sqlClientLinkedTo('c'));
     }
 
     const search = cleanText(filters.search);
@@ -678,11 +675,7 @@ export async function getDossiersLabForExport(
     if (!scope?.isFull) {
       const scopeId = scope?.idSellsy != null ? String(scope.idSellsy).trim() : '';
       inputs.push({ name: 'scope_id', type: sql.NVarChar(20), value: scopeId });
-      where.push(`(
-        RTRIM(LTRIM(c.expert_comptable)) = @scope_id
-        OR RTRIM(LTRIM(c.chef_de_mission)) = @scope_id
-        OR RTRIM(LTRIM(d.id_responsable_lab)) = @scope_id
-      )`);
+      where.push(sqlClientLinkedTo('c'));
     }
 
     where.push(sqlIsClient('c'));

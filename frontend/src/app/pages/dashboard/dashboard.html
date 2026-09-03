@@ -1,6 +1,6 @@
 <main class="dashboard-content">
     <h1>Tableau de bord - {{ getCollabNom() }}</h1>
-    <p class="subtitle">Consultez vos dossiers en cours et ceux de votre équipe.</p>
+    <p class="subtitle">Consultez vos dossiers en cours.</p>
 
     <div class="actions-bar">
         <div class="controls-group">
@@ -27,7 +27,7 @@
             <button
                 class="primary-action-button"
                 type="button"
-                *ngIf="collaborateur"
+                *ngIf="canSeeProspects"
                 (click)="openModalAttente()">
                 Prospects
                 <app-rond-notif
@@ -49,10 +49,6 @@
 
         <button *ngIf="isLabUser" [class.active]="activeTab === 'lab'" (click)="selectTab('lab')">
             Vue LAB
-        </button>
-
-        <button *ngIf="userRole.includes('chef')" [class.active]="activeTab === 'equipe'" (click)="selectTab('equipe')">
-            Mon Équipe
         </button>
     </nav>
 
@@ -205,80 +201,6 @@
                 </tbody>
             </table>
 
-            <nav class="pagination">
-                <button (click)="prevPage()" [disabled]="currentPage === 1">Précédent</button>
-                Page {{ currentPage }} sur {{ getTotalPages() }}
-                <button (click)="nextPage()" [disabled]="currentPage === getTotalPages()">Suivant</button>
-            </nav>
-        </div>
-
-        <div *ngIf="activeTab === 'equipe' && !isLoading" class="table-container">
-            <div *ngIf="dossiersEquipe.length === 0 && filterClient" class="empty-state">
-                Aucun dossier d'équipe ne correspond à votre filtre.
-            </div>
-
-            <div *ngIf="dossiersEquipe.length === 0 && !filterClient" class="empty-state">
-                Aucun dossier n'est assigné aux membres de votre équipe.
-            </div>
-
-            <table *ngIf="dossiersEquipe.length > 0" class="equipe-table">
-                <thead>
-                    <tr>
-                        <th (click)="setSort('code_client')" [class.active-sort]="sortField === 'code_client'">
-                            Code Client
-                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
-                                [class.desc]="sortDirection === 'desc'"></i>
-                        </th>
-                        <th (click)="setSort('_sortableName')" [class.active-sort]="sortField === '_sortableName'">
-                            Nom du Dossier
-                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
-                                [class.desc]="sortDirection === 'desc'"></i>
-                        </th>
-                        <th (click)="setSort('collaborateur')" [class.active-sort]="sortField === 'collaborateur'">
-                            Collaborateur
-                            <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
-                                [class.desc]="sortDirection === 'desc'"></i>
-                        </th>
-                        <th (click)="setSort('date_sortie')" [class.active-sort]="sortField === 'date_sortie'">
-                            Date de sortie <i class="sort-icon" [class.asc]="sortDirection === 'asc'"
-                                [class.desc]="sortDirection === 'desc'"></i>
-                        </th>
-                        <th>Action</th>
-                        <th>Historique</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let dossier of dossiersEquipe">
-                        <td>
-                            <div class="cell-content">{{ dossier.code_client }}</div>
-                        </td>
-                        <td>
-                            <div class="cell-content">{{ formatNomEntreprise(dossier) }}</div>
-                        </td>
-                        <td>
-                            <div class="cell-content">{{ dossier.collaborateur }}</div>
-                        </td>
-                        <td>
-                            <div class="cell-content">{{ dossier.date_sortie | date:'dd/MM/yyyy' }}</div>
-                        </td>
-                        <td>
-                            <div class="cell-content">
-                                <button (click)="openDossier(formatNomEntreprise(dossier), dossier.code_client)"
-                                    class="action-button">
-                                    Ouvrir
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="cell-content">
-                                <button (click)="consulterHistorique(dossier)" class="action-button">
-                                    Consulter
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
             <nav class="pagination">
                 <button (click)="prevPage()" [disabled]="currentPage === 1">Précédent</button>
                 Page {{ currentPage }} sur {{ getTotalPages() }}

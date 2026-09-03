@@ -489,10 +489,24 @@ export function buildOptionalFilters(request, filters = {}, allowed = {}) {
 }
 
 /**
+ * Un dossier est lié si id_sellsy figure sur n'importe quelle colonne d'équipe
+ * (EC, N1, N2, N3/N4/N5) — union, pas exclusif au statut.
+ */
+export function sqlClientLinkedTo(alias, paramName = 'scope_id') {
+  const prefix = alias ? `${alias}.` : '';
+  return `(
+    RTRIM(LTRIM(${prefix}expert_comptable)) = @${paramName}
+    OR RTRIM(LTRIM(${prefix}chef_de_mission)) = @${paramName}
+    OR RTRIM(LTRIM(${prefix}assistant_comptable_revision)) = @${paramName}
+    OR RTRIM(LTRIM(${prefix}assistant_comptable)) = @${paramName}
+  )`;
+}
+
+/**
  * Clause RBAC réutilisable : restreint une requête aux dossiers du périmètre de
  * l'appelant à partir d'une expression code_client (ex. 'e.code_client').
- * Un dossier est « dans le périmètre » si l'appelant est expert-comptable ou
- * chef de mission du client, ou responsable LAB du dossier.
+ * Un dossier est « dans le périmètre » si l'appelant est lié au client
+ * (expert_comptable, chef_de_mission, assistant_comptable_revision, assistant_comptable).
  *
  * @returns {null|{ clause: string, input: { name: string, type: any, value: string } }}
  *   null si accès complet (aucune restriction).
@@ -503,11 +517,7 @@ export function buildScopeClause(scope, codeClientExpr, paramName = 'scope_id') 
   const clause = `(
     EXISTS (SELECT 1 FROM clients c_scope
       WHERE RTRIM(LTRIM(c_scope.code_client)) = RTRIM(LTRIM(${codeClientExpr}))
-        AND (RTRIM(LTRIM(c_scope.expert_comptable)) = @${paramName}
-          OR RTRIM(LTRIM(c_scope.chef_de_mission)) = @${paramName}))
-    OR EXISTS (SELECT 1 FROM lab_dossier d_scope
-      WHERE RTRIM(LTRIM(d_scope.code_client)) = RTRIM(LTRIM(${codeClientExpr}))
-        AND RTRIM(LTRIM(d_scope.id_responsable_lab)) = @${paramName})
+        AND ${sqlClientLinkedTo('c_scope', paramName)})
   )`;
   return { clause, input: { name: paramName, type: sql.NVarChar(20), value: idSellsy } };
 }
@@ -535,7 +545,8 @@ export function sqlIsProspect(alias = 'c') {
 export async function assertDossierInScope(codeClient, scope) {
   if (!scope || scope.isFull) return;
   const idSellsy = scope.idSellsy != null ? String(scope.idSellsy).trim() : '';
-  if (!idSellsy) {
+  const canSeeAllProspects = scope.canSeeAllProspects === true;
+  if (!idSellsy && !canSeeAllProspects) {
     throw new LabDossierError('Accès LAB non autorisé', 403);
   }
   const code = codeClient != null ? String(codeClient).trim() : '';
@@ -545,18 +556,19 @@ export async function assertDossierInScope(codeClient, scope) {
   }
 
   const pool = await poolPromise;
-  const result = await pool
-    .request()
-    .input('code_client', sql.NVarChar(10), codeSafe)
-    .input('scope_id', sql.NVarChar(20), idSellsy)
-    .query(`
+  const request = pool.request().input('code_client', sql.NVarChar(10), codeSafe);
+  const linkSql = idSellsy
+    ? sqlClientLinkedTo('c')
+    : '1 = 0';
+  if (idSellsy) {
+    request.input('scope_id', sql.NVarChar(20), idSellsy);
+  }
+  const prospectSql = canSeeAllProspects ? `OR ${sqlIsProspect('c')}` : '';
+  const result = await request.query(`
       SELECT TOP 1 1 AS ok
       FROM clients c
-      LEFT JOIN lab_dossier d ON RTRIM(LTRIM(d.code_client)) = RTRIM(LTRIM(c.code_client))
       WHERE RTRIM(LTRIM(c.code_client)) = RTRIM(LTRIM(@code_client))
-        AND (RTRIM(LTRIM(c.expert_comptable)) = @scope_id
-          OR RTRIM(LTRIM(c.chef_de_mission)) = @scope_id
-          OR RTRIM(LTRIM(d.id_responsable_lab)) = @scope_id)
+        AND (${linkSql} ${prospectSql})
     `);
 
   if (!result.recordset?.[0]) {

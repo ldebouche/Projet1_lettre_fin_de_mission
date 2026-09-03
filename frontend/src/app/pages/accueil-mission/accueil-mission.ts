@@ -7,7 +7,6 @@ import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-hi
 import { DbService } from '../../services/db-service';
 import { DashboardService } from '../../services/dashboard-service';
 import { LabService } from '../../services/lab-service';
-import { RolesService } from '../../services/roles-service';
 
 interface CarteAction {
   label: string;
@@ -45,7 +44,6 @@ export class AccueilMissionComponent implements OnInit {
 
   hoverIndex: number | null = null;
 
-  hasRoleLab = false;
   labResumeLoading = false;
   labResumeError = false;
   labResume: any | null = null;
@@ -61,8 +59,7 @@ export class AccueilMissionComponent implements OnInit {
     private dataService: DataService,
     private db: DbService,
     private dashboardService: DashboardService,
-    private labService: LabService,
-    private rolesService: RolesService
+    private labService: LabService
   ) {
     this.nomEntreprise = this.dataService.getNomEntreprise() || '';
     this.db.GetDossierInfos().subscribe((dossierInfos: any) => {
@@ -72,11 +69,6 @@ export class AccueilMissionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.hasRoleLab = this.rolesService.hasRoles(
-      this.collaborateur?.groupes_microsoft || [],
-      ['admin', 'informatique', 'lab']
-    );
-
     this.cartes = [
       {
         title: 'Début de mission',
@@ -106,34 +98,32 @@ export class AccueilMissionComponent implements OnInit {
       }
     ];
 
-    if (this.hasRoleLab) {
-      this.cartes.push({
-        title: 'Conformité LAB',
-        description: '',
-        kind: 'lab',
-        accentColor: 'blue-light',
-        actions: [
-          {
-            label: 'Initialiser',
-            onClick: () => this.onInitialiserLab(),
-            visible: () =>
-              !this.labResumeLoading &&
-              !this.labResumeError &&
-              this.labResume === null
-          },
-          {
-            label: 'Plan & Suivi',
-            onClick: () => this.openLabDossier()
-          },
-          {
-            label: 'Révision annuelle',
-            onClick: () => this.openLabRevisionForm(),
-            disabled: () => !this.isRevisionAnnuelleEnabled()
-          }
-        ]
-      });
-      this.loadLabResume();
-    }
+    this.cartes.push({
+      title: 'Conformité LAB',
+      description: '',
+      kind: 'lab',
+      accentColor: 'blue-light',
+      actions: [
+        {
+          label: 'Initialiser',
+          onClick: () => this.onInitialiserLab(),
+          visible: () =>
+            !this.labResumeLoading &&
+            !this.labResumeError &&
+            this.labResume === null
+        },
+        {
+          label: 'Plan & Suivi',
+          onClick: () => this.openLabDossier()
+        },
+        {
+          label: 'Révision annuelle',
+          onClick: () => this.openLabRevisionForm(),
+          disabled: () => !this.isRevisionAnnuelleEnabled()
+        }
+      ]
+    });
+    this.loadLabResume();
   }
 
   private loadLabResume(): void {

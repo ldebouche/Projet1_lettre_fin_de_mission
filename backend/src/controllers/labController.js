@@ -76,47 +76,35 @@ import {
   portefeuilleExportFilename,
 } from '../services/lab-portefeuille-export-service.js';
 import dbService from '../services/dbService.js';
-import { getUserGroupsByOid } from '../services/graphService.js';
-
-/** Groupes Microsoft donnant un accès LAB complet (lecture de tous les dossiers). */
-const FULL_ACCESS_GROUPS = new Set(['admin', 'informatique', 'lab']);
+import { resolveCollaborateurContext } from '../services/collaborateurContext.js';
 
 /**
  * Résout le périmètre de lecture LAB de l'appelant (RBAC).
- * Même logique de résolution des rôles que authController.VerifCollaborateur.
+ * isFull = tous les dossiers (groupe informatique uniquement).
+ * Cartographie / modulation = admin + informatique + copil (COPIL = Resplab temporaire).
  *
  * @param {import('express').Request} req
- * @returns {Promise<{ isFull: boolean, idSellsy: string|null }>}
- *   isFull   : accès complet (membre d'un groupe admin / informatique / lab)
- *   idSellsy : id_sellsy du collaborateur (périmètre restreint à ses dossiers), ou null
+ * @returns {Promise<{
+ *   isFull: boolean,
+ *   idSellsy: string|null,
+ *   statut: string,
+ *   canAccessCartographie: boolean,
+ *   canAccessTracfin: boolean,
+ *   canSeeAllProspects: boolean,
+ *   canSeeProspects: boolean
+ * }>}
  */
 async function resolveLabScope(req) {
-  const email = req.user?.unique_name;
-  let idSellsy = null;
-  if (email) {
-    const collaborateur = await dbService.GetCollaborateur(email);
-    const raw = collaborateur?.id_sellsy != null ? String(collaborateur.id_sellsy).trim() : '';
-    idSellsy = raw === '' ? null : raw;
-  }
-
-  let groupes = [];
-  if (process.env.DEMO_AUTH === 'true' && Array.isArray(req.user?.roles)) {
-    groupes = req.user.roles;
-  } else {
-    try {
-      groupes = await getUserGroupsByOid(req.user?.oid);
-    } catch (err) {
-      console.error('resolveLabScope: échec getUserGroupsByOid', err);
-      groupes = [];
-    }
-  }
-
-  const normalized = (Array.isArray(groupes) ? groupes : [])
-    .map((g) => (g != null ? String(g).trim().toLowerCase() : ''))
-    .filter(Boolean);
-  const isFull = normalized.some((g) => FULL_ACCESS_GROUPS.has(g));
-
-  return { isFull, idSellsy };
+  const ctx = await resolveCollaborateurContext(req);
+  return {
+    isFull: ctx.canSeeAllDossiers,
+    idSellsy: ctx.idSellsy,
+    statut: ctx.statut,
+    canAccessCartographie: ctx.canAccessCartographie,
+    canAccessTracfin: ctx.canAccessTracfin,
+    canSeeAllProspects: ctx.canSeeAllProspects,
+    canSeeProspects: ctx.canSeeProspects,
+  };
 }
 
 /**
@@ -137,7 +125,7 @@ function denyIfNoScope(scope, res) {
  * @returns {boolean} true si la réponse 403 a été envoyée (le handler doit s'arrêter).
  */
 function assertTracfinAccess(scope, res) {
-  if (!scope.isFull) {
+  if (!scope.canAccessTracfin) {
     res.status(403).json({ error: "Accès TRACFIN réservé à l'équipe LAB" });
     return true;
   }
@@ -582,10 +570,10 @@ async function resolveUserId(req) {
 export async function getDashboardLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (!scope.isFull && !scope.idSellsy) {
-      return res.status(403).json({ error: 'Accès LAB non autorisé' });
+    if (!scope.canAccessCartographie) {
+      return res.status(403).json({ error: 'Accès cartographie réservé à informatique, COPIL et admin' });
     }
-    const data = await labGetDashboardLab(req.query, scope);
+    const data = await labGetDashboardLab(req.query, { isFull: true, idSellsy: scope.idSellsy });
     return res.json({ data });
   } catch (err) {
     console.error('Erreur getDashboardLab:', err);
@@ -610,7 +598,10 @@ export async function getDossiersLab(req, res) {
 export async function getDossiersAttenteLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (denyIfNoScope(scope, res)) return;
+    if (!scope.canSeeProspects) {
+      return res.json({ data: [], total: 0, page: 1, pageSize: 200 });
+    }
+    if (!scope.canSeeAllProspects && denyIfNoScope(scope, res)) return;
     const result = await labGetDossiersAttenteLab(req.query, scope);
     return res.json(result);
   } catch (err) {
@@ -973,20 +964,22 @@ export async function getTransactionsLab(req, res) {
 /**
  * Hint RBAC pour l'UI. Pas de denyIfNoScope : un collaborateur sans id_sellsy
  * et sans isFull reçoit quand même le hint (tous flags false).
- * Groupe lab = équipe LAB cabinet. canReadParametrage et canEditParametrage
- * ont le même mapping isFull (décision patron 13/08 + contrat 5.1).
+ * isFull = tous les dossiers (informatique).
+ * canAccessCartographie / parametrage = admin + informatique + copil.
+ * canAccessTracfin inchangé (admin + informatique + lab).
  */
 export async function getMeLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    const isFull = Boolean(scope.isFull);
     return res.json({
       data: {
-        isFull,
+        isFull: Boolean(scope.isFull),
         id_sellsy: scope.idSellsy,
-        canAccessTracfin: isFull,
-        canReadParametrage: isFull,
-        canEditParametrage: isFull,
+        canAccessCartographie: Boolean(scope.canAccessCartographie),
+        canAccessTracfin: Boolean(scope.canAccessTracfin),
+        canReadParametrage: Boolean(scope.canAccessCartographie),
+        canEditParametrage: Boolean(scope.canAccessCartographie),
+        canSeeProspects: Boolean(scope.canSeeProspects),
         isDemo: process.env.DEMO_AUTH === 'true',
       },
     });
@@ -1011,8 +1004,8 @@ export async function getTracfinLab(req, res) {
 export async function getParametrageLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (!scope.isFull) {
-      return res.status(403).json({ error: 'Accès paramétrage LAB réservé aux administrateurs' });
+    if (!scope.canAccessCartographie) {
+      return res.status(403).json({ error: 'Accès paramétrage LAB réservé à informatique, COPIL et admin' });
     }
     const data = await labGetParametrageLab();
     return res.json({ data });
@@ -1028,8 +1021,8 @@ export async function getParametrageLab(req, res) {
 export async function putParametrageLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (!scope.isFull) {
-      return res.status(403).json({ error: 'Accès paramétrage LAB réservé aux administrateurs' });
+    if (!scope.canAccessCartographie) {
+      return res.status(403).json({ error: 'Accès paramétrage LAB réservé à informatique, COPIL et admin' });
     }
     const userId = await resolveUserId(req);
     const data = await labUpdateParametrageLab(req.body ?? {}, userId);
@@ -1050,7 +1043,7 @@ export async function putParametrageLab(req, res) {
 export async function postJobsPiecesPerimeesLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (!scope.isFull) {
+    if (!scope.canAccessTracfin) {
       return res.status(403).json({ error: 'Job pièces périmées réservé à l\'équipe LAB' });
     }
     const userId = await resolveUserId(req);
@@ -1072,7 +1065,7 @@ export async function postJobsPiecesPerimeesLab(req, res) {
 export async function postJobsRevueAnnuelleLab(req, res) {
   try {
     const scope = await resolveLabScope(req);
-    if (!scope.isFull) {
+    if (!scope.canAccessTracfin) {
       return res.status(403).json({ error: 'Job revue annuelle réservé à l\'équipe LAB' });
     }
     const userId = await resolveUserId(req);

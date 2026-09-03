@@ -17,6 +17,7 @@ export class LabShellComponent implements OnInit {
   @Input() pill = '';
 
   canReadParametrage = false;
+  canAccessCartographie = false;
 
   constructor(private labService: LabService) {}
 
@@ -24,9 +25,11 @@ export class LabShellComponent implements OnInit {
     this.labService.getMeLab().subscribe({
       next: (res) => {
         this.canReadParametrage = !!res.data?.canReadParametrage;
+        this.canAccessCartographie = !!res.data?.canAccessCartographie || this.canReadParametrage;
       },
       error: () => {
         this.canReadParametrage = false;
+        this.canAccessCartographie = false;
       },
     });
   }

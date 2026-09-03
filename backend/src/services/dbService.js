@@ -1,4 +1,5 @@
 import { poolPromise, sql } from '../config/db.js';
+import { sqlClientLinkedTo } from './lab-utils.js';
 
 class dbService {
   async executeQuery(query, params = {}, single = true) {
@@ -32,58 +33,45 @@ class dbService {
     );
   }
 
-  async GetListeDossiers(id_sellsy, statut) {
-    console.log("GetListeDossiers - id_sellsy:", id_sellsy, "statut:", statut);
-    if (statut.includes('informatique')) {
-      const dossiers = await this.executeQuery(
-        `SELECT
+  async GetListeDossiers(id_sellsy, { seeAll = false } = {}) {
+    const columns = `
           code_client,
           raison_sociale,
           forme_societe,
           civilite,
           nom,
           prenom,
-          date_sortie_cabinet
+          date_sortie_cabinet`;
+
+    if (seeAll) {
+      const dossiers = await this.executeQuery(
+        `SELECT ${columns}
         FROM clients;`,
         {},
         false,
       );
-
       return { dossiers, dossiersEquipe: [] };
     }
-    if (statut.includes('N1')) {
-      const dossiers = await this.executeQuery(
-        `SELECT *
-          FROM clients
-          WHERE chef_de_mission LIKE CONCAT(@id_sellsy, '%')
-            AND assistant_comptable_revision LIKE CONCAT(@id_sellsy, '%');`,
-        { id_sellsy },
-        false,
-      );
 
-      const dossiersEquipe = await this.executeQuery(
-        `SELECT 
-          c.*,
-          CONCAT(co.nom, ' ', co.prenom) AS collaborateur
-          FROM clients c
-          JOIN Collaborateurs co ON c.assistant_comptable_revision = co.id_sellsy
-          WHERE chef_de_mission LIKE CONCAT(@id_sellsy, '%')
-            AND assistant_comptable_revision NOT LIKE CONCAT(@id_sellsy, '%');`,
-        { id_sellsy },
-        false,
-      );
+    const dossiers = await this.executeQuery(
+      `SELECT ${columns}
+      FROM clients
+      WHERE ${sqlClientLinkedTo('')};`,
+      { scope_id: id_sellsy },
+      false,
+    );
+    return { dossiers, dossiersEquipe: [] };
+  }
 
-      return { dossiers, dossiersEquipe };
-    } else {
-      const dossiers = await this.executeQuery(
-        `SELECT *
-        FROM clients
-        WHERE assistant_comptable_revision LIKE CONCAT(@id_sellsy, '%');`,
-        { id_sellsy },
-        false,
-      );
-      return { dossiers, dossiersEquipe: [] };
-    }
+  async IsDossierLinked(code_client, id_sellsy) {
+    const row = await this.executeQuery(
+      `SELECT TOP 1 1 AS ok
+      FROM clients
+      WHERE RTRIM(LTRIM(code_client)) = RTRIM(LTRIM(@code_client))
+        AND ${sqlClientLinkedTo('')};`,
+      { code_client, scope_id: id_sellsy },
+    );
+    return !!row;
   }
 
   async GetAggregats(code_client, dateFinEx) {
