@@ -1,0 +1,58 @@
+<app-lab-carte
+  class="wizard-card form-section"
+  id="section-dirigeant"
+  title="Représentant légal / dirigeant"
+  subtitle="Identité pour la fiche LCB-FT (conservée en base)"
+>
+  <p class="panel-intro">
+    Renseignez le représentant légal (dirigeant). Ces informations sont enregistrées avec le
+    dossier et réutilisées aux revues suivantes, puis reprises sur la fiche PDF.
+  </p>
+  <div class="form-grid form-grid--2">
+    <label class="field">
+      <span class="field-label">Nom</span>
+      <input class="field-input" type="text" name="dirigeant_nom" [(ngModel)]="m.dirigeant.nom" />
+    </label>
+    <label class="field">
+      <span class="field-label">Prénom</span>
+      <input class="field-input" type="text" name="dirigeant_prenom" [(ngModel)]="m.dirigeant.prenom" />
+    </label>
+    <label class="field">
+      <span class="field-label">Date de naissance</span>
+      <input
+        class="field-input"
+        type="date"
+        name="dirigeant_date_naissance"
+        [(ngModel)]="m.dirigeant.date_naissance"
+      />
+    </label>
+    <label class="field">
+      <span class="field-label">Lieu de naissance</span>
+      <input
+        class="field-input"
+        type="text"
+        name="dirigeant_lieu_naissance"
+        [(ngModel)]="m.dirigeant.lieu_naissance"
+      />
+    </label>
+    <label class="field">
+      <span class="field-label">Nationalité</span>
+      <input
+        class="field-input"
+        type="text"
+        name="dirigeant_nationalite"
+        [(ngModel)]="m.dirigeant.nationalite"
+      />
+    </label>
+    <label class="field field--full">
+      <span class="field-label">Adresse personnelle</span>
+      <textarea
+        class="field-input field-textarea"
+        name="dirigeant_adresse"
+        rows="2"
+        [(ngModel)]="m.dirigeant.adresse_personnelle"
+        placeholder="Numéro, voie, code postal, ville, pays…"
+      ></textarea>
+    </label>
+  </div>
+</app-lab-carte>

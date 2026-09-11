@@ -71,7 +71,7 @@ export async function scanRevueAnnuelleLab(userId = 'JOB_LAB') {
       FROM lab_dossier d
       WHERE d.date_prochaine_revue IS NOT NULL
         AND d.date_prochaine_revue < CAST(GETDATE() AS DATE)
-        AND RTRIM(LTRIM(ISNULL(d.statut_dossier, N''))) NOT IN (N'Cloture', N'Clôturé', N'Cloturee')
+        AND RTRIM(LTRIM(ISNULL(d.statut_dossier, N''))) NOT IN (N'Cloture', N'Clôturé', N'Cloturee', N'Refuse')
       ORDER BY d.date_prochaine_revue ASC, d.code_client ASC
     `);
 

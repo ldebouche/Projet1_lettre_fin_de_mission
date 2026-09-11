@@ -4,6 +4,7 @@
     routerLink="/lab/dashboard"
     routerLinkActive="tab--on"
     [routerLinkActiveOptions]="{ exact: true }"
+    *ngIf="canAccessCartographie"
   >
     Cartographie
   </a>

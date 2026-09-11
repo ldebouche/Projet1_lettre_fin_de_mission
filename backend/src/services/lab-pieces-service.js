@@ -9,7 +9,7 @@ import path from 'path';
 
 import { poolPromise, sql } from '../config/db.js';
 
-import { PATHS } from '../config/paths.js';
+import { PATHS, getLabPiecesDir } from '../config/paths.js';
 
 import {
   LabDossierError,
@@ -240,40 +240,47 @@ function assertBeneficiaireFieldLengths(fields) {
 }
 
 /**
- * Si un filepath pointe vers le stockage clients, il doit être sous
- * CLIENT_FILES_ROOT/{code}/LAB/KYC/. Les références textuelles restent autorisées.
+ * Si un filepath pointe vers un stockage serveur, il doit être sous
+ * OUTILS_AVENIA_ROOT/{code}/pieces_lab/ (cible) ou l’ancien
+ * CLIENT_FILES_ROOT/{code}/LAB/KYC/ (pièces déjà archivées).
+ * Les références textuelles restent autorisées.
  */
 function assertPieceFilepathInClientScope(codeClient, filepath) {
   const fp = cleanText(filepath);
   if (!fp) return null;
 
-  const clientRoot = path.resolve(PATHS.clientFilesRoot);
-  const clientPrefix = clientRoot.endsWith(path.sep) ? clientRoot : `${clientRoot}${path.sep}`;
+  const code = String(codeClient).trim().toUpperCase();
   const resolved = path.resolve(fp);
-  const underClientRoot = resolved === clientRoot || resolved.startsWith(clientPrefix);
 
-  if (!underClientRoot) {
-    if (path.isAbsolute(fp)) {
-      throw new LabDossierError('filepath hors périmètre du dossier client', 400);
+  const allowedRoots = [
+    path.resolve(getLabPiecesDir(code)),
+    path.resolve(PATHS.clientFilesRoot, code, 'LAB', 'KYC'),
+  ];
+
+  for (const expectedRoot of allowedRoots) {
+    const prefix = expectedRoot.endsWith(path.sep) ? expectedRoot : `${expectedRoot}${path.sep}`;
+    if (resolved === expectedRoot || resolved.startsWith(prefix)) {
+      return resolved;
     }
-    return fp;
   }
 
-  const expectedRoot = path.resolve(
-    PATHS.clientFilesRoot,
-    String(codeClient).trim().toUpperCase(),
-    'LAB',
-    'KYC',
-  );
-  const prefix = expectedRoot.endsWith(path.sep) ? expectedRoot : `${expectedRoot}${path.sep}`;
-  if (resolved !== expectedRoot && !resolved.startsWith(prefix)) {
+  const outilsRoot = path.resolve(PATHS.outilsAveniaRoot);
+  const clientLegacyRoot = path.resolve(PATHS.clientFilesRoot);
+  const underKnownStorage =
+    resolved.startsWith(outilsRoot.endsWith(path.sep) ? outilsRoot : `${outilsRoot}${path.sep}`) ||
+    resolved.startsWith(
+      clientLegacyRoot.endsWith(path.sep) ? clientLegacyRoot : `${clientLegacyRoot}${path.sep}`,
+    );
+
+  if (underKnownStorage || path.isAbsolute(fp)) {
     throw new LabDossierError('filepath hors périmètre du dossier client', 400);
   }
-  return resolved;
+  return fp;
 }
 
 /**
- * Enregistre le binaire d'une pièce KYC sous CLIENT_FILES_ROOT/{code_client}/LAB/KYC/.
+ * Enregistre le binaire d'une pièce KYC sous
+ * C:\outils-avenia\{code_client}\pieces_lab\ (même racine que les LFM).
  */
 export async function savePieceKycFileLab(codeClient, file) {
   const code = codeClient != null ? String(codeClient).trim() : '';
@@ -297,7 +304,7 @@ export async function savePieceKycFileLab(codeClient, file) {
   }
   assertPieceKycContent(file, ext);
 
-  const dir = path.join(PATHS.clientFilesRoot, code.toUpperCase(), 'LAB', 'KYC');
+  const dir = getLabPiecesDir(code);
   await fs.mkdir(dir, { recursive: true });
 
   const storedName = `${Date.now()}_${originalName}`;
@@ -669,7 +676,7 @@ export async function scanPiecesPerimeesLab(userId = 'JOB_LAB') {
       FROM lab_pieces_kyc p
       INNER JOIN lab_dossier d
         ON RTRIM(LTRIM(d.code_client)) = RTRIM(LTRIM(p.code_client))
-      WHERE RTRIM(LTRIM(ISNULL(d.statut_dossier, N''))) NOT IN (N'Cloture', N'Clôturé', N'Cloturee')
+      WHERE RTRIM(LTRIM(ISNULL(d.statut_dossier, N''))) NOT IN (N'Cloture', N'Clôturé', N'Cloturee', N'Refuse')
         AND RTRIM(LTRIM(p.statut)) <> N'Non_requise'
         AND (
           RTRIM(LTRIM(p.statut)) = N'Perimee'

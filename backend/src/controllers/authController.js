@@ -1,6 +1,7 @@
 import dbService from '../services/dbService.js';
 import { generateToken } from '../utils/jwt.js';
 import { getUserGroupsByOid } from '../services/graphService.js';
+import { resolveCollaborateurContext } from '../services/collaborateurContext.js';
 
 export const VerifCollaborateur = async (req, res) => {
   try {
@@ -33,6 +34,17 @@ export const VerifCollaborateur = async (req, res) => {
 export const VerifDossier = async (req, res) => {
   try {
     const { code_client, dateFinEx, dateDebutEx } = req.body;
+
+    const ctx = await resolveCollaborateurContext(req);
+    if (!ctx.canSeeAllDossiers) {
+      if (!ctx.idSellsy) {
+        return res.status(403).json({ error: 'Accès au dossier non autorisé' });
+      }
+      const linked = await dbService.IsDossierLinked(code_client, ctx.idSellsy);
+      if (!linked) {
+        return res.status(403).json({ error: 'Accès au dossier non autorisé' });
+      }
+    }
 
     const { dossier, client } = await dbService.GetDossier(code_client, dateFinEx);
     if (!dossier) {

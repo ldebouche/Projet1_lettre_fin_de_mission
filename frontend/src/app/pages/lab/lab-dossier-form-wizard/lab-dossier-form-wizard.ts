@@ -21,6 +21,8 @@ import { LabWizardIdentiteComponent } from '../lab-wizard-identite/lab-wizard-id
 import { LabWizardKycComponent } from '../lab-wizard-kyc/lab-wizard-kyc';
 import { LabWizardBeComponent } from '../lab-wizard-be/lab-wizard-be';
 import { LabWizardPiecesComponent } from '../lab-wizard-pieces/lab-wizard-pieces';
+import { LabWizardCommentaireComponent } from '../lab-wizard-commentaire/lab-wizard-commentaire';
+import { LabWizardDirigeantComponent } from '../lab-wizard-dirigeant/lab-wizard-dirigeant';
 import { LabCarteComponent } from '../lab-carte/lab-carte';
 import {
   applyLocalKycPrefill,
@@ -83,6 +85,8 @@ function isEnrichableStringField(key: string): key is EnrichableStringField {
     LabWizardKycComponent,
     LabWizardBeComponent,
     LabWizardPiecesComponent,
+    LabWizardDirigeantComponent,
+    LabWizardCommentaireComponent,
     LabEvaluationRisqueComponent,
     LabCarteComponent,
   ],
@@ -133,9 +137,11 @@ export class LabDossierFormWizardComponent implements OnInit {
     identite: 'section-identite',
     coordonnees: 'section-coordonnees',
     'fiscal-profil': 'section-fiscal',
+    dirigeant: 'section-dirigeant',
     kyc: 'section-kyc',
     be: 'section-be',
     pieces: 'section-pieces',
+    commentaire: 'section-commentaire-etape1',
     lab: 'section-affectation',
   };
 
@@ -497,7 +503,10 @@ export class LabDossierFormWizardComponent implements OnInit {
     this.bodaccSectionOpen = open;
   }
 
-  private async persistStep1(codeClient: string): Promise<void> {
+  private async persistStep1(
+    codeClient: string,
+    statutDossierOverride?: string,
+  ): Promise<void> {
     if (this.isWizardLocked) {
       throw new Error(
         'Révision impossible : lancez ou reprenez la revue depuis le plan & suivi.',
@@ -505,7 +514,13 @@ export class LabDossierFormWizardComponent implements OnInit {
     }
     await firstValueFrom(this.labService.updateClientLab(codeClient, buildClientPayload(this.m)));
 
-    const lab = buildLabPayload(this.m, this.idRevue);
+    const lab = {
+      ...buildLabPayload(this.m, this.idRevue),
+      ...(statutDossierOverride ? { statut_dossier: statutDossierOverride } : {}),
+    };
+    if (statutDossierOverride) {
+      this.m.statut_dossier = statutDossierOverride;
+    }
 
     if (this.hasExistingLabDossier) {
       await firstValueFrom(this.labService.updateDossierLab(codeClient, { lab }));
@@ -584,11 +599,30 @@ export class LabDossierFormWizardComponent implements OnInit {
   private formatStep2SubmitError(err: unknown): string {
     const apiErr = err as { error?: { error?: string }; message?: string; status?: number };
     const message = this.formatSubmitApiError(err);
-    const retryHint = 'Cliquez sur « Valider et ouvrir le plan de vigilance » pour réessayer.';
+    const retryHint = 'Cliquez sur « Accepter la mission » pour réessayer.';
     if (apiErr?.status === 503) {
       return `${message} — Le dossier client est enregistré ; l’évaluation ARPEC nécessite le schéma lab_arpec_* en base. ${retryHint}`;
     }
     return `${message} — Le dossier client est enregistré ; corrigez l’évaluation du risque si besoin. ${retryHint}`;
+  }
+
+  private assertArpecReadyForDecision(): boolean {
+    const evalCmp = this.evalRisque;
+    if (evalCmp?.questionnaireBlocked) {
+      this.stepIndex = this.steps.length - 1;
+      this.submitError =
+        evalCmp.questionnaireError ??
+        'Questionnaire ARPEC indisponible — impossible de valider.';
+      return false;
+    }
+    if (!evalCmp?.validateEvaluation()) {
+      this.stepIndex = this.steps.length - 1;
+      this.submitError =
+        evalCmp?.validationError ??
+        'Complétez le questionnaire ARPEC (toutes les questions OUI/NON) avant de valider.';
+      return false;
+    }
+    return true;
   }
 
   get isRevisionSession(): boolean {
@@ -640,21 +674,7 @@ export class LabDossierFormWizardComponent implements OnInit {
       return;
     }
 
-    const evalCmp = this.evalRisque;
-    if (evalCmp?.questionnaireBlocked) {
-      this.stepIndex = this.steps.length - 1;
-      this.submitError =
-        evalCmp.questionnaireError ??
-        'Questionnaire ARPEC indisponible — impossible de valider.';
-      return;
-    }
-    if (!evalCmp?.validateEvaluation()) {
-      this.stepIndex = this.steps.length - 1;
-      this.submitError =
-        evalCmp?.validationError ??
-        'Complétez le questionnaire ARPEC (toutes les questions OUI/NON) avant de valider.';
-      return;
-    }
+    if (!this.assertArpecReadyForDecision()) return;
 
     const code = (this.m.code_client || this.codeClient || '').trim();
     if (!code) {
@@ -662,11 +682,21 @@ export class LabDossierFormWizardComponent implements OnInit {
       return;
     }
 
+    if (
+      !confirm(
+        this.idRevue
+          ? 'Accepter la mission et clôturer la revue ? L’évaluation ARPEC sera enregistrée et le plan de vigilance s’ouvrira.'
+          : 'Accepter la mission ? L’évaluation ARPEC sera enregistrée et le plan de vigilance s’ouvrira.',
+      )
+    ) {
+      return;
+    }
+
     this.submitting = true;
 
     try {
       try {
-        await this.persistStep1(code);
+        await this.persistStep1(code, 'Actif');
       } catch (err: unknown) {
         console.error('Erreur étape 1 wizard LAB:', err);
         this.submitError = this.formatSubmitApiError(err);
@@ -698,11 +728,108 @@ export class LabDossierFormWizardComponent implements OnInit {
         }
       }
 
+      await this.tryDownloadFicheLcbft(code);
+
       const queryParams: Record<string, string> = { code_client: code };
       if (this.returnTo) queryParams['returnTo'] = this.returnTo;
       await this.router.navigate(['/lab/dossier'], { queryParams });
     } finally {
       this.submitting = false;
     }
+  }
+
+  /**
+   * Refus de mission (acceptation ou revue) : lab_dossier.statut_dossier = Refuse,
+   * hors listes (prospects / portefeuille). En revue : clôture la revue en cours.
+   * N'ouvre pas le plan de vigilance.
+   */
+  async refuserMission(): Promise<void> {
+    if (this.isWizardLocked) return;
+    this.submitError = null;
+
+    if (!this.assertArpecReadyForDecision()) return;
+
+    const code = (this.m.code_client || this.codeClient || '').trim();
+    if (!code) {
+      this.submitError = 'Code client requis pour enregistrer le dossier.';
+      return;
+    }
+
+    const confirmMsg = this.idRevue
+      ? 'Refuser la mission et clôturer la revue ? Le dossier passera au statut « Refusé », disparaîtra du portefeuille et des listes, et le plan de vigilance ne s’ouvrira pas.'
+      : 'Refuser la mission ? Le dossier passera au statut « Refusé » (prospect : hors liste d’attente ; client : hors portefeuille). Le plan de vigilance ne s’ouvrira pas.';
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    this.submitting = true;
+
+    try {
+      try {
+        await this.persistStep1(code, 'Refuse');
+      } catch (err: unknown) {
+        console.error('Erreur refus mission LAB (étape 1):', err);
+        this.submitError = this.formatSubmitApiError(err);
+        return;
+      }
+
+      try {
+        await this.persistStep2(code);
+      } catch (err: unknown) {
+        console.error('Erreur refus mission LAB (ARPEC):', err);
+        this.stepIndex = this.steps.length - 1;
+        this.submitError = this.formatStep2SubmitError(err);
+        return;
+      }
+
+      if (this.idRevue) {
+        try {
+          await firstValueFrom(this.labService.cloturerRevueLab(this.idRevue, {
+            commentaires_conclusion: this.m.commentaire_revision.trim() || null,
+            options: {
+              source: 'wizard_revision_refus',
+              bodacc_checklist: this.bodaccChecklist?.exportChecklistState() ?? {},
+            },
+          }));
+        } catch (err: unknown) {
+          console.error('Erreur clôture revue LAB (refus):', err);
+          this.submitError = this.formatSubmitApiError(err);
+          return;
+        }
+      }
+
+      await this.tryDownloadFicheLcbft(code);
+
+      await this.router.navigate(['/lab/portefeuille']);
+    } finally {
+      this.submitting = false;
+    }
+  }
+
+  /** Génération PDF Fiche 1/2 : non bloquant si échec (décision déjà enregistrée). */
+  private async tryDownloadFicheLcbft(codeClient: string): Promise<void> {
+    try {
+      const blob = await firstValueFrom(
+        this.labService.downloadFicheLcbftLab(codeClient, this.idRevue),
+      );
+      const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const filename = this.idRevue
+        ? `LAB_Fiche2_${codeClient}_revue${this.idRevue}_${stamp}.pdf`
+        : `LAB_Fiche1_${codeClient}_${stamp}.pdf`;
+      this.triggerBlobDownload(blob, filename);
+    } catch (err: unknown) {
+      console.error('Génération PDF fiche LCB-FT:', err);
+      // Ne bloque pas la navigation : ARPEC / décision déjà persistés.
+    }
+  }
+
+  private triggerBlobDownload(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 }

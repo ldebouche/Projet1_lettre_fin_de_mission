@@ -86,9 +86,11 @@
           <a href="#section-coordonnees">Siège</a>
           <a href="#section-fiscal">Fiscal</a>
           <a href="#section-affectation">Affectation</a>
+          <a href="#section-dirigeant">Dirigeant</a>
           <a href="#section-kyc">KYC</a>
           <a href="#section-be">Bénéficiaires</a>
           <a href="#section-pieces">Pièces</a>
+          <a href="#section-commentaire-etape1">Commentaire</a>
         </nav>
         <app-lab-wizard-identite
           [m]="m"
@@ -108,6 +110,7 @@
           (bodaccSectionToggle)="onBodaccSectionToggle($event)"
           (navigateStep)="goToWizardStep($event)"
         />
+        <app-lab-wizard-dirigeant [m]="m" />
         <app-lab-wizard-kyc
           [m]="m"
           [fieldMeta]="fieldMeta"
@@ -122,6 +125,7 @@
           [pieceTypePresets]="pieceTypePresets"
           (removedPersistedId)="onRemovedPersistedPiece($event)"
         />
+        <app-lab-wizard-commentaire [m]="m" />
       </div>
 
       <!-- Étape 2 — Évaluation du risque (ARPEC) -->
@@ -158,8 +162,17 @@
           >
             {{ step1Saving ? 'Enregistrement…' : 'Continuer vers l\'évaluation du risque →' }}
           </button>
+          <button
+            type="button"
+            class="btn btn--ghost btn--danger"
+            *ngIf="isLastStep"
+            (click)="refuserMission()"
+            [disabled]="submitting || step1Saving || revueActionBusy || arpecQuestionnaireBlocked"
+          >
+            {{ submitting ? 'Enregistrement…' : 'Refuser la mission' }}
+          </button>
           <button type="button" class="btn btn--primary" *ngIf="isLastStep" (click)="submitWizard()" [disabled]="submitting || step1Saving || revueActionBusy || arpecQuestionnaireBlocked">
-            {{ submitting ? 'Enregistrement…' : 'Valider et ouvrir le plan de vigilance →' }}
+            {{ submitting ? 'Enregistrement…' : 'Accepter la mission →' }}
           </button>
         </div>
       </form>

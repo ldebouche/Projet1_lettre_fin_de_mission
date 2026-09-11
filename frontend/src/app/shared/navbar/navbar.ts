@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { MsalService } from '@azure/msal-angular';
 
 import { DataService } from '../../services/data-service';
-import { RolesService } from '../../services/roles-service';
+import { RolesService, GROUPES_CARTOGRAPHIE } from '../../services/roles-service';
 import {
   ActiviteKey,
   ActiviteOption,
@@ -31,6 +31,7 @@ export class NavbarComponent implements OnInit {
   currentUrl: string = '';
   collaborateur: any;
   hasRole: boolean = false;
+  hasRoleAdmin: boolean = false;
   hasRoleLab: boolean = false;
 
   adminMenuOpen = false;
@@ -59,8 +60,9 @@ export class NavbarComponent implements OnInit {
     this.dataService.collaborateur$.subscribe((collab) => {
       this.collaborateur = collab;
 
-      this.hasRole = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique"]);
-      this.hasRoleLab = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique", "lab"]);
+      this.hasRoleAdmin = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ["admin", "informatique"]);
+      this.hasRoleLab = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], GROUPES_CARTOGRAPHIE);
+      this.hasRole = this.hasRoleAdmin || this.hasRoleLab;
       this.activiteOptions = getActiviteOptions(this.collaborateur?.groupes_microsoft || []);
     });
   }

@@ -63,9 +63,11 @@ export class LabService {
   private static readonly EMPTY_ME: LabMeResponse = {
     isFull: false,
     id_sellsy: null,
+    canAccessCartographie: false,
     canAccessTracfin: false,
     canReadParametrage: false,
     canEditParametrage: false,
+    canSeeProspects: false,
     isDemo: false,
   };
 
@@ -256,6 +258,26 @@ export class LabService {
     if (params.pays?.trim()) query['pays'] = params.pays.trim();
     return this.http.get(`/api/lab/portefeuille/export`, {
       params: query,
+      responseType: 'blob',
+    });
+  }
+
+  /**
+   * Génère + archive PDF Fiche LCB-FT (Fiche 1 sans id_revue, Fiche 2 avec).
+   * Réponse binaire application/pdf.
+   */
+  downloadFicheLcbftLab(
+    codeClient: string,
+    idRevue?: string | number | null,
+  ): Observable<Blob> {
+    const params: Record<string, string> = {
+      code_client: String(codeClient).trim(),
+    };
+    if (idRevue != null && String(idRevue).trim() !== '') {
+      params['id_revue'] = String(idRevue).trim();
+    }
+    return this.http.get(`/api/lab/fiches/lcb-ft`, {
+      params,
       responseType: 'blob',
     });
   }

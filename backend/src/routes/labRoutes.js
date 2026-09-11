@@ -24,6 +24,7 @@ import {
   getDossiersLab,
   getDossiersAttenteLab,
   getPortefeuilleExportLab,
+  getFicheLcbftLab,
   getEvenementsLab,
   getDiligencesLab,
   postEvenementLab,
@@ -65,6 +66,7 @@ router.get('/dashboard', authMiddlewareCollaborateur, getDashboardLab);
 router.get('/dossiers', authMiddlewareCollaborateur, getDossiersLab);
 router.get('/dossiers-attente', authMiddlewareCollaborateur, getDossiersAttenteLab);
 router.get('/portefeuille/export', authMiddlewareCollaborateur, getPortefeuilleExportLab);
+router.get('/fiches/lcb-ft', authMiddlewareCollaborateur, getFicheLcbftLab);
 router.get('/resume', authMiddlewareCollaborateur, getResumeLab);
 router.get('/dossier', authMiddlewareCollaborateur, getDossierLab);
 router.post('/dossier', authMiddlewareCollaborateur, postDossierLab);

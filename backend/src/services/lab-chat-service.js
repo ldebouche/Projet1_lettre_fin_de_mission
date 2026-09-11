@@ -323,6 +323,18 @@ async function loadParticipants(pool, codeClient) {
           AND chef_de_mission IS NOT NULL
           AND RTRIM(LTRIM(chef_de_mission)) <> N''
         UNION
+        SELECT assistant_comptable_revision, N'assistant_comptable_revision'
+        FROM clients
+        WHERE RTRIM(LTRIM(code_client)) = RTRIM(LTRIM(@code_client))
+          AND assistant_comptable_revision IS NOT NULL
+          AND RTRIM(LTRIM(assistant_comptable_revision)) <> N''
+        UNION
+        SELECT assistant_comptable, N'assistant_comptable'
+        FROM clients
+        WHERE RTRIM(LTRIM(code_client)) = RTRIM(LTRIM(@code_client))
+          AND assistant_comptable IS NOT NULL
+          AND RTRIM(LTRIM(assistant_comptable)) <> N''
+        UNION
         SELECT id_responsable_lab, N'responsable_lab'
         FROM lab_dossier
         WHERE RTRIM(LTRIM(code_client)) = RTRIM(LTRIM(@code_client))

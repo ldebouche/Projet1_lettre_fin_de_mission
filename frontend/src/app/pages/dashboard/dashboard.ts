@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { DbService } from '../../services/db-service';
 import { DataService } from '../../services/data-service';
 import { LabDossierAttenteItem, LabService } from '../../services/lab-service';
-import { RolesService } from '../../services/roles-service';
+import { RolesService, GROUPES_TOUS_PROSPECTS } from '../../services/roles-service';
 import { ListeHistoriqueComponent } from '../../shared/liste-historique/liste-historique';
 import { ModalComponent } from '../../shared/modal/modal';
 import { BoutonFiltreComponent } from '../../shared/bouton-filtre/bouton-filtre';
@@ -39,15 +39,13 @@ interface Dossier {
 export class DashboardComponent implements OnInit {
   collaborateur: any | null = null;
 
-  activeTab: 'mesDossiers' | 'equipe' | 'lab' = 'mesDossiers';
+  activeTab: 'mesDossiers' | 'lab' = 'mesDossiers';
 
   isLoading = true;
   mesDossiers: Dossier[] = [];
-  dossiersEquipe: Dossier[] = [];
   errorMessage: string | null = null;
 
   nomEntreprise: string = "";
-  userRole: string[] = [];
 
   filterClient: string = '';
   showExitedClients: boolean = false;
@@ -59,7 +57,6 @@ export class DashboardComponent implements OnInit {
   totalFilteredItems = 0;
 
   _allMesDossiers: Dossier[] = [];
-  _allDossiersEquipe: Dossier[] = [];
 
   sortLabelMap: { [key in SortableField]: string } = {
     'code_client': 'Code Client',
@@ -78,7 +75,8 @@ export class DashboardComponent implements OnInit {
   selectedDossierAttente: LabDossierAttenteItem | null = null;
 
   risqueMap: Map<string, any> = new Map();
-  isLabUser: boolean = false;
+  isLabUser: boolean = true;
+  canSeeProspects: boolean = false;
 
   constructor(
     private router: Router,
@@ -90,9 +88,15 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.collaborateur = JSON.parse(localStorage.getItem('collaborateur') || 'null');
-    this.isLabUser = this.rolesService.hasRoles(this.collaborateur?.groupes_microsoft || [], ['admin', 'informatique', 'lab']);
+    this.isLabUser = true;
+    const groupes = this.collaborateur?.groupes_microsoft || [];
+    const statut = String(this.collaborateur?.statut || '').trim().toUpperCase();
+    this.canSeeProspects =
+      statut === 'EC' || this.rolesService.hasRoles(groupes, GROUPES_TOUS_PROSPECTS);
     this.loadData();
-    this.loadDossiersAttente();
+    if (this.canSeeProspects) {
+      this.loadDossiersAttente();
+    }
   }
 
   private prepareData(data: any[]): Dossier[] {
@@ -119,19 +123,9 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    if (this.collaborateur.statut === 'N1') {
-      this.userRole = ['chef'];
-    } else {
-      this.userRole = ['collaborateur'];
-    }
-
-    this.userRole.push(...this.collaborateur.groupes_microsoft);
-
-    this.db.GetListeDossiers(this.collaborateur.id_sellsy, this.userRole).subscribe({
+    this.db.GetListeDossiers().subscribe({
       next: (data: any) => {
-        console.log("Dossiers reçus :", data);
         this._allMesDossiers = this.prepareData(data.dossiers);
-        this._allDossiersEquipe = this.prepareData(data.dossiersEquipe);
         this.applyFilterAndSort()
         this.loadRisqueLab(this._allMesDossiers);
         this.isLoading = false;
@@ -167,7 +161,7 @@ export class DashboardComponent implements OnInit {
     return 'risque-non-evalue';
   }
 
-  selectTab(tab: 'mesDossiers' | 'equipe' | 'lab') {
+  selectTab(tab: 'mesDossiers' | 'lab') {
     this.activeTab = tab;
     this.currentPage = 1;
     this.filterClient = '';
@@ -209,15 +203,13 @@ export class DashboardComponent implements OnInit {
   }
 
   applyFilterAndSort() {
-    const isMesDossiersView = this.activeTab === 'mesDossiers' || this.activeTab === 'lab';
-    let sourceData = isMesDossiersView ? [...this._allMesDossiers] : [...this._allDossiersEquipe];
+    let sourceData = [...this._allMesDossiers];
 
     if (this.filterClient) {
       const filterTerm = this.filterClient.toLowerCase();
       sourceData = sourceData.filter(d =>
         (d.code_client && d.code_client.toLowerCase().includes(filterTerm)) ||
-        (d._sortableName && d._sortableName.toLowerCase().includes(filterTerm)) ||
-        (this.activeTab === 'equipe' && d.collaborateur && d.collaborateur.toLowerCase().includes(filterTerm))
+        (d._sortableName && d._sortableName.toLowerCase().includes(filterTerm))
       );
     }
 
@@ -249,13 +241,7 @@ export class DashboardComponent implements OnInit {
 
     const start = (this.currentPage - 1) * this.itemsPerPage;
     const end = start + this.itemsPerPage;
-    const paginatedData = sourceData.slice(start, end);
-
-    if (isMesDossiersView) {
-      this.mesDossiers = paginatedData;
-    } else {
-      this.dossiersEquipe = paginatedData;
-    }
+    this.mesDossiers = sourceData.slice(start, end);
   }
 
   getCollabNom(): string {
@@ -294,7 +280,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadDossiersAttente(selectFirst = false): void {
-    if (!this.collaborateur) {
+    if (!this.collaborateur || !this.canSeeProspects) {
       this.dossiersEnAttente = [];
       this.dossiersAttenteTotal = 0;
       this.selectedDossierAttente = null;
