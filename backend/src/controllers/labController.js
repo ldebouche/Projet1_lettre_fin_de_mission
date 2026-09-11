@@ -75,6 +75,7 @@ import {
   buildPortefeuilleCsvBuffer,
   portefeuilleExportFilename,
 } from '../services/lab-portefeuille-export-service.js';
+import { genererFicheLcbftLab as labGenererFicheLcbftLab } from '../services/lab-fiche-lcbft-service.js';
 import dbService from '../services/dbService.js';
 import { resolveCollaborateurContext } from '../services/collaborateurContext.js';
 
@@ -652,6 +653,58 @@ export async function getPortefeuilleExportLab(req, res) {
       return res.status(500).json({ error: "Impossible de générer l'export portefeuille" });
     }
     return undefined;
+  }
+}
+
+/**
+ * GET /api/lab/fiches/lcb-ft?code_client=&id_revue=
+ * Génère le PDF Fiche 1 (sans id_revue) ou Fiche 2 (avec id_revue), archive en pièce KYC.
+ */
+export async function getFicheLcbftLab(req, res) {
+  try {
+    req.setTimeout(300000);
+    res.setTimeout(300000);
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+
+    const codeClient = req.query.code_client != null ? String(req.query.code_client).trim() : '';
+    if (!codeClient) {
+      return res.status(400).json({ error: 'code_client requis' });
+    }
+
+    try {
+      await labAssertDossierInScope(codeClient, scope);
+    } catch (err) {
+      if (err instanceof LabDossierError) {
+        return res.status(err.statusCode).json({ error: err.message });
+      }
+      throw err;
+    }
+
+    const userId = await resolveUserId(req);
+    const result = await labGenererFicheLcbftLab({
+      code_client: codeClient,
+      id_revue: req.query.id_revue,
+      redacteur: req.user?.name || req.user?.unique_name || 'Collaborateur',
+      userId,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader('Content-Length', String(result.buffer.length));
+    res.setHeader('X-Lab-Fiche-Type', result.type_fiche);
+    if (result.piece_id != null) {
+      res.setHeader('X-Lab-Piece-Id', String(result.piece_id));
+    }
+    return res.status(200).end(result.buffer);
+  } catch (err) {
+    console.error('Erreur getFicheLcbftLab:', err);
+    if (res.headersSent) return undefined;
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    return res.status(500).json({ error: 'Impossible de générer la fiche LCB-FT' });
   }
 }
 

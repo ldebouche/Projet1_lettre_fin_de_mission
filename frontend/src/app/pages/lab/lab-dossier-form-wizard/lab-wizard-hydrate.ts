@@ -124,6 +124,15 @@ export function createEmptyWizardForm(): LabWizardFormModel {
     periodicite_revue_mois: '',
     id_responsable_lab: '',
     commentaire_revision: '',
+    commentaire_etape1: '',
+    dirigeant: {
+      nom: '',
+      prenom: '',
+      date_naissance: '',
+      lieu_naissance: '',
+      nationalite: '',
+      adresse_personnelle: '',
+    },
   };
 }
 
@@ -320,6 +329,20 @@ export function hydrateWizardSupplement(
   if ('commentaire_revision' in supplement) {
     m.commentaire_revision = toInputStr(supplement.commentaire_revision);
   }
+  if ('commentaire_etape1' in supplement) {
+    m.commentaire_etape1 = toInputStr(supplement.commentaire_etape1);
+  }
+  if (supplement.dirigeant && typeof supplement.dirigeant === 'object') {
+    const d = supplement.dirigeant;
+    m.dirigeant = {
+      nom: toInputStr(d.nom),
+      prenom: toInputStr(d.prenom),
+      date_naissance: toInputStr(d.date_naissance),
+      lieu_naissance: toInputStr(d.lieu_naissance),
+      nationalite: toInputStr(d.nationalite),
+      adresse_personnelle: toInputStr(d.adresse_personnelle),
+    };
+  }
 
   const k = m.kyc;
   if (supplement.categorie_client === 'Personne_morale' || supplement.categorie_client === 'Personne_physique') {
@@ -503,6 +526,17 @@ export function buildClientPayload(m: LabWizardFormModel): LabUpdateClientReques
 
 export function buildWizardSupplement(m: LabWizardFormModel): LabWizardSupplement {
   const k = m.kyc;
+  const d = m.dirigeant;
+  const dirigeant = {
+    nom: d.nom.trim() || null,
+    prenom: d.prenom.trim() || null,
+    date_naissance: d.date_naissance.trim() || null,
+    lieu_naissance: d.lieu_naissance.trim() || null,
+    nationalite: d.nationalite.trim() || null,
+    adresse_personnelle: d.adresse_personnelle.trim() || null,
+  };
+  const hasDirigeant = Object.values(dirigeant).some((v) => v != null);
+
   return {
     pays_siege: m.pays_siege.trim() || null,
     taille_entreprise: m.taille_entreprise.trim() || null,
@@ -513,6 +547,8 @@ export function buildWizardSupplement(m: LabWizardFormModel): LabWizardSupplemen
     nature_relation_libre: m.nature_relation_libre.trim() || null,
     secteur_sensible: k.secteur_sensible,
     commentaire_revision: m.commentaire_revision.trim() || null,
+    commentaire_etape1: m.commentaire_etape1.trim() || null,
+    dirigeant: hasDirigeant ? dirigeant : null,
     categorie_client: k.categorie_client || null,
     civilite: k.civilite.trim() || null,
     nom_physique: k.nom_physique.trim() || null,

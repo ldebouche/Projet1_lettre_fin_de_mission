@@ -1,0 +1,25 @@
+<app-lab-carte
+  class="wizard-card form-section"
+  id="section-commentaire-etape1"
+  title="Commentaire libre"
+  subtitle="Infos hors champs structurés (Fiche LCB-FT)"
+>
+  <p class="panel-intro">
+    Notez ici ce qui n’a pas de champ dédié : origine du contact, honoraires, principaux
+    clients ou fournisseurs, banques, date et source des contrôles, etc.
+    Ces éléments seront repris à la génération de la fiche PDF.
+  </p>
+  <label class="field field--full">
+    <span class="field-label">Commentaire étape 1</span>
+    <textarea
+      class="field-input field-textarea"
+      name="commentaire_etape1"
+      rows="6"
+      [(ngModel)]="m.commentaire_etape1"
+      placeholder="Ex. : Contact via recommandation M. X ; honoraires ~12 k€ HT/an ; banques BNP et Crédit Agricole ; contrôles gel DG Trésor le 03/09/2026…"
+    ></textarea>
+    <span class="field-hint">
+      Distinct du commentaire synthèse / révision (bloc Affectation). Le dirigeant a son propre bloc plus haut.
+    </span>
+  </label>
+</app-lab-carte>

@@ -422,9 +422,9 @@ export function niveauArpecFromRank(rank) {
 
 export function periodiciteFromNiveau(niveau) {
   const rank = niveauRankForArpec(niveau);
-  if (rank >= 2) return 3;
-  if (rank === 1) return 6;
-  return 12;
+  if (rank >= 2) return 6;
+  if (rank === 1) return 12;
+  return 24;
 }
 
 export function parseEntityId(value, label = 'id') {
@@ -532,6 +532,14 @@ export function sqlIsClient(alias = 'c') {
 
 export function sqlIsProspect(alias = 'c') {
   return `(RTRIM(LTRIM(${alias}.prospect)) IN (N'O', N'o', N'1'))`;
+}
+
+/**
+ * Dossiers visibles dans portefeuille / dashboard / jobs :
+ * exclut clôturés et refusés (Refuse = plus affiché, données conservées).
+ */
+export function sqlDossierVisible(alias = 'd') {
+  return `RTRIM(LTRIM(ISNULL(${alias}.statut_dossier, N''))) NOT IN (N'Cloture', N'Clôturé', N'Cloturee', N'Refuse')`;
 }
 
 /**

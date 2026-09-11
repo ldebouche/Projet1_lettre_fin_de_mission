@@ -262,6 +262,26 @@ export class LabService {
     });
   }
 
+  /**
+   * Génère + archive PDF Fiche LCB-FT (Fiche 1 sans id_revue, Fiche 2 avec).
+   * Réponse binaire application/pdf.
+   */
+  downloadFicheLcbftLab(
+    codeClient: string,
+    idRevue?: string | number | null,
+  ): Observable<Blob> {
+    const params: Record<string, string> = {
+      code_client: String(codeClient).trim(),
+    };
+    if (idRevue != null && String(idRevue).trim() !== '') {
+      params['id_revue'] = String(idRevue).trim();
+    }
+    return this.http.get(`/api/lab/fiches/lcb-ft`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
   getEvenementsLab(params: Record<string, string> = {}): Observable<LabListResponse<LabEvenementListItem>> {
     return this.http.get<LabListResponse<LabEvenementListItem>>(`/api/lab/evenements`, { params });
   }

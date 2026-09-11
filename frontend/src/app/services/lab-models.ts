@@ -338,6 +338,26 @@ export interface LabUpdateClientRequest {
   client: LabUpdateClientInput;
 }
 
+/** Infos Fiche LCB-FT extraites du commentaire étape 1 (IA, à la génération PDF). */
+export interface LabWizardExtractionEtape1 {
+  origine_contact?: string | null;
+  honoraires?: string | null;
+  clients_fournisseurs?: string | null;
+  banques?: string | null;
+  date_controles?: string | null;
+  source_controles?: string | null;
+}
+
+/** Représentant légal / dirigeant — persisté wizard_supplement.dirigeant (BDD lab_kyc). */
+export interface LabWizardDirigeant {
+  nom?: string | null;
+  prenom?: string | null;
+  date_naissance?: string | null;
+  lieu_naissance?: string | null;
+  nationalite?: string | null;
+  adresse_personnelle?: string | null;
+}
+
 export interface LabWizardSupplement {
   pays_siege?: string | null;
   taille_entreprise?: string | null;
@@ -345,10 +365,17 @@ export interface LabWizardSupplement {
   mission_audit?: boolean;
   mission_sociale?: boolean;
   mission_juridique?: boolean;
-    nature_relation_libre?: string | null;
-    secteur_sensible?: boolean;
-    /** Persisté dans lab_kyc.origine_patrimoine (JSON wizard_supplement), audit MODIF_KYC. */
-    commentaire_revision?: string | null;
+  nature_relation_libre?: string | null;
+  secteur_sensible?: boolean;
+  /** Persisté dans lab_kyc.origine_patrimoine (JSON wizard_supplement), audit MODIF_KYC. */
+  commentaire_revision?: string | null;
+  /**
+   * Commentaire libre en bas de l’étape 1 (hors champs structurés).
+   * Source pour l’extraction IA à la génération PDF Fiche 1 / Fiche 2 (pas de bouton UI).
+   */
+  commentaire_etape1?: string | null;
+  /** Représentant légal — réutilisé aux revues + PDF Fiche LCB-FT. */
+  dirigeant?: LabWizardDirigeant | null;
   categorie_client?: string | null;
   civilite?: string | null;
   nom_physique?: string | null;
@@ -953,4 +980,15 @@ export interface LabWizardFormModel {
   periodicite_revue_mois: string;
   id_responsable_lab: string;
   commentaire_revision: string;
+  /** Commentaire libre fin d’étape 1 — persisté wizard_supplement.commentaire_etape1. */
+  commentaire_etape1: string;
+  /** Représentant légal — persisté wizard_supplement.dirigeant (lab_kyc en BDD). */
+  dirigeant: {
+    nom: string;
+    prenom: string;
+    date_naissance: string;
+    lieu_naissance: string;
+    nationalite: string;
+    adresse_personnelle: string;
+  };
 }

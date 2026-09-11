@@ -1,0 +1,4 @@
+/* Host is transparent so section cards keep .dossier-page flex gap. */
+:host {
+  display: contents;
+}

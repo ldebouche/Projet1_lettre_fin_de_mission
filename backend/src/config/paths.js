@@ -23,6 +23,9 @@ export const PATHS = {
     dataRoot: envOrDefault("DATA_DIR", path.join(repoRoot, "data")),
     clientFilesRoot: envOrDefault("CLIENT_FILES_ROOT", path.join(repoRoot, "data", "clients")),
 
+    /** Racine fichiers clients type LFM : C:\outils-avenia\{CODE}\… */
+    outilsAveniaRoot: envOrDefault("OUTILS_AVENIA_ROOT", path.join("C:", "outils-avenia")),
+
     templatesRoot: path.join(srcRoot, "templates"),
     utilsRoot: path.join(srcRoot, "utils"),
     fontsRoot: path.join(repoRoot, "frontend", "src", "assets", "fonts"),
@@ -37,6 +40,12 @@ export const PATHS = {
     ),
     pythonExecutablePath: envOrDefault("PYTHON_EXECUTABLE_PATH", "python"),
 };
+
+/** Dossier pièces LAB : C:\outils-avenia\{CODE}\pieces_lab (comme LFM sous le même root). */
+export function getLabPiecesDir(codeClient) {
+    const code = codeClient != null ? String(codeClient).trim().toUpperCase() : '';
+    return path.join(PATHS.outilsAveniaRoot, code, 'pieces_lab');
+}
 
 export function getJobsDir() {
     return path.join(PATHS.dataRoot, "jobs_ppt");
