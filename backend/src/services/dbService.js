@@ -43,10 +43,16 @@ class dbService {
           prenom,
           date_sortie_cabinet`;
 
+    // Exclus du dashboard : codes TR*, CO*, AC68*
+    const excludeCodes = `
+      LEFT(RTRIM(LTRIM(code_client)), 2) NOT IN (N'TR', N'CO')
+      AND LEFT(RTRIM(LTRIM(code_client)), 4) <> N'AC68'`;
+
     if (seeAll) {
       const dossiers = await this.executeQuery(
         `SELECT ${columns}
-        FROM clients;`,
+        FROM clients
+        WHERE ${excludeCodes};`,
         {},
         false,
       );
@@ -56,7 +62,8 @@ class dbService {
     const dossiers = await this.executeQuery(
       `SELECT ${columns}
       FROM clients
-      WHERE ${sqlClientLinkedTo('')};`,
+      WHERE ${sqlClientLinkedTo('')}
+        AND ${excludeCodes};`,
       { scope_id: id_sellsy },
       false,
     );
