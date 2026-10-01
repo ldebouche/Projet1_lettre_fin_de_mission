@@ -16,6 +16,7 @@ import {
   postPieceUploadLab,
   putPieceLab,
   deletePieceLabHandler,
+  getPieceFichierLabHandler,
   getArpecQuestionnaire,
   getArpecEvaluation,
   postArpecEvaluation,
@@ -77,6 +78,7 @@ router.post('/beneficiaires', authMiddlewareCollaborateur, postBeneficiaireLab);
 router.put('/beneficiaires', authMiddlewareCollaborateur, putBeneficiaireLab);
 router.delete('/beneficiaires', authMiddlewareCollaborateur, deleteBeneficiaireLabHandler);
 router.post('/pieces/upload', authMiddlewareCollaborateur, pieceUpload.single('file'), postPieceUploadLab);
+router.get('/pieces/fichier', authMiddlewareCollaborateur, getPieceFichierLabHandler);
 router.post('/pieces', authMiddlewareCollaborateur, postPieceLab);
 router.put('/pieces', authMiddlewareCollaborateur, putPieceLab);
 router.delete('/pieces', authMiddlewareCollaborateur, deletePieceLabHandler);

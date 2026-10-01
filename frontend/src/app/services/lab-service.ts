@@ -188,6 +188,18 @@ export class LabService {
     );
   }
 
+  /**
+   * Ouvre / télécharge le fichier d'une pièce KYC (filepath serveur).
+   * Si la pièce n'a qu'une URL distante, la réponse JSON { data: { url } } est possible —
+   * préférer piece.url côté UI avant d'appeler cet endpoint.
+   */
+  downloadPieceFichierLab(id: string | number): Observable<Blob> {
+    return this.http.get(`/api/lab/pieces/fichier`, {
+      params: { id: String(id).trim() },
+      responseType: 'blob',
+    });
+  }
+
   getArpecEvaluation(codeClient: string): Observable<{ data: LabArpecEvaluationData }> {
     return this.http.get<{ data: LabArpecEvaluationData }>(`/api/lab/arpec/evaluation`, {
       params: { code_client: codeClient.trim() },

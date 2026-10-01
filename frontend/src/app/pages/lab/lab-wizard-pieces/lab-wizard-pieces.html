@@ -1,6 +1,6 @@
-<app-lab-carte class="wizard-card form-section" id="section-pieces" title="Pièces KYC" subtitle="Statuts documentaires attendus">
+<app-lab-carte class="wizard-card form-section" id="section-pieces" title="Pièces KYC" subtitle="Documents attendus et fichiers associés">
   <p class="panel-intro">
-    Références documentaires attendues pour le dossier KYC (stockage fichier éventuel hors périmètre). Chaque pièce peut être associée au client, à un BE ou à un dirigeant.
+    Ajoutez les pièces KYC du dossier. Vous pouvez sélectionner un PDF (ou autre document) depuis votre ordinateur pour chaque ligne.
   </p>
   <datalist id="piece-presets-lab">
     <option *ngFor="let t of pieceTypePresets" [value]="t"></option>
@@ -42,8 +42,19 @@
           </select>
         </label>
         <label class="field">
-          <span class="field-label">Référence / lien interne</span>
-          <input class="field-input" type="text" [name]="'pc_ref_' + p.id" [(ngModel)]="p.reference" />
+          <span class="field-label">Fichier (PDF, image, Office…)</span>
+          <div class="piece-file-row">
+            <button type="button" class="btn btn--ghost btn--sm" (click)="pickFile(p.id)">
+              Parcourir…
+            </button>
+            <span class="piece-file-name" *ngIf="p.pendingFile">{{ fileLabel(p.pendingFile) }}</span>
+            <span class="piece-file-name muted" *ngIf="!p.pendingFile && (p.nom_fichier || p.reference)">
+              {{ p.nom_fichier || p.reference }}
+            </span>
+            <span class="piece-file-name muted" *ngIf="!p.pendingFile && !p.nom_fichier && !p.reference">
+              Aucun fichier sélectionné
+            </span>
+          </div>
         </label>
         <label class="field">
           <span class="field-label">Date délivrance</span>
@@ -61,3 +72,11 @@
     </div>
   </div>
 </app-lab-carte>
+
+<input
+  #pieceFileInput
+  type="file"
+  class="piece-file-input"
+  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods,application/pdf"
+  (change)="onFileSelected($event)"
+/>

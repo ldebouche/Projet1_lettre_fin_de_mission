@@ -32,6 +32,7 @@ import {
   yesNoToDb,
   normalizeComplexiteForStorage,
   ensureEvenementAutoLab,
+  AUTO_EVENT_OPEN_STATUTS_SQL,
   parseEntityId,
   getAuditDossierLab,
   buildOptionalFilters,
@@ -425,6 +426,7 @@ async function evaluatePiecesCompletes(transaction, codeClient) {
       FROM lab_pieces_kyc
       WHERE RTRIM(LTRIM(code_client)) = RTRIM(LTRIM(@code_client))
         AND RTRIM(LTRIM(statut)) IN (N'Manquante', N'Perimee', N'Périmée')
+        AND RTRIM(LTRIM(statut)) <> N'Supprime'
     `);
   return result.recordset?.[0] ? 'N' : 'O';
 }

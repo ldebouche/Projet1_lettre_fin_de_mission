@@ -57,6 +57,7 @@ export function normalizeStatutPiece(value) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
+  if (normalized.includes('supprim')) return 'Supprime';
   if (normalized.includes('recu') || normalized.includes('recue')) return 'Recue';
   if (normalized.includes('perime')) return 'Perimee';
   if (normalized.includes('non') && normalized.includes('requ')) return 'Non_requise';

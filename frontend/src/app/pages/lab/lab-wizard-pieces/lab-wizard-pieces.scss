@@ -2,3 +2,23 @@
 :host {
   display: contents;
 }
+
+.piece-file-input {
+  display: none;
+}
+
+.piece-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.piece-file-name {
+  font-size: 0.875rem;
+  word-break: break-word;
+
+  &.muted {
+    opacity: 0.65;
+  }
+}

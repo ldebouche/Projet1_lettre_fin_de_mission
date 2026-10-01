@@ -21,7 +21,10 @@ import {
   savePieceKycFileLab as labSavePieceKycFileLab,
   resolvePieceCodeClient as labResolvePieceCodeClient,
   scanPiecesPerimeesLab as labScanPiecesPerimeesLab,
+  getPieceFichierLab as labGetPieceFichierLab,
 } from '../services/lab-pieces-service.js';
+import fs from 'fs';
+import path from 'path';
 import {
   saveArpecEvaluation as labSaveArpecEvaluation,
   getArpecQuestionnaire as labGetArpecQuestionnaire,
@@ -457,6 +460,61 @@ export async function deletePieceLabHandler(req, res) {
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error('Erreur deletePieceLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+const PIECE_MIME_BY_EXT = {
+  '.pdf': 'application/pdf',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.odt': 'application/vnd.oasis.opendocument.text',
+  '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
+};
+
+export async function getPieceFichierLabHandler(req, res) {
+  try {
+    const id = req.query.id;
+    if (id === undefined || id === null || String(id).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre id requis' });
+    }
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+
+    const codeClient = await labResolvePieceCodeClient(id);
+    await labAssertDossierInScope(codeClient, scope);
+
+    const meta = await labGetPieceFichierLab(id);
+    if (meta.url && !meta.filepath) {
+      return res.json({ data: { url: meta.url } });
+    }
+
+    if (!meta.filepath || !fs.existsSync(meta.filepath)) {
+      if (meta.url) {
+        return res.json({ data: { url: meta.url } });
+      }
+      return res.status(404).json({ error: 'Fichier introuvable sur le serveur' });
+    }
+
+    const filename = meta.nom_fichier || path.basename(meta.filepath);
+    const ext = path.extname(filename).toLowerCase();
+    const contentType = PIECE_MIME_BY_EXT[ext] || 'application/octet-stream';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${filename.replace(/"/g, '')}"`);
+    return fs.createReadStream(meta.filepath).pipe(res);
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur getPieceFichierLab:', err);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }

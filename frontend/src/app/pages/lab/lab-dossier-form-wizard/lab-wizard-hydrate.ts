@@ -162,6 +162,11 @@ export function emptyPiece(id: string): WizardPieceRow {
     date_echeance: '',
     reference: '',
     commentaire: '',
+    libelle: '',
+    filepath: null,
+    url: null,
+    nom_fichier: null,
+    pendingFile: null,
   };
 }
 
@@ -415,8 +420,13 @@ export function mapPiece(piece: LabPieceKyc): WizardPieceRow {
     statut,
     date_delivrance: toInputDate(piece.date_delivrance),
     date_echeance: toInputDate(piece.date_echeance),
-    reference: toInputStr(piece.reference),
+    reference: toInputStr(piece.libelle || piece.reference),
     commentaire: toInputStr(piece.commentaire),
+    libelle: toInputStr(piece.libelle),
+    filepath: piece.filepath ?? null,
+    url: piece.url ?? null,
+    nom_fichier: piece.nom_fichier ?? null,
+    pendingFile: null,
   };
 }
 
@@ -623,6 +633,25 @@ export function mapPieceToUpdate(row: WizardPieceRow): LabUpdatePieceRequest {
     reference: row.reference.trim() || null,
     titulaire: row.titulaire || 'Client',
     commentaire: row.commentaire.trim() || null,
+    nom_fichier: row.nom_fichier ?? undefined,
+    filepath: row.filepath ?? undefined,
+    url: row.url ?? undefined,
+  };
+}
+
+export function mapPieceToCreate(row: WizardPieceRow, code: string): LabCreatePieceRequest {
+  return {
+    code_client: code,
+    type_piece: row.type_piece.trim(),
+    statut: row.statut || 'Manquante',
+    date_delivrance: row.date_delivrance.trim() || null,
+    date_echeance: row.date_echeance.trim() || null,
+    reference: row.reference.trim() || null,
+    titulaire: row.titulaire || 'Client',
+    commentaire: row.commentaire.trim() || null,
+    nom_fichier: row.nom_fichier ?? undefined,
+    filepath: row.filepath ?? undefined,
+    url: row.url ?? undefined,
   };
 }
 
@@ -661,14 +690,5 @@ export function getPiecesToCreate(
 ): LabCreatePieceRequest[] {
   return rows
     .filter((row) => !isPersistedId(row.id) && row.type_piece.trim())
-    .map((row) => ({
-      code_client: code,
-      type_piece: row.type_piece.trim(),
-      statut: row.statut || 'Manquante',
-      date_delivrance: row.date_delivrance.trim() || null,
-      date_echeance: row.date_echeance.trim() || null,
-      reference: row.reference.trim() || null,
-      titulaire: row.titulaire || 'Client',
-      commentaire: row.commentaire.trim() || null,
-    }));
+    .map((row) => mapPieceToCreate(row, code));
 }

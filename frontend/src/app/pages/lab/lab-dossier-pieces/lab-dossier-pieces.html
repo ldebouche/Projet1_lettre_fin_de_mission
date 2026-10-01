@@ -37,7 +37,7 @@
               <th>Statut</th>
               <th>Délivrée</th>
               <th>Échéance</th>
-              <th>Référence</th>
+              <th>Libellé</th>
               <th>Actions</th>
             </tr>
             </thead>
@@ -61,8 +61,14 @@
               </td>
               <td>{{ p.date_delivrance ? (p.date_delivrance | date:'dd/MM/yyyy') : '—' }}</td>
               <td>{{ p.date_echeance ? (p.date_echeance | date:'dd/MM/yyyy') : '—' }}</td>
-              <td><span class="mono">{{ val(p.reference) }}</span></td>
+              <td><span class="mono">{{ val(p.libelle || p.reference) }}</span></td>
               <td>
+                <button
+                  type="button"
+                  class="link-action link-action--inline"
+                  (click)="openPiece(p)"
+                  [disabled]="actionBusy || !canOpenPiece(p)"
+                >Ouvrir</button>
                 <button type="button" class="link-action link-action--inline" (click)="openEditPieceModal(p)">Modifier</button>
                 <button type="button" class="link-action link-action--inline" (click)="deletePiece(p)" [disabled]="actionBusy">Supprimer</button>
               </td>
@@ -130,10 +136,10 @@
           Parcourir…
         </button>
         <span class="piece-file-name" *ngIf="pendingPieceFile">{{ pendingPieceFileLabel }}</span>
-        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && pieceForm.reference">
-          {{ pieceForm.reference }}
+        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && (pieceForm.libelle || pieceForm.reference)">
+          {{ pieceForm.libelle || pieceForm.reference }}
         </span>
-        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && !pieceForm.reference">
+        <span class="piece-file-name muted" *ngIf="!pendingPieceFile && !pieceForm.libelle && !pieceForm.reference">
           Aucun fichier sélectionné
         </span>
       </div>

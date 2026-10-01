@@ -60,10 +60,46 @@ function statutPieceForStorage(statut) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
+  if (normalized.includes('supprim')) return 'Supprime';
   if (normalized.includes('recu') || normalized.includes('recue')) return 'Recue';
   if (normalized.includes('perime')) return 'Perimee';
   if (normalized.includes('non') && normalized.includes('requ')) return 'Non_requise';
   return 'Attendue';
+}
+
+/** Identifiant métier 10 chiffres (paddé depuis la PK). */
+function formatIdDocument(pieceId) {
+  const n = Number(pieceId);
+  if (!Number.isInteger(n) || n < 1) return null;
+  return String(n).padStart(10, '0').slice(-10);
+}
+
+function cleanUrl(value) {
+  const raw = cleanText(value);
+  if (!raw) return null;
+  if (raw.length > 500) {
+    throw new LabDossierError('url trop longue (max 500 caractères)', 400);
+  }
+  return raw;
+}
+
+function mapPieceRow(row, titulaireOverride = null, commentaireOverride = null) {
+  const { titulaire, commentaire } = parsePieceLibelle(row.libelle);
+  return {
+    id: String(row.id),
+    id_document: cleanText(row.id_document) || formatIdDocument(row.id),
+    type_piece: cleanText(row.type_piece) || 'Pièce KYC',
+    titulaire: titulaireOverride || titulaire,
+    statut: normalizeStatutPiece(row.statut),
+    date_delivrance: row.date_delivrance ?? null,
+    date_echeance: row.date_echeance ?? null,
+    libelle: cleanText(row.libelle),
+    nom_fichier: cleanText(row.nom_fichier),
+    filepath: cleanText(row.filepath),
+    url: cleanText(row.url),
+    reference: cleanText(row.libelle) || cleanText(row.nom_fichier) || cleanText(row.filepath),
+    commentaire: commentaireOverride !== undefined ? commentaireOverride : commentaire,
+  };
 }
 
 /** D5.3-G : statut Perimee OU date_echeance < aujourd'hui, hors Non_requise. */
@@ -336,13 +372,17 @@ export async function createPieceKycLab(payload, userId = null) {
   }
 
   const statutBdd = statutPieceForStorage(payload.statut);
+  if (statutBdd === 'Supprime') {
+    throw new LabDossierError('Impossible de créer une pièce au statut Supprime', 400);
+  }
   const libelle = buildPieceLibelle(payload.titulaire, payload.commentaire);
   const reference = cleanText(payload.reference);
   const nomFichier = cleanText(payload.nom_fichier) || reference;
   const filepath = assertPieceFilepathInClientScope(
     codeSafe,
-    cleanText(payload.filepath) || reference,
+    cleanText(payload.filepath) || (cleanText(payload.url) ? null : reference),
   );
+  const url = cleanUrl(payload.url);
   const modifiePar = cleanText(userId);
 
   let dateDelivrance = null;
@@ -377,6 +417,7 @@ export async function createPieceKycLab(payload, userId = null) {
       .input('date_echeance', sql.Date, dateEcheance)
       .input('nom_fichier', sql.NVarChar(200), nomFichier)
       .input('filepath', sql.NVarChar(500), filepath)
+      .input('url', sql.NVarChar(500), url)
       .input('date_reception', sql.DateTime2, statutBdd === 'Recue' ? new Date() : null)
       .input('recu_par', sql.NChar(20), statutBdd === 'Recue' ? modifiePar : null)
       .input('modifie_par', sql.NChar(20), modifiePar)
@@ -390,6 +431,7 @@ export async function createPieceKycLab(payload, userId = null) {
           date_echeance,
           nom_fichier,
           filepath,
+          url,
           date_reception,
           recu_par,
           modifie_par
@@ -404,6 +446,7 @@ export async function createPieceKycLab(payload, userId = null) {
           @date_echeance,
           @nom_fichier,
           @filepath,
+          @url,
           @date_reception,
           @recu_par,
           @modifie_par
@@ -415,13 +458,23 @@ export async function createPieceKycLab(payload, userId = null) {
       throw new Error('INSERT lab_pieces_kyc sans id retourné');
     }
 
+    const idDocument = formatIdDocument(pieceId);
+    await new sql.Request(transaction)
+      .input('id', sql.Int, pieceId)
+      .input('id_document', sql.NChar(10), idDocument)
+      .query(`
+        UPDATE lab_pieces_kyc
+        SET id_document = @id_document
+        WHERE id = @id
+      `);
+
     await writeLabAuditLog(transaction, {
       userId: modifiePar,
       typeAction: 'CREATION_PIECE',
       entite: 'lab_pieces_kyc',
       idEntite: pieceId,
       codeClient: codeSafe,
-      detail: JSON.stringify({ type_piece: typePiece, source: 'wizard' }),
+      detail: JSON.stringify({ type_piece: typePiece, id_document: idDocument, source: 'wizard' }),
     });
 
     let evenement = null;
@@ -439,16 +492,18 @@ export async function createPieceKycLab(payload, userId = null) {
     await transaction.commit();
 
     return {
-      piece: {
-        id: String(pieceId),
+      piece: mapPieceRow({
+        id: pieceId,
+        id_document: idDocument,
         type_piece: typePiece,
-        titulaire: cleanText(payload.titulaire) || 'Client',
-        statut: normalizeStatutPiece(statutBdd),
+        libelle,
+        statut: statutBdd,
         date_delivrance: dateDelivrance,
         date_echeance: dateEcheance,
-        reference: nomFichier || filepath,
-        commentaire: cleanText(payload.commentaire),
-      },
+        nom_fichier: nomFichier,
+        filepath,
+        url,
+      }, cleanText(payload.titulaire) || 'Client', cleanText(payload.commentaire)),
       evenement,
     };
   } catch (err) {
@@ -489,6 +544,9 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
   }
 
   const statutBdd = statutPieceForStorage(payload?.statut);
+  if (statutBdd === 'Supprime') {
+    throw new LabDossierError('Utilisez DELETE pour supprimer une pièce', 400);
+  }
   const libelle = buildPieceLibelle(payload?.titulaire, payload?.commentaire);
   const reference = cleanText(payload?.reference);
   const nomFichier = cleanText(payload?.nom_fichier) || reference;
@@ -517,7 +575,14 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
     const existing = await new sql.Request(transaction)
       .input('id', sql.Int, id)
       .query(`
-        SELECT TOP 1 id, RTRIM(LTRIM(code_client)) AS code_client
+        SELECT TOP 1
+          id,
+          RTRIM(LTRIM(code_client)) AS code_client,
+          RTRIM(LTRIM(statut)) AS statut,
+          filepath,
+          url,
+          nom_fichier,
+          id_document
         FROM lab_pieces_kyc
         WHERE id = @id
       `);
@@ -525,13 +590,19 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
     if (!row) {
       throw new LabDossierError('Pièce KYC introuvable', 404);
     }
+    if (cleanText(row.statut) === 'Supprime') {
+      throw new LabDossierError('Pièce KYC supprimée', 404);
+    }
     const codeSafe = cleanText(row.code_client);
     await assertDossierExists(transaction, codeSafe);
 
-    const filepath = assertPieceFilepathInClientScope(
-      codeSafe,
-      cleanText(payload?.filepath) || reference,
-    );
+    const filepath =
+      payload?.filepath !== undefined
+        ? assertPieceFilepathInClientScope(codeSafe, cleanText(payload.filepath))
+        : cleanText(row.filepath);
+    const url =
+      payload?.url !== undefined ? cleanUrl(payload.url) : cleanText(row.url);
+    const nomFichierFinal = nomFichier || cleanText(row.nom_fichier);
 
     await new sql.Request(transaction)
       .input('id', sql.Int, id)
@@ -540,8 +611,9 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
       .input('statut', sql.NChar(20), statutBdd)
       .input('date_delivrance', sql.Date, dateDelivrance)
       .input('date_echeance', sql.Date, dateEcheance)
-      .input('nom_fichier', sql.NVarChar(200), nomFichier)
+      .input('nom_fichier', sql.NVarChar(200), nomFichierFinal)
       .input('filepath', sql.NVarChar(500), filepath)
+      .input('url', sql.NVarChar(500), url)
       .input('date_reception', sql.DateTime2, statutBdd === 'Recue' ? new Date() : null)
       .input('recu_par', sql.NChar(20), statutBdd === 'Recue' ? modifiePar : null)
       .input('modifie_par', sql.NChar(20), modifiePar)
@@ -555,11 +627,13 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
           date_echeance = @date_echeance,
           nom_fichier = @nom_fichier,
           filepath = @filepath,
+          url = @url,
           date_reception = @date_reception,
           recu_par = @recu_par,
           date_modification = SYSUTCDATETIME(),
           modifie_par = @modifie_par
         WHERE id = @id
+          AND RTRIM(LTRIM(statut)) <> N'Supprime'
       `);
 
     await writeLabAuditLog(transaction, {
@@ -586,16 +660,18 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
     await transaction.commit();
 
     return {
-      piece: {
-        id: String(id),
+      piece: mapPieceRow({
+        id,
+        id_document: row.id_document,
         type_piece: typePiece,
-        titulaire: cleanText(payload?.titulaire) || 'Client',
-        statut: normalizeStatutPiece(statutBdd),
+        libelle,
+        statut: statutBdd,
         date_delivrance: dateDelivrance,
         date_echeance: dateEcheance,
-        reference: nomFichier || filepath,
-        commentaire: cleanText(payload?.commentaire),
-      },
+        nom_fichier: nomFichierFinal,
+        filepath,
+        url,
+      }, cleanText(payload?.titulaire) || 'Client', cleanText(payload?.commentaire)),
       evenement,
     };
   } catch (err) {
@@ -605,7 +681,7 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
 }
 
 /**
- * Supprime une pièce KYC (hard delete).
+ * Soft-delete : statut = Supprime (ligne conservée en BDD).
  */
 export async function deletePieceKycLab(pieceId, userId = null) {
   const id = parseEntityId(pieceId);
@@ -619,7 +695,11 @@ export async function deletePieceKycLab(pieceId, userId = null) {
     const existing = await new sql.Request(transaction)
       .input('id', sql.Int, id)
       .query(`
-        SELECT TOP 1 id, RTRIM(LTRIM(code_client)) AS code_client, type_piece
+        SELECT TOP 1
+          id,
+          RTRIM(LTRIM(code_client)) AS code_client,
+          type_piece,
+          RTRIM(LTRIM(statut)) AS statut
         FROM lab_pieces_kyc
         WHERE id = @id
       `);
@@ -627,12 +707,24 @@ export async function deletePieceKycLab(pieceId, userId = null) {
     if (!row) {
       throw new LabDossierError('Pièce KYC introuvable', 404);
     }
+    if (cleanText(row.statut) === 'Supprime') {
+      throw new LabDossierError('Pièce KYC déjà supprimée', 404);
+    }
     const codeSafe = cleanText(row.code_client);
     const typePiece = cleanText(row.type_piece);
 
     await new sql.Request(transaction)
       .input('id', sql.Int, id)
-      .query(`DELETE FROM lab_pieces_kyc WHERE id = @id`);
+      .input('modifie_par', sql.NChar(20), modifiePar)
+      .query(`
+        UPDATE lab_pieces_kyc
+        SET
+          statut = N'Supprime',
+          date_modification = SYSUTCDATETIME(),
+          modifie_par = @modifie_par
+        WHERE id = @id
+          AND RTRIM(LTRIM(statut)) <> N'Supprime'
+      `);
 
     await writeLabAuditLog(transaction, {
       userId: modifiePar,
@@ -640,7 +732,7 @@ export async function deletePieceKycLab(pieceId, userId = null) {
       entite: 'lab_pieces_kyc',
       idEntite: id,
       codeClient: codeSafe,
-      detail: JSON.stringify({ type_piece: typePiece, source: 'wizard' }),
+      detail: JSON.stringify({ type_piece: typePiece, soft_delete: true, source: 'wizard' }),
     });
 
     await transaction.commit();
@@ -678,6 +770,7 @@ export async function scanPiecesPerimeesLab(userId = 'JOB_LAB') {
         ON RTRIM(LTRIM(d.code_client)) = RTRIM(LTRIM(p.code_client))
       WHERE RTRIM(LTRIM(ISNULL(d.statut_dossier, N''))) NOT IN (N'Cloture', N'Clôturé', N'Cloturee', N'Refuse')
         AND RTRIM(LTRIM(p.statut)) <> N'Non_requise'
+        AND RTRIM(LTRIM(p.statut)) <> N'Supprime'
         AND (
           RTRIM(LTRIM(p.statut)) = N'Perimee'
           OR (
@@ -778,15 +871,18 @@ export async function getPiecesDossierLab(pool, codeClient) {
   const query = `
     SELECT
       id,
+      id_document,
       type_piece,
       libelle,
       statut,
       date_delivrance,
       date_echeance,
       filepath,
-      nom_fichier
+      nom_fichier,
+      url
     FROM lab_pieces_kyc
     WHERE RTRIM(LTRIM(code_client)) = RTRIM(LTRIM(@code_client))
+      AND RTRIM(LTRIM(statut)) <> N'Supprime'
     ORDER BY
       CASE
         WHEN RTRIM(LTRIM(statut)) IN ('Manquante', 'Perimee', 'Périmée') THEN 0
@@ -802,17 +898,50 @@ export async function getPiecesDossierLab(pool, codeClient) {
     .input('code_client', sql.NVarChar(10), codeClient)
     .query(query);
 
-  return (result.recordset || []).map((row) => {
-    const { titulaire, commentaire } = parsePieceLibelle(row.libelle);
-    return {
-      id: String(row.id),
-      type_piece: cleanText(row.type_piece) || 'Pièce KYC',
-      titulaire,
-      statut: normalizeStatutPiece(row.statut),
-      date_delivrance: row.date_delivrance ?? null,
-      date_echeance: row.date_echeance ?? null,
-      reference: cleanText(row.nom_fichier) || cleanText(row.filepath),
-      commentaire,
-    };
-  });
+  return (result.recordset || []).map((row) => mapPieceRow(row));
+}
+
+/**
+ * Métadonnées fichier pour téléchargement / ouverture d'une pièce (hors Supprime).
+ */
+export async function getPieceFichierLab(pieceId) {
+  const id = parseEntityId(pieceId);
+  const pool = await poolPromise;
+  const result = await pool
+    .request()
+    .input('id', sql.Int, id)
+    .query(`
+      SELECT TOP 1
+        id,
+        RTRIM(LTRIM(code_client)) AS code_client,
+        RTRIM(LTRIM(statut)) AS statut,
+        filepath,
+        nom_fichier,
+        url,
+        libelle
+      FROM lab_pieces_kyc
+      WHERE id = @id
+    `);
+  const row = result.recordset?.[0];
+  if (!row || cleanText(row.statut) === 'Supprime') {
+    throw new LabDossierError('Pièce KYC introuvable', 404);
+  }
+
+  const url = cleanText(row.url);
+  const filepath = cleanText(row.filepath);
+  if (!url && !filepath) {
+    throw new LabDossierError('Aucun fichier associé à cette pièce', 404);
+  }
+
+  if (filepath) {
+    assertPieceFilepathInClientScope(cleanText(row.code_client), filepath);
+  }
+
+  return {
+    id: String(row.id),
+    code_client: cleanText(row.code_client),
+    url,
+    filepath,
+    nom_fichier: cleanText(row.nom_fichier) || cleanText(row.libelle) || `piece-${row.id}`,
+  };
 }

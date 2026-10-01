@@ -94,11 +94,16 @@ export interface LabBeneficiaireEffectif {
 
 export interface LabPieceKyc {
   id: string;
+  id_document?: string | null;
   type_piece: string;
   titulaire: 'Client' | 'BE' | 'Dirigeant';
   statut: 'Recue' | 'Manquante' | 'Perimee' | 'Non_requise';
   date_delivrance: string | null;
   date_echeance: string | null;
+  libelle?: string | null;
+  nom_fichier?: string | null;
+  filepath?: string | null;
+  url?: string | null;
   reference: string | null;
   commentaire: string | null;
 }
@@ -444,6 +449,7 @@ export interface LabCreatePieceRequest {
   reference?: string | null;
   nom_fichier?: string | null;
   filepath?: string | null;
+  url?: string | null;
   titulaire?: string;
   commentaire?: string | null;
 }
@@ -456,6 +462,7 @@ export interface LabUpdatePieceRequest {
   reference?: string | null;
   nom_fichier?: string | null;
   filepath?: string | null;
+  url?: string | null;
   titulaire?: string;
   commentaire?: string | null;
 }
@@ -914,6 +921,12 @@ export type WizardPieceRow = {
   date_echeance: string;
   reference: string;
   commentaire: string;
+  libelle?: string;
+  filepath?: string | null;
+  url?: string | null;
+  nom_fichier?: string | null;
+  /** Fichier local choisi dans l’explorateur, uploadé à l’enregistrement. */
+  pendingFile?: File | null;
 };
 
 export interface LabWizardKycForm {

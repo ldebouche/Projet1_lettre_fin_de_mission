@@ -423,6 +423,7 @@ export async function restoreDossierSnapshot(transaction, codeClient, snapshot) 
       .input('date_echeance', sql.Date, piece.date_echeance ?? null)
       .input('filepath', sql.NVarChar(500), cleanText(piece.filepath))
       .input('nom_fichier', sql.NVarChar(200), cleanText(piece.nom_fichier))
+      .input('url', sql.NVarChar(500), cleanText(piece.url))
       .query(`
         UPDATE lab_pieces_kyc
         SET
@@ -433,6 +434,7 @@ export async function restoreDossierSnapshot(transaction, codeClient, snapshot) 
           date_echeance = @date_echeance,
           filepath = @filepath,
           nom_fichier = @nom_fichier,
+          url = @url,
           date_modification = SYSUTCDATETIME()
         WHERE id = @id
       `);

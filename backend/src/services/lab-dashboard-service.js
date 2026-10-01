@@ -561,6 +561,7 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
  * Source = table clients, pas lab_dossier (un prospect peut ne pas encore avoir de dossier LAB).
  * Phase 9.4 : exclure les prospects dont le lab_dossier est au statut Refuse
  * (refus de mission — restent prospect mais hors liste à traiter).
+ * Exclure aussi les prospects archivés (clients.archive char — 'True' / 'False').
  *
  * @param {object} filters  query : search, page, pageSize
  * @param {{ isFull: boolean, idSellsy: string|null, canSeeAllProspects?: boolean, canSeeProspects?: boolean }} scope
@@ -572,6 +573,7 @@ export async function getDossiersAttenteLab(filters = {}, scope = { isFull: true
     const where = [
       sqlIsProspect('c'),
       `(d.id IS NULL OR RTRIM(LTRIM(d.statut_dossier)) != N'Refuse')`,
+      `(c.archive IS NULL OR LOWER(RTRIM(LTRIM(c.archive))) <> N'true')`,
     ];
     const inputs = [];
     const seeAll = scope?.canSeeAllProspects === true || scope?.isFull === true;

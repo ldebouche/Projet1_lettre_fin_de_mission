@@ -52,6 +52,7 @@ export class LabDossierPiecesComponent {
     date_delivrance: '',
     date_echeance: '',
     reference: '',
+    libelle: '',
     commentaire: '',
   };
 
@@ -65,6 +66,36 @@ export class LabDossierPiecesComponent {
     if (v == null) return '—';
     const s = String(v).trim();
     return s === '' ? '—' : s;
+  }
+
+  canOpenPiece(p: LabPieceKyc): boolean {
+    return !!(p.url?.trim() || p.filepath?.trim());
+  }
+
+  openPiece(p: LabPieceKyc): void {
+    if (this.actionBusy || !this.canOpenPiece(p)) return;
+
+    const url = p.url?.trim();
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    this.actionBusy = true;
+    this.actionError = null;
+    this.labService.downloadPieceFichierLab(p.id).subscribe({
+      next: (blob) => {
+        this.actionBusy = false;
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank', 'noopener,noreferrer');
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      },
+      error: (err) => {
+        this.actionBusy = false;
+        this.actionError = this.formatApiError(err);
+        this.failed.emit(this.actionError);
+      },
+    });
   }
 
   getPiecesCounts(): { recue: number; manquante: number; perimee: number; non_requise: number; total: number } {
@@ -89,6 +120,7 @@ export class LabDossierPiecesComponent {
       date_delivrance: '',
       date_echeance: '',
       reference: '',
+      libelle: '',
       commentaire: '',
     };
     this.pendingPieceFile = null;
@@ -178,6 +210,7 @@ export class LabDossierPiecesComponent {
       date_delivrance: p.date_delivrance ? p.date_delivrance.slice(0, 10) : '',
       date_echeance: p.date_echeance ? p.date_echeance.slice(0, 10) : '',
       reference: p.reference ?? '',
+      libelle: p.libelle ?? '',
       commentaire: p.commentaire ?? '',
     };
     this.pieceModalMode = 'edit';

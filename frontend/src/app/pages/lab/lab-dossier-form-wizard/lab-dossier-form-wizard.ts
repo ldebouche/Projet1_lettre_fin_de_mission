@@ -35,11 +35,11 @@ import {
   genWizardId,
   getBeneficiairesToCreate,
   getBeneficiairesToUpdate,
-  getPiecesToCreate,
   getPiecesToUpdate,
   hydrateFromDossier as hydrateWizardData,
   isPersistedId,
   mapBeToUpdate,
+  mapPieceToCreate,
   mapPieceToUpdate,
   toInputStr,
 } from './lab-wizard-hydrate';
@@ -559,14 +559,44 @@ export class LabDossierFormWizardComponent implements OnInit {
     this.deletedPieceIds = [];
 
     for (const row of getPiecesToUpdate(this.pieces)) {
-      await firstValueFrom(this.labService.updatePieceLab(row.id, mapPieceToUpdate(row)));
+      const body = mapPieceToUpdate(row);
+      if (row.pendingFile) {
+        const upload = await firstValueFrom(
+          this.labService.uploadPieceKycFile(codeClient, row.pendingFile),
+        );
+        body.nom_fichier = upload.data.nom_fichier;
+        body.filepath = upload.data.filepath;
+        body.reference = upload.data.nom_fichier;
+        if (!body.statut || body.statut === 'Manquante') {
+          body.statut = 'Recue';
+        }
+      }
+      await firstValueFrom(this.labService.updatePieceLab(row.id, body));
+      row.pendingFile = null;
+      if (body.filepath) row.filepath = body.filepath;
+      if (body.nom_fichier) row.nom_fichier = body.nom_fichier;
     }
 
-    for (const piece of getPiecesToCreate(this.pieces, codeClient)) {
-      const res = await firstValueFrom(this.labService.createPieceLab(piece));
+    for (const row of this.pieces.filter((r) => !isPersistedId(r.id) && r.type_piece.trim())) {
+      let body = mapPieceToCreate(row, codeClient);
+      if (row.pendingFile) {
+        const upload = await firstValueFrom(
+          this.labService.uploadPieceKycFile(codeClient, row.pendingFile),
+        );
+        body = {
+          ...body,
+          nom_fichier: upload.data.nom_fichier,
+          filepath: upload.data.filepath,
+          reference: upload.data.nom_fichier,
+          statut: !body.statut || body.statut === 'Manquante' ? 'Recue' : body.statut,
+        };
+      }
+      const res = await firstValueFrom(this.labService.createPieceLab(body));
       if (res.data?.piece?.id) {
-        const match = this.pieces.find((r) => r.type_piece.trim() === piece.type_piece && !isPersistedId(r.id));
-        if (match) match.id = res.data.piece.id;
+        row.id = res.data.piece.id;
+        row.pendingFile = null;
+        if (body.filepath) row.filepath = body.filepath ?? null;
+        if (body.nom_fichier) row.nom_fichier = body.nom_fichier ?? null;
       }
     }
   }
