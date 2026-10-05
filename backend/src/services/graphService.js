@@ -8,6 +8,10 @@ const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 let cachedToken = null;
 let tokenExpiresAt = 0;
 
+/** Cache groupes Azure par OID (évite un appel Graph à chaque requête LAB). */
+const GROUPS_TTL_MS = 5 * 60 * 1000;
+const groupsCache = new Map();
+
 function msAxiosConfig() {
     const agent = getMsHttpsAgent();
     return agent ? { httpsAgent: agent, proxy: false } : {};
@@ -37,19 +41,29 @@ async function getGraphAppToken() {
 }
 
 export async function getUserGroupsByOid(userOid) {
+    const oid = userOid != null ? String(userOid).trim() : '';
+    if (!oid) return [];
+
+    const now = Date.now();
+    const cached = groupsCache.get(oid);
+    if (cached && cached.expiresAt > now) {
+        return cached.groups;
+    }
+
     const token = await getGraphAppToken();
 
     const res = await axios.get(
-        `https://graph.microsoft.com/v1.0/users/${userOid}/memberOf`,
+        `https://graph.microsoft.com/v1.0/users/${oid}/memberOf`,
         {
             headers: {
                 Authorization: `Bearer ${token}`
             },
+            timeout: 5_000,
             ...msAxiosConfig()
         }
     );
 
-    return res.data.value
+    const groups = res.data.value
         .filter(g => g["@odata.type"] === "#microsoft.graph.group")
         .map(g => g.displayName)
         .filter(
@@ -58,4 +72,7 @@ export async function getUserGroupsByOid(userOid) {
                 name.toLowerCase().startsWith("gr-users-chatbot")
         )
         .map(name => name.replace("GR-Users-ChatBot-", "").toLowerCase());
+
+    groupsCache.set(oid, { expiresAt: now + GROUPS_TTL_MS, groups });
+    return groups;
 }

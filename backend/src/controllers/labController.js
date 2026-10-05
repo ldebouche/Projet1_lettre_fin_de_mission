@@ -79,6 +79,11 @@ import {
   portefeuilleExportFilename,
 } from '../services/lab-portefeuille-export-service.js';
 import { genererFicheLcbftLab as labGenererFicheLcbftLab } from '../services/lab-fiche-lcbft-service.js';
+import {
+  getWizardBrouillonLab as labGetWizardBrouillon,
+  upsertWizardBrouillonLab as labUpsertWizardBrouillon,
+  deleteWizardBrouillonLab as labDeleteWizardBrouillon,
+} from '../services/lab-wizard-brouillon-service.js';
 import dbService from '../services/dbService.js';
 import { resolveCollaborateurContext } from '../services/collaborateurContext.js';
 
@@ -188,7 +193,12 @@ export async function getDossierLab(req, res) {
     if (denyIfNoScope(scope, res)) return;
     await labAssertDossierInScope(code_client, scope);
 
-    const data = await labGetDossierLab(code_client);
+    const viewRaw = req.query.view != null ? String(req.query.view).trim().toLowerCase() : '';
+    const view = viewRaw === 'wizard' || viewRaw === 'core' || viewRaw === 'history'
+      ? viewRaw
+      : 'full';
+
+    const data = await labGetDossierLab(code_client, { view });
     return res.json({ data });
   } catch (err) {
     if (err instanceof LabDossierError) {
@@ -1324,6 +1334,89 @@ export async function deleteMessageLab(req, res) {
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error('Erreur deleteMessageLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function getWizardBrouillonLab(req, res) {
+  try {
+    const codeClient = req.query.code_client;
+    if (codeClient === undefined || codeClient === null || String(codeClient).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre code_client requis' });
+    }
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    await labAssertDossierInScope(codeClient, scope);
+
+    const data = await labGetWizardBrouillon(codeClient, {
+      id_revue: req.query.id_revue,
+      mode: req.query.mode,
+    });
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur getWizardBrouillonLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function putWizardBrouillonLab(req, res) {
+  try {
+    const codeClient = req.query.code_client ?? req.body?.code_client;
+    if (codeClient === undefined || codeClient === null || String(codeClient).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre code_client requis' });
+    }
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    await labAssertDossierInScope(codeClient, scope);
+
+    const userId = await resolveUserId(req);
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const payload = body.payload != null ? body.payload : body;
+    const data = await labUpsertWizardBrouillon(
+      codeClient,
+      payload,
+      {
+        id_revue: body.id_revue ?? req.query.id_revue,
+        mode: body.mode ?? req.query.mode,
+      },
+      userId,
+    );
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur putWizardBrouillonLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+export async function deleteWizardBrouillonLabHandler(req, res) {
+  try {
+    const codeClient = req.query.code_client;
+    if (codeClient === undefined || codeClient === null || String(codeClient).trim() === '') {
+      return res.status(400).json({ error: 'Paramètre code_client requis' });
+    }
+
+    const scope = await resolveLabScope(req);
+    if (denyIfNoScope(scope, res)) return;
+    await labAssertDossierInScope(codeClient, scope);
+
+    const data = await labDeleteWizardBrouillon(codeClient, {
+      id_revue: req.query.id_revue,
+      mode: req.query.mode,
+    });
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur deleteWizardBrouillonLab:', err);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }

@@ -8,7 +8,7 @@ import {
   LabPieceKyc,
   LabUpdatePieceRequest,
 } from '../../../services/lab-service';
-import { statutPieceLabel } from '../lab-labels';
+import { statutPieceLabel, effectiveStatutPiece } from '../lab-labels';
 
 type PieceModalMode = 'create' | 'edit' | null;
 
@@ -44,6 +44,7 @@ export class LabDossierPiecesComponent {
 
   readonly pieceTypePresets = PIECE_TYPE_PRESETS;
   statutPieceLabel = statutPieceLabel;
+  effectiveStatutPiece = effectiveStatutPiece;
 
   pieceForm = {
     type_piece: '',
@@ -100,10 +101,10 @@ export class LabDossierPiecesComponent {
 
   getPiecesCounts(): { recue: number; manquante: number; perimee: number; non_requise: number; total: number } {
     const total = this.pieces.length;
-    const recue = this.pieces.filter((p) => p.statut === 'Recue').length;
-    const manquante = this.pieces.filter((p) => p.statut === 'Manquante').length;
-    const perimee = this.pieces.filter((p) => p.statut === 'Perimee').length;
-    const non_requise = this.pieces.filter((p) => p.statut === 'Non_requise').length;
+    const recue = this.pieces.filter((p) => this.effectiveStatutPiece(p.statut, p.date_echeance) === 'Recue').length;
+    const manquante = this.pieces.filter((p) => this.effectiveStatutPiece(p.statut, p.date_echeance) === 'Manquante').length;
+    const perimee = this.pieces.filter((p) => this.effectiveStatutPiece(p.statut, p.date_echeance) === 'Perimee').length;
+    const non_requise = this.pieces.filter((p) => this.effectiveStatutPiece(p.statut, p.date_echeance) === 'Non_requise').length;
     return { recue, manquante, perimee, non_requise, total };
   }
 

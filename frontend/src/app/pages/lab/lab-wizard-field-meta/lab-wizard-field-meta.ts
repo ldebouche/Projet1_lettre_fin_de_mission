@@ -16,7 +16,7 @@ import type { LabFieldMeta } from '../../../services/lab-service';
       <div class="field-meta-divergence" *ngIf="meta.status === 'divergence'">
         <span class="field-meta-alert">Écart détecté avec {{ meta.apiSourceLabel || 'registre public' }}</span>
         <div class="field-meta-values">
-          <span><em>Fiche client</em> : {{ meta.bddValue }}</span>
+          <span><em>Valeur actuelle</em> : {{ meta.bddValue }}</span>
           <span><em>Registre public</em> : {{ meta.apiValue }}</span>
         </div>
         <button type="button" class="field-meta-btn" (click)="acceptApi.emit()">

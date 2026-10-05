@@ -4,6 +4,7 @@
  */
 
 import { poolPromise, sql } from '../config/db.js';
+import { deleteWizardBrouillonByRevueLab } from './lab-wizard-brouillon-service.js';
 
 import {
   LabDossierError,
@@ -887,6 +888,12 @@ export async function cloturerRevueLab(revueId, payload, userId = null) {
 
     await transaction.commit();
 
+    try {
+      await deleteWizardBrouillonByRevueLab(id);
+    } catch (cleanupErr) {
+      console.warn('Nettoyage brouillon wizard après clôture revue:', cleanupErr?.message || cleanupErr);
+    }
+
     return {
       id,
       code_client: codeSafe,
@@ -988,6 +995,12 @@ export async function annulerRevueLab(revueId, userId = null) {
     });
 
     await transaction.commit();
+
+    try {
+      await deleteWizardBrouillonByRevueLab(id);
+    } catch (cleanupErr) {
+      console.warn('Nettoyage brouillon wizard après annulation revue:', cleanupErr?.message || cleanupErr);
+    }
 
     return {
       id,

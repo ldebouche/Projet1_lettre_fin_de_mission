@@ -58,10 +58,7 @@
       </ng-container>
 
       <ng-container *ngIf="!questionnaireBlocked">
-      <app-lab-carte title="Ajuster le niveau" subtitle="Hausse ou baisse justifiée du niveau calculé">
-        <p class="panel-intro">
-          Le cabinet peut retenir un niveau différent du calcul automatique. Toute hausse ou baisse doit être justifiée et tracée.
-        </p>
+      <app-lab-carte title="Ajuster le niveau">
         <div class="modulation-opts">
           <label class="modulation-opt" [class.modulation-opt--active]="modulation === 0">
             <input type="radio" name="modulation" [value]="0" [ngModel]="modulation" (ngModelChange)="onModulationChange(0)" />
@@ -96,7 +93,7 @@
     </div>
 
     <aside class="eval-side" *ngIf="!questionnaireBlocked">
-      <app-lab-carte title="Synthèse risque" subtitle="Niveau retenu selon le questionnaire du cabinet">
+      <app-lab-carte title="Synthèse risque">
         <div class="summary-kv">
           <span class="summary-k">Niveau calculé</span>
           <span [class]="niveauPillClass(evaluation.niveauCalcule)">{{ evaluation.niveauCalcule }}</span>

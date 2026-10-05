@@ -8,6 +8,8 @@ export interface LabClientBloc {
   ape: string | null;
   activite: string | null;
   nature: string | null;
+  /** Catégorie fiscale (BIC, BNC, RFONC…) — source du champ formulaire « Nature ». */
+  categorie_revenu?: string | null;
   rcs: string | null;
   tvaintracom: string | null;
   montant_capital_social: number | string | null;
@@ -29,6 +31,23 @@ export interface LabClientBloc {
   chef_de_mission: string | null;
   chef_de_mission_nom: string | null;
   chef_de_mission_prenom: string | null;
+  /** Personne physique — table clients (hors lab_kyc). */
+  civilite?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
+  prospect?: string | null;
+  is_prospect?: boolean;
+  nb_salaries?: number | null;
+  type_client?: string | null;
+  /** Missions déduites des affectations collaborateurs (id ≠ 0). */
+  mission_comptabilite?: boolean;
+  mission_sociale?: boolean;
+  mission_juridique?: boolean;
+  mission_audit?: boolean;
+  /** Dernier exercice Aggregats_FEC. */
+  aggregat_ca?: number | null;
+  aggregat_capital_social?: number | null;
+  aggregat_datefinex?: string | null;
 }
 
 export interface LabDossierBloc {
@@ -386,6 +405,8 @@ export interface LabWizardSupplement {
   nom_physique?: string | null;
   prenom_physique?: string | null;
   pays_residence_fiscale?: string | null;
+  origine_fonds_requise?: boolean;
+  origine_fonds_statut?: 'Renseignee' | 'A_renseigner' | 'Non_applicable' | null;
 }
 
 export interface LabUpdateKycRequest {
@@ -1004,4 +1025,46 @@ export interface LabWizardFormModel {
     nationalite: string;
     adresse_personnelle: string;
   };
+}
+
+/** Brouillon JSON de l’assistant (hors dossier officiel). */
+export interface LabWizardBrouillonArpec {
+  reponses: Record<string, 'O' | 'N' | null>;
+  modulation: -1 | 0 | 1;
+  justification: string;
+}
+
+export interface LabWizardBrouillonPayload {
+  version: 1;
+  stepIndex: number;
+  m: LabWizardFormModel;
+  beneficiaires: WizardBeRow[];
+  pieces: Array<Omit<WizardPieceRow, 'pendingFile'> & { pendingFile?: null }>;
+  deletedBeneficiaireIds: string[];
+  deletedPieceIds: string[];
+  arpec: LabWizardBrouillonArpec | null;
+  bodaccChecklist: Record<string, LabBodaccChecklistEntry> | null;
+}
+
+export interface LabWizardBrouillonRecord {
+  id: number;
+  code_client: string | null;
+  id_revue: number | null;
+  cle_brouillon: string | null;
+  payload: LabWizardBrouillonPayload | null;
+  date_creation: string | null;
+  date_modification: string | null;
+}
+
+export interface LabWizardBrouillonResponse {
+  brouillon: LabWizardBrouillonRecord | null;
+  code_client: string;
+  id_revue: number | null;
+  cle_brouillon: string;
+}
+
+export interface LabWizardBrouillonUpsertRequest {
+  payload: LabWizardBrouillonPayload;
+  id_revue?: string | number | null;
+  mode?: string | null;
 }

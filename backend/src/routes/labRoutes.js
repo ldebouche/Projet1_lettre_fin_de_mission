@@ -52,6 +52,9 @@ import {
   postMessageLab,
   putMessageLab,
   deleteMessageLab,
+  getWizardBrouillonLab,
+  putWizardBrouillonLab,
+  deleteWizardBrouillonLabHandler,
 } from '../controllers/labController.js';
 
 const router = express.Router();
@@ -111,6 +114,9 @@ router.get('/messages', authMiddlewareCollaborateur, getMessagesLab);
 router.post('/messages', authMiddlewareCollaborateur, postMessageLab);
 router.put('/messages', authMiddlewareCollaborateur, putMessageLab);
 router.delete('/messages', authMiddlewareCollaborateur, deleteMessageLab);
+router.get('/wizard-brouillon', authMiddlewareCollaborateur, getWizardBrouillonLab);
+router.put('/wizard-brouillon', authMiddlewareCollaborateur, putWizardBrouillonLab);
+router.delete('/wizard-brouillon', authMiddlewareCollaborateur, deleteWizardBrouillonLabHandler);
 
 export default router;
 

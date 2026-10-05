@@ -469,6 +469,20 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
       LEFT JOIN clients c ON RTRIM(LTRIM(c.code_client)) = RTRIM(LTRIM(d.code_client))
       LEFT JOIN lab_kyc k ON RTRIM(LTRIM(k.code_client)) = RTRIM(LTRIM(d.code_client))
       LEFT JOIN collaborateurs responsable ON RTRIM(LTRIM(responsable.id_sellsy)) = RTRIM(LTRIM(d.id_responsable_lab))
+      LEFT JOIN (
+        SELECT RTRIM(LTRIM(e.code_client)) AS code_client, COUNT(*) AS nb_evenements_ouverts
+        FROM lab_evenements e
+        WHERE RTRIM(LTRIM(e.statut)) != 'Cloture'
+        GROUP BY RTRIM(LTRIM(e.code_client))
+      ) ev ON ev.code_client = RTRIM(LTRIM(d.code_client))
+      LEFT JOIN (
+        SELECT RTRIM(LTRIM(di.code_client)) AS code_client, COUNT(*) AS nb_diligences_retard
+        FROM lab_diligences di
+        WHERE di.date_echeance IS NOT NULL
+          AND di.date_echeance < CAST(GETDATE() AS DATE)
+          AND RTRIM(LTRIM(di.statut)) NOT IN ('Realisee', 'Abandonnee')
+        GROUP BY RTRIM(LTRIM(di.code_client))
+      ) dil ON dil.code_client = RTRIM(LTRIM(d.code_client))
     `;
 
     // Pagination
@@ -485,19 +499,18 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
       return request;
     };
 
-    // 1) Total (mêmes FROM/JOIN/WHERE/inputs que la page)
-    const countResult = await applyInputs(pool.request()).query(`
+    const countPromise = applyInputs(pool.request()).query(`
       SELECT COUNT(*) AS total
-      ${fromJoin}
+      FROM lab_dossier d
+      LEFT JOIN clients c ON RTRIM(LTRIM(c.code_client)) = RTRIM(LTRIM(d.code_client))
+      LEFT JOIN lab_kyc k ON RTRIM(LTRIM(k.code_client)) = RTRIM(LTRIM(d.code_client))
       ${whereSql}
     `);
-    const total = countResult.recordset?.[0]?.total ?? 0;
 
-    // 2) Page
     const pageRequest = applyInputs(pool.request());
     pageRequest.input('offset', sql.Int, offset);
     pageRequest.input('pageSize', sql.Int, pageSize);
-    const result = await pageRequest.query(`
+    const pagePromise = pageRequest.query(`
       SELECT
         d.id,
         d.code_client,
@@ -514,13 +527,8 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
         d.id_responsable_lab,
         responsable.nom AS responsable_nom,
         responsable.prenom AS responsable_prenom,
-        (SELECT COUNT(*) FROM lab_evenements e
-         WHERE e.code_client = d.code_client AND RTRIM(LTRIM(e.statut)) != 'Cloture') AS nb_evenements_ouverts,
-        (SELECT COUNT(*) FROM lab_diligences di
-         WHERE di.code_client = d.code_client
-           AND di.date_echeance IS NOT NULL
-           AND di.date_echeance < CAST(GETDATE() AS DATE)
-           AND RTRIM(LTRIM(di.statut)) NOT IN ('Realisee', 'Abandonnee')) AS nb_diligences_retard
+        ISNULL(ev.nb_evenements_ouverts, 0) AS nb_evenements_ouverts,
+        ISNULL(dil.nb_diligences_retard, 0) AS nb_diligences_retard
       ${fromJoin}
       ${whereSql}
       ORDER BY
@@ -529,6 +537,9 @@ export async function getDossiersLab(filters = {}, scope = { isFull: true, idSel
         d.id DESC
       OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
     `);
+
+    const [countResult, result] = await Promise.all([countPromise, pagePromise]);
+    const total = countResult.recordset?.[0]?.total ?? 0;
 
     const data = (result.recordset || []).map((row) => ({
       id: row.id,

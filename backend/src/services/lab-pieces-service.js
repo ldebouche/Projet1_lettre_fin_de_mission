@@ -85,12 +85,13 @@ function cleanUrl(value) {
 
 function mapPieceRow(row, titulaireOverride = null, commentaireOverride = null) {
   const { titulaire, commentaire } = parsePieceLibelle(row.libelle);
+  const statutRaw = normalizeStatutPiece(row.statut);
   return {
     id: String(row.id),
     id_document: cleanText(row.id_document) || formatIdDocument(row.id),
     type_piece: cleanText(row.type_piece) || 'Pièce KYC',
     titulaire: titulaireOverride || titulaire,
-    statut: normalizeStatutPiece(row.statut),
+    statut: applyEcheanceToStatut(statutRaw, row.date_echeance),
     date_delivrance: row.date_delivrance ?? null,
     date_echeance: row.date_echeance ?? null,
     libelle: cleanText(row.libelle),
@@ -103,12 +104,30 @@ function mapPieceRow(row, titulaireOverride = null, commentaireOverride = null) 
 }
 
 /** D5.3-G : statut Perimee OU date_echeance < aujourd'hui, hors Non_requise. */
+function coercePieceDate(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  const parsed = parseIsoDate(value);
+  return parsed === undefined ? null : parsed;
+}
+
 function isPieceExpiredForEvent(statutBdd, dateEcheance) {
   const statut = cleanText(statutBdd) || '';
-  if (statut === 'Non_requise') return false;
+  if (statut === 'Non_requise' || statut === 'Supprime') return false;
   if (statut === 'Perimee') return true;
-  if (!(dateEcheance instanceof Date) || Number.isNaN(dateEcheance.getTime())) return false;
-  return dateEcheance.getTime() < todayUtcDate().getTime();
+  const d = coercePieceDate(dateEcheance);
+  if (!d) return false;
+  return d.getTime() < todayUtcDate().getTime();
+}
+
+/** Force Perimee si l’échéance est dépassée (hors Non_requise / Supprime). */
+function applyEcheanceToStatut(statutBdd, dateEcheance) {
+  if (statutBdd === 'Non_requise' || statutBdd === 'Supprime') return statutBdd;
+  const d = coercePieceDate(dateEcheance);
+  if (d && d.getTime() < todayUtcDate().getTime()) return 'Perimee';
+  return statutBdd;
 }
 
 function buildPieceLibelle(titulaire, commentaire) {
@@ -371,10 +390,6 @@ export async function createPieceKycLab(payload, userId = null) {
     throw new LabDossierError('type_piece requis', 400);
   }
 
-  const statutBdd = statutPieceForStorage(payload.statut);
-  if (statutBdd === 'Supprime') {
-    throw new LabDossierError('Impossible de créer une pièce au statut Supprime', 400);
-  }
   const libelle = buildPieceLibelle(payload.titulaire, payload.commentaire);
   const reference = cleanText(payload.reference);
   const nomFichier = cleanText(payload.nom_fichier) || reference;
@@ -398,6 +413,11 @@ export async function createPieceKycLab(payload, userId = null) {
     if (dateEcheance === undefined) {
       throw new LabDossierError('date_echeance invalide', 400);
     }
+  }
+
+  const statutBdd = applyEcheanceToStatut(statutPieceForStorage(payload.statut), dateEcheance);
+  if (statutBdd === 'Supprime') {
+    throw new LabDossierError('Impossible de créer une pièce au statut Supprime', 400);
   }
 
   const pool = await poolPromise;
@@ -543,10 +563,6 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
     throw new LabDossierError('type_piece requis', 400);
   }
 
-  const statutBdd = statutPieceForStorage(payload?.statut);
-  if (statutBdd === 'Supprime') {
-    throw new LabDossierError('Utilisez DELETE pour supprimer une pièce', 400);
-  }
   const libelle = buildPieceLibelle(payload?.titulaire, payload?.commentaire);
   const reference = cleanText(payload?.reference);
   const nomFichier = cleanText(payload?.nom_fichier) || reference;
@@ -565,6 +581,11 @@ export async function updatePieceKycLab(pieceId, payload, userId = null) {
     if (dateEcheance === undefined) {
       throw new LabDossierError('date_echeance invalide', 400);
     }
+  }
+
+  const statutBdd = applyEcheanceToStatut(statutPieceForStorage(payload?.statut), dateEcheance);
+  if (statutBdd === 'Supprime') {
+    throw new LabDossierError('Utilisez DELETE pour supprimer une pièce', 400);
   }
 
   const pool = await poolPromise;

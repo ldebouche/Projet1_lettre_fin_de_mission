@@ -18,6 +18,7 @@ import type {
   WizardBeRow,
   WizardPieceRow,
 } from '../../../services/lab-service';
+import { effectiveStatutPiece } from '../lab-labels';
 
 export function toInputDate(value: string | Date | null | undefined): string {
   if (value == null) return '';
@@ -181,6 +182,38 @@ export function isPersistedId(id: string): boolean {
   return /^\d+$/.test(String(id).trim());
 }
 
+export function mapCiviliteFromClients(value: string | null | undefined): string {
+  const raw = toInputStr(value);
+  if (!raw) return '';
+  const norm = raw
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\./g, '')
+    .trim();
+  if (norm === 'mr' || norm === 'm' || norm === 'monsieur') return 'M.';
+  if (norm === 'mme' || norm === 'mlle' || norm === 'madame' || norm === 'mademoiselle') return 'Mme';
+  if (raw === 'M.' || raw === 'Mme' || raw === 'Autre') return raw;
+  return 'Autre';
+}
+
+export function mapTailleFromNbSalaries(nb: number | null | undefined): string {
+  if (nb == null || !Number.isFinite(Number(nb))) return '';
+  const n = Number(nb);
+  if (n <= 0) return '';
+  if (n < 10) return 'TPE';
+  if (n < 250) return 'PME';
+  if (n < 5000) return 'ETI';
+  return 'GE';
+}
+
+export function formatCaForVolumeField(ca: number | null | undefined): string {
+  if (ca == null || !Number.isFinite(Number(ca))) return '';
+  const n = Number(ca);
+  if (n === 0) return '';
+  return `${Math.round(n).toLocaleString('fr-FR')} €`;
+}
+
 export function hydrateClient(
   m: LabWizardFormModel,
   client: LabClientBloc,
@@ -198,10 +231,11 @@ export function hydrateClient(
   m.rcs = toInputStr(client.rcs);
   m.ape = toInputStr(client.ape);
   m.activite = toInputStr(client.activite);
-  m.nature = toInputStr(client.nature);
+  // Formulaire « Nature (ex. BIC) » = categorie_revenu ; fallback clients.nature (Société/Particulier).
+  m.nature = toInputStr(client.categorie_revenu) || toInputStr(client.nature);
   m.tvaintracom = toInputStr(client.tvaintracom);
   m.montant_capital_social = client.montant_capital_social != null
-    ? String(client.montant_capital_social)
+    ? String(client.montant_capital_social).trim()
     : '';
   m.date_entree_cabinet = toInputDate(client.date_entree_cabinet);
   m.adr1_siege = toInputStr(client.adr1_siege);
@@ -225,6 +259,66 @@ export function hydrateClient(
       client.chef_de_mission_nom,
     ),
   };
+}
+
+/**
+ * Complète le formulaire avec les infos clients / Aggregats_FEC
+ * non encore portées par lab_kyc / wizard_supplement.
+ * Ne remplit que les champs vides (missions : active seulement, ne décoche pas).
+ */
+export function applyClientsDbPrefill(
+  m: LabWizardFormModel,
+  client: LabClientBloc,
+  opts: { hasExistingLabDossier: boolean },
+): void {
+  const k = m.kyc;
+  const nom = toInputStr(client.nom);
+  const prenom = toInputStr(client.prenom);
+  const rs = toInputStr(client.raison_sociale);
+  const forme = toInputStr(client.forme_societe);
+
+  if (!k.categorie_client) {
+    if (nom && !rs) {
+      k.categorie_client = 'Personne_physique';
+    } else if (rs || forme) {
+      k.categorie_client = 'Personne_morale';
+    }
+  }
+
+  if (k.categorie_client === 'Personne_physique' || (!k.categorie_client && nom)) {
+    if (!k.civilite.trim()) {
+      k.civilite = mapCiviliteFromClients(client.civilite);
+    }
+    if (!k.nom_physique.trim() && nom) {
+      k.nom_physique = nom;
+    }
+    if (!k.prenom_physique.trim() && prenom) {
+      k.prenom_physique = prenom;
+    }
+  }
+
+  if (!m.taille_entreprise.trim()) {
+    m.taille_entreprise = mapTailleFromNbSalaries(client.nb_salaries);
+  }
+
+  if (!m.montant_capital_social.trim()
+    && client.aggregat_capital_social != null
+    && Number(client.aggregat_capital_social) > 0) {
+    m.montant_capital_social = String(Math.round(Number(client.aggregat_capital_social)));
+  }
+
+  if (!m.volume_affaires_fourchette.trim()) {
+    m.volume_affaires_fourchette = formatCaForVolumeField(client.aggregat_ca);
+  }
+
+  if (client.mission_comptabilite) m.mission_comptabilite = true;
+  if (client.mission_sociale) m.mission_sociale = true;
+  if (client.mission_juridique) m.mission_juridique = true;
+  if (client.mission_audit) m.mission_audit = true;
+
+  if (!opts.hasExistingLabDossier && !m.statut_dossier.trim() && client.is_prospect) {
+    m.statut_dossier = 'Prospect';
+  }
 }
 
 export function hydrateLab(m: LabWizardFormModel, lab: LabDossierBloc): void {
@@ -263,10 +357,6 @@ export function hydrateKyc(m: LabWizardFormModel, kyc: LabKycBloc | null): void 
     k.pep_statut = kyc.pep_statut;
   }
   k.pep_details = toInputStr(kyc.pep_details);
-  k.origine_fonds_requise = !!kyc.origine_fonds_requise;
-  if (kyc.origine_fonds_statut) {
-    k.origine_fonds_statut = kyc.origine_fonds_statut;
-  }
   if (kyc.complexite_structure) {
     k.complexite_structure = kyc.complexite_structure;
   }
@@ -285,6 +375,22 @@ export function hydrateKyc(m: LabWizardFormModel, kyc: LabKycBloc | null): void 
   }
 
   hydrateWizardSupplement(m, kyc.wizard_supplement);
+  // Origine des fonds : priorité au wizard_supplement, sinon statut API KYC.
+  if (
+    kyc.wizard_supplement?.origine_fonds_statut === 'Renseignee'
+    || kyc.wizard_supplement?.origine_fonds_statut === 'A_renseigner'
+    || kyc.wizard_supplement?.origine_fonds_statut === 'Non_applicable'
+  ) {
+    k.origine_fonds_statut = kyc.wizard_supplement.origine_fonds_statut;
+  } else if (kyc.origine_fonds_statut) {
+    k.origine_fonds_statut = kyc.origine_fonds_statut;
+  }
+  if (typeof kyc.wizard_supplement?.origine_fonds_requise === 'boolean') {
+    k.origine_fonds_requise = kyc.wizard_supplement.origine_fonds_requise;
+  } else {
+    k.origine_fonds_requise =
+      k.origine_fonds_statut === 'A_renseigner' || k.origine_fonds_statut === 'Renseignee';
+  }
   applyLocalKycPrefill(m);
 }
 
@@ -406,11 +512,12 @@ export function mapPiece(piece: LabPieceKyc): WizardPieceRow {
     || piece.titulaire === 'Dirigeant'
     ? piece.titulaire
     : '';
-  const statut = piece.statut === 'Recue'
-    || piece.statut === 'Manquante'
-    || piece.statut === 'Perimee'
-    || piece.statut === 'Non_requise'
-    ? piece.statut
+  const statutEffectif = effectiveStatutPiece(piece.statut, piece.date_echeance);
+  const statut = statutEffectif === 'Recue'
+    || statutEffectif === 'Manquante'
+    || statutEffectif === 'Perimee'
+    || statutEffectif === 'Non_requise'
+    ? statutEffectif
     : '';
 
   return {
@@ -463,6 +570,8 @@ export function hydrateFromDossier(
     hydrateLab(m, data.lab);
   }
   hydrateKyc(m, data.kyc);
+  applyClientsDbPrefill(m, data.client, { hasExistingLabDossier });
+  applyLocalKycPrefill(m);
   const beneficiaires = hydrateBeneficiaires(
     data.beneficiaires ?? [],
     (be) => mapBeneficiaire(be, toInputStr),
@@ -564,6 +673,8 @@ export function buildWizardSupplement(m: LabWizardFormModel): LabWizardSupplemen
     nom_physique: k.nom_physique.trim() || null,
     prenom_physique: k.prenom_physique.trim() || null,
     pays_residence_fiscale: k.pays_residence_fiscale.trim() || null,
+    origine_fonds_requise: k.origine_fonds_requise,
+    origine_fonds_statut: k.origine_fonds_statut || null,
   };
 }
 

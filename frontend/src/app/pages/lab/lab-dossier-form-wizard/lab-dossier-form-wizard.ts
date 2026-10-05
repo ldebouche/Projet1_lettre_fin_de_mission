@@ -1,4 +1,12 @@
-import { Component, DestroyRef, OnInit, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,11 +15,14 @@ import { firstValueFrom } from 'rxjs';
 
 import {
   LabBodaccAlerte,
+  LabBodaccChecklistEntry,
   LabCreateDossierRequest,
   LabDossierResponse,
   LabEnrichissementResponse,
   LabFieldMeta,
   LabService,
+  LabWizardBrouillonArpec,
+  LabWizardBrouillonPayload,
   LabWizardFormModel,
   WizardBeRow,
   WizardPieceRow,
@@ -93,7 +104,7 @@ function isEnrichableStringField(key: string): key is EnrichableStringField {
   templateUrl: './lab-dossier-form-wizard.html',
   styleUrls: ['./lab-dossier-form-wizard.scss'],
 })
-export class LabDossierFormWizardComponent implements OnInit {
+export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private labService = inject(LabService);
@@ -119,7 +130,14 @@ export class LabDossierFormWizardComponent implements OnInit {
   step1Saving = false;
   revueActionBusy = false;
   bodaccPendingCritical = 0;
-  private loadedCode: string | null = null;
+  draftNotice: string | null = null;
+  private loadedSessionKey: string | null = null;
+  private draftReady = false;
+  private draftSaveInFlight = false;
+  private lastDraftJson: string | null = null;
+  private draftTimer: ReturnType<typeof setInterval> | null = null;
+  private pendingArpecDraft: LabWizardBrouillonArpec | null = null;
+  private pendingBodaccDraft: Record<string, LabBodaccChecklistEntry> | null = null;
 
   @ViewChild(LabWizardIdentiteComponent) identiteCmp?: LabWizardIdentiteComponent;
   @ViewChild('evalRisque') evalRisque?: LabEvaluationRisqueComponent;
@@ -187,7 +205,33 @@ export class LabDossierFormWizardComponent implements OnInit {
   }
 
   onRemovedPersistedPiece(id: string): void {
-    this.deletedPieceIds = [...this.deletedPieceIds, id];
+    if (!this.deletedPieceIds.includes(id)) {
+      this.deletedPieceIds = [...this.deletedPieceIds, id];
+    }
+    // Suppression immédiate en base : la fiche dossier ne garde plus la pièce
+    // en attendant la validation de la revue.
+    void this.deletePersistedPieceNow(id);
+  }
+
+  private async deletePersistedPieceNow(id: string): Promise<void> {
+    try {
+      await firstValueFrom(this.labService.deletePieceLab(id));
+      this.deletedPieceIds = this.deletedPieceIds.filter((x) => x !== id);
+      const code = (this.m.code_client || this.codeClient || '').trim();
+      if (code) {
+        void import('../lab-dossier/lab-dossier').then((m) => {
+          m.LabDossierComponent.clearDossierCache(code);
+        });
+      }
+    } catch (err: unknown) {
+      const apiErr = err as { status?: number };
+      if (apiErr?.status === 404) {
+        this.deletedPieceIds = this.deletedPieceIds.filter((x) => x !== id);
+        return;
+      }
+      // Échec réseau : retentera à l’enregistrement final via deletedPieceIds.
+      console.warn('Suppression pièce KYC différée à l’enregistrement:', err);
+    }
   }
 
   ngOnInit(): void {
@@ -202,46 +246,99 @@ export class LabDossierFormWizardComponent implements OnInit {
       });
   }
 
+  ngOnDestroy(): void {
+    this.stopDraftAutosave();
+    void this.flushDraft();
+  }
+
+  @HostListener('window:beforeunload')
+  onBeforeUnload(): void {
+    void this.flushDraft();
+  }
+
   private applyCodeClient(code: string | null): void {
     this.codeClient = code;
     this.submitError = null;
     if (!code) {
-      this.loadedCode = null;
+      this.stopDraftAutosave();
+      this.draftReady = false;
+      this.lastDraftJson = null;
+      this.draftNotice = null;
+      this.pendingArpecDraft = null;
+      this.pendingBodaccDraft = null;
+      this.loadedSessionKey = null;
       return;
     }
-    if (code === this.loadedCode) return;
-    this.loadedCode = code;
+
+    const sessionKey = `${code}|${this.idRevue || ''}|${this.isAcceptationMode ? '1' : '0'}`;
+    if (sessionKey === this.loadedSessionKey) return;
+
+    this.stopDraftAutosave();
+    this.draftReady = false;
+    this.lastDraftJson = null;
+    this.draftNotice = null;
+    this.pendingArpecDraft = null;
+    this.pendingBodaccDraft = null;
+    this.loadedSessionKey = sessionKey;
     this.stepIndex = 0;
     this.m.code_client = code;
-    this.loadDossier(code);
+    this.hasExistingLabDossier = false;
+    void this.loadDossier(code);
   }
 
-  private loadDossier(codeClient: string): void {
+  private async loadDossier(codeClient: string): Promise<void> {
     this.loading = true;
     this.errorMessage = null;
+    const sessionKey = this.loadedSessionKey;
 
-    this.labService.getDossierLab(codeClient).subscribe({
-      next: (res: { data: LabDossierResponse | null }) => {
-        const data = res?.data ?? null;
-        if (!data?.client) {
-          this.errorMessage = 'Aucune donnée client trouvée pour ce code.';
-        } else {
-          this.hydrateFromDossier(data);
-          if (this.hasExistingLabDossier && !this.idRevue && !this.isAcceptationMode) {
-            this.errorMessage =
-              'Révision impossible : paramètre id_revue manquant. Lancez ou reprenez la revue depuis le plan & suivi.';
-          } else {
-            void this.enrichFromPublicApis();
-          }
-        }
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Erreur chargement dossier LAB (formulaire):', err);
-        this.loading = false;
-        this.errorMessage = 'Impossible de charger les données existantes.';
-      },
-    });
+    try {
+      // Prefetch brouillon en parallèle du dossier (même résultat final, moins d’attente).
+      const draftParams = this.draftQueryParams();
+      const dossierPromise = firstValueFrom(this.labService.getDossierLab(codeClient, { view: 'wizard' }));
+      const draftPromise = draftParams
+        ? firstValueFrom(this.labService.getWizardBrouillonLab(draftParams)).catch((err: unknown) => {
+            const apiErr = err as { status?: number };
+            if (apiErr?.status === 503) {
+              this.draftNotice =
+                'Enregistrement automatique indisponible (table lab_wizard_brouillons absente).';
+            } else if (apiErr?.status !== 404) {
+              console.warn('Erreur chargement brouillon wizard LAB:', err);
+            }
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const res = await dossierPromise;
+      const data = res?.data ?? null;
+      if (!data?.client) {
+        this.errorMessage = 'Aucune donnée client trouvée pour ce code.';
+        return;
+      }
+
+      this.hydrateFromDossier(data);
+      if (this.hasExistingLabDossier && !this.idRevue && !this.isAcceptationMode) {
+        this.errorMessage =
+          'Révision impossible : paramètre id_revue manquant. Lancez ou reprenez la revue depuis le plan & suivi.';
+        return;
+      }
+
+      // Enrichissement en arrière-plan : n’bloque plus l’ouverture (< 1 s).
+      const draftRes = await draftPromise;
+      this.applyDraftResponse(draftRes);
+      this.reconcileFieldMetaWithCurrentForm();
+      this.startDraftAutosave();
+
+      void this.fetchEnrichmentData().then((enrichData) => {
+        if (!enrichData || this.loadedSessionKey !== sessionKey) return;
+        this.applyEnrichment(enrichData);
+        this.reconcileFieldMetaWithCurrentForm();
+      });
+    } catch (err) {
+      console.error('Erreur chargement dossier LAB (formulaire):', err);
+      this.errorMessage = 'Impossible de charger les données existantes.';
+    } finally {
+      this.loading = false;
+    }
   }
 
   private hydrateFromDossier(data: LabDossierResponse): void {
@@ -300,31 +397,272 @@ export class LabDossierFormWizardComponent implements OnInit {
   }
 
   enrichFromPublicApis(): void {
+    void this.enrichFromPublicApisAsync();
+  }
+
+  private async enrichFromPublicApisAsync(): Promise<void> {
+    this.enriching = true;
+    this.enrichmentError = null;
+    try {
+      const data = await this.fetchEnrichmentData();
+      if (data) {
+        this.applyEnrichment(data);
+        this.reconcileFieldMetaWithCurrentForm();
+      }
+    } finally {
+      this.enriching = false;
+    }
+  }
+
+  /** Appels registres publics uniquement — n’applique pas encore au formulaire. */
+  private async fetchEnrichmentData(): Promise<LabEnrichissementResponse | null> {
     const siret = toInputStr(this.m.siret).replace(/\s/g, '');
     const siren = toInputStr(this.m.siren).replace(/\s/g, '') || (siret.length >= 9 ? siret.slice(0, 9) : '');
     if (!siret && siren.length !== 9) {
       this.enrichmentError = 'Saisissez un SIREN (9 chiffres) ou SIRET (14 chiffres) pour enrichir.';
-      return;
+      return null;
     }
 
     this.enriching = true;
     this.enrichmentError = null;
 
-    this.labService.getEnrichissementLab({
-      siret: siret || undefined,
-      siren: siren || undefined,
-      code_client: this.m.code_client || this.codeClient || undefined,
-    }).subscribe({
-      next: (res) => {
-        this.applyEnrichment(res.data);
-        this.enriching = false;
-      },
-      error: (err) => {
-        console.error('Erreur enrichissement LAB:', err);
-        this.enriching = false;
-        this.enrichmentError = err?.error?.error || 'Enrichissement depuis les registres publics impossible.';
-      },
+    try {
+      const res = await firstValueFrom(
+        this.labService.getEnrichissementLab({
+          siret: siret || undefined,
+          siren: siren || undefined,
+          code_client: this.m.code_client || this.codeClient || undefined,
+        }),
+      );
+      return res.data ?? null;
+    } catch (err: unknown) {
+      console.error('Erreur enrichissement LAB:', err);
+      const apiErr = err as { error?: { error?: string } };
+      this.enrichmentError =
+        apiErr?.error?.error || 'Enrichissement depuis les registres publics impossible.';
+      return null;
+    } finally {
+      this.enriching = false;
+    }
+  }
+
+  private canUseDraftPersistence(): boolean {
+    const code = (this.m.code_client || this.codeClient || '').trim();
+    if (!code || this.isWizardLocked) return false;
+    return !!this.idRevue || this.isAcceptationMode || !this.hasExistingLabDossier;
+  }
+
+  private draftQueryParams(): {
+    code_client: string;
+    id_revue?: string;
+    mode?: string;
+  } | null {
+    const code = (this.m.code_client || this.codeClient || '').trim();
+    if (!code || !this.canUseDraftPersistence()) return null;
+    if (this.idRevue) {
+      return { code_client: code, id_revue: this.idRevue };
+    }
+    return { code_client: code, mode: 'acceptation' };
+  }
+
+  private startDraftAutosave(): void {
+    this.stopDraftAutosave();
+    if (!this.canUseDraftPersistence()) return;
+    this.draftTimer = setInterval(() => {
+      void this.flushDraft();
+    }, 2000);
+  }
+
+  private stopDraftAutosave(): void {
+    if (this.draftTimer != null) {
+      clearInterval(this.draftTimer);
+      this.draftTimer = null;
+    }
+  }
+
+  private serializePiecesForDraft(pieces: WizardPieceRow[]): LabWizardBrouillonPayload['pieces'] {
+    return pieces.map((p) => {
+      const { pendingFile: _pendingFile, ...rest } = p;
+      return { ...rest, pendingFile: null };
     });
+  }
+
+  private buildDraftPayload(): LabWizardBrouillonPayload {
+    const arpecLive = this.evalRisque?.getDraftState() ?? null;
+    const arpec = arpecLive ?? this.pendingArpecDraft;
+    const bodaccLive = this.bodaccChecklist?.exportChecklistState() ?? null;
+    if (bodaccLive) {
+      this.pendingBodaccDraft = bodaccLive;
+    }
+    if (arpecLive) {
+      this.pendingArpecDraft = arpecLive;
+    }
+
+    return {
+      version: 1,
+      stepIndex: this.stepIndex,
+      m: structuredClone(this.m),
+      beneficiaires: structuredClone(this.beneficiaires),
+      pieces: this.serializePiecesForDraft(this.pieces),
+      deletedBeneficiaireIds: [...this.deletedBeneficiaireIds],
+      deletedPieceIds: [...this.deletedPieceIds],
+      arpec,
+      bodaccChecklist: this.pendingBodaccDraft,
+    };
+  }
+
+  private async flushDraft(force = false): Promise<void> {
+    if (!this.draftReady || this.draftSaveInFlight || this.submitting || this.revueActionBusy) {
+      return;
+    }
+    const params = this.draftQueryParams();
+    if (!params) return;
+
+    const payload = this.buildDraftPayload();
+    const json = JSON.stringify(payload);
+    if (!force && json === this.lastDraftJson) return;
+
+    this.draftSaveInFlight = true;
+    try {
+      await firstValueFrom(
+        this.labService.saveWizardBrouillonLab(params.code_client, {
+          payload,
+          id_revue: params.id_revue ?? null,
+          mode: params.mode ?? null,
+        }),
+      );
+      this.lastDraftJson = json;
+      const stamp = new Date().toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      this.draftNotice = `Brouillon enregistré à ${stamp}`;
+    } catch (err: unknown) {
+      const apiErr = err as { status?: number; error?: { error?: string } };
+      if (apiErr?.status === 503) {
+        this.draftNotice =
+          'Enregistrement automatique indisponible (table lab_wizard_brouillons absente).';
+        this.stopDraftAutosave();
+      } else {
+        console.warn('Erreur sauvegarde brouillon wizard LAB:', err);
+      }
+    } finally {
+      this.draftSaveInFlight = false;
+    }
+  }
+
+  private async clearDraft(): Promise<void> {
+    const params = this.draftQueryParams();
+    this.stopDraftAutosave();
+    this.draftReady = false;
+    this.lastDraftJson = null;
+    this.pendingArpecDraft = null;
+    this.pendingBodaccDraft = null;
+    if (!params) return;
+    try {
+      await firstValueFrom(this.labService.deleteWizardBrouillonLab(params));
+    } catch (err) {
+      console.warn('Erreur suppression brouillon wizard LAB:', err);
+    }
+  }
+
+  private async loadAndApplyBrouillon(): Promise<void> {
+    this.draftReady = false;
+    const params = this.draftQueryParams();
+    if (!params) {
+      this.draftReady = this.canUseDraftPersistence();
+      return;
+    }
+
+    try {
+      const res = await firstValueFrom(this.labService.getWizardBrouillonLab(params));
+      this.applyDraftResponse(res);
+    } catch (err: unknown) {
+      const apiErr = err as { status?: number };
+      if (apiErr?.status === 503) {
+        this.draftNotice =
+          'Enregistrement automatique indisponible (table lab_wizard_brouillons absente).';
+      } else if (apiErr?.status !== 404) {
+        console.warn('Erreur chargement brouillon wizard LAB:', err);
+      }
+    } finally {
+      this.draftReady = this.canUseDraftPersistence();
+      if (this.draftReady) {
+        this.lastDraftJson = JSON.stringify(this.buildDraftPayload());
+      }
+    }
+  }
+
+  private applyDraftResponse(
+    res: { data?: { brouillon?: { payload?: LabWizardBrouillonPayload | null } | null } } | null,
+  ): void {
+    this.draftReady = false;
+    try {
+      const payload = res?.data?.brouillon?.payload;
+      if (payload && typeof payload === 'object') {
+        this.applyDraftPayload(payload);
+        this.draftNotice = 'Brouillon repris — vous pouvez continuer où vous vous êtes arrêté.';
+      }
+    } finally {
+      this.draftReady = this.canUseDraftPersistence();
+      if (this.draftReady) {
+        this.lastDraftJson = JSON.stringify(this.buildDraftPayload());
+      }
+    }
+  }
+
+  private applyDraftPayload(payload: LabWizardBrouillonPayload): void {
+    if (payload.m && typeof payload.m === 'object') {
+      const base = createEmptyWizardForm();
+      this.m = {
+        ...base,
+        ...payload.m,
+        kyc: { ...base.kyc, ...(payload.m.kyc || {}) },
+        dirigeant: { ...base.dirigeant, ...(payload.m.dirigeant || {}) },
+      };
+      if (this.codeClient) {
+        this.m.code_client = this.codeClient;
+      }
+    }
+
+    if (Array.isArray(payload.beneficiaires) && payload.beneficiaires.length > 0) {
+      this.beneficiaires = payload.beneficiaires.map((row) => ({ ...row }));
+    }
+    if (Array.isArray(payload.pieces) && payload.pieces.length > 0) {
+      this.pieces = payload.pieces.map((row) => ({ ...row, pendingFile: null }));
+    }
+    if (Array.isArray(payload.deletedBeneficiaireIds)) {
+      this.deletedBeneficiaireIds = [...payload.deletedBeneficiaireIds];
+    }
+    if (Array.isArray(payload.deletedPieceIds)) {
+      this.deletedPieceIds = [...payload.deletedPieceIds];
+    }
+
+    this.pendingArpecDraft = payload.arpec ?? null;
+    this.pendingBodaccDraft = payload.bodaccChecklist ?? null;
+
+    const targetStep =
+      typeof payload.stepIndex === 'number' && payload.stepIndex >= 1
+        ? 1
+        : 0;
+    this.stepIndex = targetStep;
+
+    setTimeout(() => {
+      this.applyPendingBodaccDraft();
+      this.applyPendingArpecDraft();
+      this.reconcileFieldMetaWithCurrentForm();
+    }, 0);
+  }
+
+  private applyPendingBodaccDraft(): void {
+    if (!this.pendingBodaccDraft) return;
+    this.bodaccChecklist?.importChecklistState(this.pendingBodaccDraft);
+  }
+
+  private applyPendingArpecDraft(): void {
+    if (!this.pendingArpecDraft || !this.evalRisque) return;
+    this.evalRisque.applyDraftState(this.pendingArpecDraft);
   }
 
   private applyEnrichment(data: LabEnrichissementResponse): void {
@@ -336,7 +674,6 @@ export class LabDossierFormWizardComponent implements OnInit {
     this.fieldMeta = { ...this.fieldMeta, ...(data.fields ?? {}) };
     this.alertesBodacc = data.alertesBodacc ?? [];
     this.enrichmentSources = data.sources ?? null;
-    this.divergenceCount = data.divergences?.length ?? 0;
     this.bodaccPendingCritical = (data.alertesBodacc ?? []).filter((a) => a.gravite === 'elevee').length;
 
     const merged = data.merged ?? {};
@@ -375,11 +712,93 @@ export class LabDossierFormWizardComponent implements OnInit {
       }
     }
     applyLocalKycPrefill(this.m);
+    this.reconcileFieldMetaWithCurrentForm();
   }
 
+  /** Ne remplit que les champs vides — ne réécrit jamais une saisie / un brouillon. */
   private applyMergedValue(field: EnrichableStringField, value: unknown): void {
     if (value == null || value === '') return;
+    if (toInputStr(this.m[field])) return;
     this.m[field] = String(value);
+  }
+
+  private normalizeCompareValue(value: unknown): string {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  private valuesMatch(a: unknown, b: unknown): boolean {
+    const na = this.normalizeCompareValue(a);
+    const nb = this.normalizeCompareValue(b);
+    if (!na && !nb) return true;
+    return na === nb;
+  }
+
+  private getFormFieldValue(fieldKey: string): string {
+    if (fieldKey === 'kyc.pays_implantation') return toInputStr(this.m.kyc.pays_implantation);
+    if (fieldKey === 'kyc.secteurs_text') return toInputStr(this.m.kyc.secteurs_text);
+    if (isEnrichableStringField(fieldKey)) return toInputStr(this.m[fieldKey]);
+    return '';
+  }
+
+  /**
+   * Recalcule les écarts registre vs saisie actuelle (brouillon si repris, sinon BDD hydratée).
+   * L’API enrichissement compare à la BDD seule — on réalignement côté formulaire.
+   */
+  private reconcileFieldMetaWithCurrentForm(): void {
+    const next: Record<string, LabFieldMeta> = { ...this.fieldMeta };
+
+    for (const [key, meta] of Object.entries(next)) {
+      if (!meta) continue;
+      const current = this.getFormFieldValue(key);
+      const apiValue = toInputStr(meta.apiValue);
+
+      let status: LabFieldMeta['status'];
+      let value = current;
+      let source = meta.source;
+      let sourceLabel = meta.sourceLabel;
+
+      if (!current && !apiValue) {
+        status = 'empty';
+        value = '';
+      } else if (!current && apiValue) {
+        status = 'prefilled';
+        value = apiValue;
+        source = meta.apiSource;
+        sourceLabel = meta.apiSourceLabel;
+      } else if (current && !apiValue) {
+        status = 'bdd';
+        source = source || 'BDD';
+        sourceLabel = sourceLabel || 'Valeur actuelle';
+      } else if (this.valuesMatch(current, apiValue)) {
+        status = 'prefilled';
+        value = current;
+        source = meta.apiSource || source || 'BDD';
+        sourceLabel = meta.apiSourceLabel || sourceLabel || 'Registre public';
+      } else {
+        status = 'divergence';
+        value = current;
+        source = 'BDD';
+        sourceLabel = 'Valeur actuelle';
+      }
+
+      next[key] = {
+        ...meta,
+        value,
+        source,
+        sourceLabel,
+        status,
+        bddValue: current || null,
+        apiValue: apiValue || null,
+      };
+    }
+
+    this.fieldMeta = next;
+    this.divergenceCount = Object.values(this.fieldMeta).filter((f) => f.status === 'divergence').length;
   }
 
   getFieldMeta(key: string): LabFieldMeta | null {
@@ -404,9 +823,10 @@ export class LabDossierFormWizardComponent implements OnInit {
       source: meta.apiSource,
       sourceLabel: meta.apiSourceLabel,
       status: 'prefilled',
-      bddValue: meta.bddValue,
+      bddValue: meta.apiValue,
     };
     this.divergenceCount = Object.values(this.fieldMeta).filter((f) => f.status === 'divergence').length;
+    void this.flushDraft(true);
   }
 
   onSiretBlur(): void {
@@ -432,7 +852,12 @@ export class LabDossierFormWizardComponent implements OnInit {
 
   goPrev(): void {
     if (this.isWizardLocked || this.isFirstStep) return;
+    if (this.evalRisque) {
+      this.pendingArpecDraft = this.evalRisque.getDraftState();
+    }
     this.stepIndex--;
+    setTimeout(() => this.applyPendingBodaccDraft(), 0);
+    void this.flushDraft(true);
   }
 
   async onStepperSelect(targetIndex: number): Promise<void> {
@@ -471,6 +896,8 @@ export class LabDossierFormWizardComponent implements OnInit {
       try {
         await this.persistStep1(code);
         this.stepIndex++;
+        setTimeout(() => this.applyPendingArpecDraft(), 0);
+        await this.flushDraft(true);
       } catch (err: unknown) {
         console.error('Erreur sauvegarde intermédiaire étape 1 wizard LAB:', err);
         this.submitError = this.formatSubmitApiError(err);
@@ -481,6 +908,7 @@ export class LabDossierFormWizardComponent implements OnInit {
     }
 
     this.stepIndex++;
+    void this.flushDraft(true);
   }
 
   onBodaccProgressChange(pendingCritical: number): void {
@@ -488,15 +916,28 @@ export class LabDossierFormWizardComponent implements OnInit {
   }
 
   goToWizardStep(stepId: string): void {
-    if (this.isWizardLocked) return;
-    this.stepIndex = 0;
     const anchor = this.sectionAnchorByWizardStep[stepId] ?? `section-${stepId}`;
-    if (anchor === 'section-bodacc') {
+    this.scrollToSection(anchor);
+  }
+
+  /** Navigation sommaire / BODACC — scroll JS (les href # ne marchent pas avec le router Angular). */
+  scrollToSection(sectionId: string): void {
+    if (this.isWizardLocked || !sectionId) return;
+    this.stepIndex = 0;
+    if (sectionId === 'section-bodacc') {
       this.bodaccSectionOpen = true;
     }
-    setTimeout(() => {
-      document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
+    const tryScroll = (attempt: number): void => {
+      const el = document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      if (attempt < 5) {
+        setTimeout(() => tryScroll(attempt + 1), 50);
+      }
+    };
+    setTimeout(() => tryScroll(0), 0);
   }
 
   onBodaccSectionToggle(open: boolean): void {
@@ -554,7 +995,12 @@ export class LabDossierFormWizardComponent implements OnInit {
     }
 
     for (const pieceId of this.deletedPieceIds) {
-      await firstValueFrom(this.labService.deletePieceLab(pieceId));
+      try {
+        await firstValueFrom(this.labService.deletePieceLab(pieceId));
+      } catch (err: unknown) {
+        const apiErr = err as { status?: number };
+        if (apiErr?.status !== 404) throw err;
+      }
     }
     this.deletedPieceIds = [];
 
@@ -678,6 +1124,7 @@ export class LabDossierFormWizardComponent implements OnInit {
 
     try {
       await firstValueFrom(this.labService.annulerRevueLab(this.idRevue));
+      await this.clearDraft();
       const code = (this.m.code_client || this.codeClient || '').trim();
       const queryParams: Record<string, string> = {};
       if (code) queryParams['code_client'] = code;
@@ -759,6 +1206,7 @@ export class LabDossierFormWizardComponent implements OnInit {
       }
 
       await this.tryDownloadFicheLcbft(code);
+      await this.clearDraft();
 
       const queryParams: Record<string, string> = { code_client: code };
       if (this.returnTo) queryParams['returnTo'] = this.returnTo;
@@ -830,6 +1278,7 @@ export class LabDossierFormWizardComponent implements OnInit {
       }
 
       await this.tryDownloadFicheLcbft(code);
+      await this.clearDraft();
 
       await this.router.navigate(['/lab/portefeuille']);
     } finally {

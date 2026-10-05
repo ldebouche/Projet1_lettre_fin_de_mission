@@ -134,6 +134,10 @@ function mapKycInputToDb(kycInput = {}, options = {}) {
   let origineFonds = null;
   if (kyc.origine_fonds_statut === 'Renseignee') {
     origineFonds = notesParts[0] || 'Renseignee';
+  } else if (kyc.origine_fonds_statut === 'Non_applicable') {
+    origineFonds = 'Non_applicable';
+  } else if (kyc.origine_fonds_statut === 'A_renseigner' || kyc.origine_fonds_requise === true) {
+    origineFonds = 'A_renseigner';
   }
 
   const opsIntl = options.operations_internationales === true
@@ -887,8 +891,24 @@ export async function getKycDossierLab(pool, codeClient) {
         ? 'Inconnu'
         : 'Non',
     pep_details: pepDetails || null,
-    origine_fonds_requise: true,
-    origine_fonds_statut: origineFonds ? 'Renseignee' : 'A_renseigner',
+    origine_fonds_requise: (() => {
+      if (typeof wizardSupplement?.origine_fonds_requise === 'boolean') {
+        return wizardSupplement.origine_fonds_requise;
+      }
+      if (origineFonds === 'Non_applicable') return false;
+      if (origineFonds === 'A_renseigner' || origineFonds) return true;
+      return false;
+    })(),
+    origine_fonds_statut: (() => {
+      const fromSupp = cleanText(wizardSupplement?.origine_fonds_statut);
+      if (fromSupp === 'Renseignee' || fromSupp === 'A_renseigner' || fromSupp === 'Non_applicable') {
+        return fromSupp;
+      }
+      if (origineFonds === 'Non_applicable') return 'Non_applicable';
+      if (origineFonds === 'A_renseigner') return 'A_renseigner';
+      if (origineFonds) return 'Renseignee';
+      return 'Non_applicable';
+    })(),
     complexite_structure: normalizeComplexite(row.complexite_structure),
     justification_complexite: null,
     exposition_sanctions: 'Inconnu',

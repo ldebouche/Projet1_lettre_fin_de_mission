@@ -26,6 +26,7 @@ import {
   LabRisqueHistoriqueItem,
   LabAuditItem,
 } from '../../../services/lab-service';
+import { effectiveStatutPiece } from '../lab-labels';
 
 type LabBadgeTone = 'neutral' | 'ok' | 'warn' | 'danger' | 'info';
 
@@ -76,6 +77,21 @@ export class LabDossierComponent implements OnInit, OnDestroy {
 
   actionBusy = false;
   actionError: string | null = null;
+
+  /** Cache mémoire court pour navigation instantanée entre dossiers. */
+  private static readonly dossierCache = new Map<string, { at: number; data: LabDossierResponse }>();
+  private static readonly CACHE_TTL_MS = 90_000;
+  private loadGen = 0;
+
+  /** Invalide le cache fiche (ex. après suppression pièce hors écran dossier). */
+  static clearDossierCache(codeClient?: string | null): void {
+    const code = codeClient != null ? String(codeClient).trim() : '';
+    if (code) {
+      LabDossierComponent.dossierCache.delete(code);
+      return;
+    }
+    LabDossierComponent.dossierCache.clear();
+  }
 
   @ViewChild('evenementsCmp') evenementsCmp?: LabDossierEvenementsComponent;
   @ViewChild('planCmp') planCmp?: LabDossierPlanComponent;
@@ -150,37 +166,84 @@ export class LabDossierComponent implements OnInit, OnDestroy {
 
   private loadDossier(): void {
     if (!this.codeClient) return;
-    this.loading = true;
+    const code = this.codeClient;
+    const gen = ++this.loadGen;
     this.errorMessage = null;
-    this.resetDetailCollections();
 
-    this.labService.getDossierLab(this.codeClient).subscribe({
+    const cached = LabDossierComponent.dossierCache.get(code);
+    const cacheFresh = !!cached && Date.now() - cached.at < LabDossierComponent.CACHE_TTL_MS;
+    if (cacheFresh && cached) {
+      this.applyDossierData(cached.data);
+      this.loading = false;
+    } else if (!this.client || (this.client.code_client || '').trim() !== code) {
+      this.loading = true;
+      this.resetDetailCollections();
+    }
+
+    this.labService.getDossierLab(code, { view: 'core' }).subscribe({
       next: (res: { data: LabDossierResponse | null }) => {
+        if (gen !== this.loadGen || this.codeClient !== code) return;
         const data = res?.data ?? null;
-        this.client = data?.client ?? null;
-        this.lab = data?.lab ?? null;
-        this.kyc = data?.kyc ?? null;
-        this.beneficiaires = data?.beneficiaires ?? [];
-        this.pieces = data?.pieces ?? [];
-        this.evenements = data?.evenements ?? [];
-        this.diligences = data?.diligences ?? [];
-        this.revues = data?.revues ?? [];
-        this.risqueHistorique = data?.risqueHistorique ?? [];
-        this.audit = data?.audit ?? [];
-        this.revueEnCours = data?.revue_en_cours ?? null;
-        this.loading = false;
         if (!data?.client || !data.lab) {
+          this.loading = false;
           this.errorMessage = 'Aucun dossier LAB trouvé pour ce client.';
-        } else {
-          this.applyPendingChat();
+          return;
+        }
+        this.applyDossierData(data);
+        this.loading = false;
+        LabDossierComponent.dossierCache.set(code, { at: Date.now(), data });
+        this.applyPendingChat();
+        this.loadDossierHistory(code, gen);
+      },
+      error: (err) => {
+        if (gen !== this.loadGen) return;
+        console.error('Erreur chargement dossier LAB:', err);
+        this.loading = false;
+        if (!this.client) {
+          this.errorMessage = 'Impossible de charger le dossier LAB.';
+        }
+      },
+    });
+  }
+
+  private loadDossierHistory(code: string, gen: number): void {
+    this.labService.getDossierLab(code, { view: 'history' }).subscribe({
+      next: (res: { data: LabDossierResponse | null }) => {
+        if (gen !== this.loadGen || this.codeClient !== code) return;
+        const data = res?.data;
+        if (!data) return;
+        this.revues = data.revues ?? [];
+        this.risqueHistorique = data.risqueHistorique ?? [];
+        this.audit = data.audit ?? [];
+        const cached = LabDossierComponent.dossierCache.get(code);
+        if (cached) {
+          cached.data = {
+            ...cached.data,
+            revues: this.revues,
+            risqueHistorique: this.risqueHistorique,
+            audit: this.audit,
+          };
+          cached.at = Date.now();
         }
       },
       error: (err) => {
-        console.error('Erreur chargement dossier LAB:', err);
-        this.loading = false;
-        this.errorMessage = 'Impossible de charger le dossier LAB.';
-      }
+        console.warn('Historique dossier LAB différé indisponible:', err);
+      },
     });
+  }
+
+  private applyDossierData(data: LabDossierResponse): void {
+    this.client = data.client ?? null;
+    this.lab = data.lab ?? null;
+    this.kyc = data.kyc ?? null;
+    this.beneficiaires = data.beneficiaires ?? [];
+    this.pieces = data.pieces ?? [];
+    this.evenements = data.evenements ?? [];
+    this.diligences = data.diligences ?? [];
+    this.revues = data.revues ?? this.revues;
+    this.risqueHistorique = data.risqueHistorique ?? this.risqueHistorique;
+    this.audit = data.audit ?? this.audit;
+    this.revueEnCours = data.revue_en_cours ?? null;
   }
 
   private resetDetailCollections(): void {
@@ -197,6 +260,9 @@ export class LabDossierComponent implements OnInit, OnDestroy {
 
   onSectionChanged(): void {
     this.actionError = null;
+    if (this.codeClient) {
+      LabDossierComponent.dossierCache.delete(this.codeClient);
+    }
     this.loadDossier();
   }
 
@@ -266,8 +332,8 @@ export class LabDossierComponent implements OnInit, OnDestroy {
   getKycStatusDetail(): string {
     if (!this.kyc) return 'Détails KYC non encore branchés';
     const pieces = this.pieces;
-    const manquantes = pieces.filter((p) => p.statut === 'Manquante').length;
-    const perimees = pieces.filter((p) => p.statut === 'Perimee').length;
+    const manquantes = pieces.filter((p) => effectiveStatutPiece(p.statut, p.date_echeance) === 'Manquante').length;
+    const perimees = pieces.filter((p) => effectiveStatutPiece(p.statut, p.date_echeance) === 'Perimee').length;
     const aRenseigner = this.kyc.origine_fonds_requise && this.kyc.origine_fonds_statut === 'A_renseigner';
     const parts = [
       manquantes > 0 ? `${manquantes} manquante(s)` : null,
