@@ -48,11 +48,34 @@ export class LabWizardIdentiteComponent {
 
   @ViewChild('bodaccChecklist') bodaccChecklist?: LabBodaccChecklistComponent;
 
-  get isPm(): boolean {
-    return this.m.kyc.categorie_client !== 'Personne_physique';
-  }
-
   getFieldMeta(key: string): LabFieldMeta | null {
     return this.fieldMeta[key] ?? null;
+  }
+
+  /**
+   * Prochaine revue = dernière revue + périodicité (mois).
+   * Périodicité vide ou invalide → 12 mois (défaut cabinet).
+   */
+  onRevueScheduleChange(): void {
+    const derniere = (this.m.date_derniere_revue || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(derniere)) return;
+
+    let months = Number(String(this.m.periodicite_revue_mois ?? '').trim());
+    if (!Number.isFinite(months) || months < 1) {
+      months = 12;
+      if (!String(this.m.periodicite_revue_mois ?? '').trim()) {
+        this.m.periodicite_revue_mois = '12';
+      }
+    }
+
+    const [year, month, day] = derniere.split('-').map((part) => Number(part));
+    const dt = new Date(Date.UTC(year, month - 1, day));
+    if (Number.isNaN(dt.getTime())) return;
+
+    dt.setUTCMonth(dt.getUTCMonth() + months);
+    const yyyy = dt.getUTCFullYear();
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getUTCDate()).padStart(2, '0');
+    this.m.date_prochaine_revue = `${yyyy}-${mm}-${dd}`;
   }
 }

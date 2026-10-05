@@ -126,9 +126,15 @@ export class DashboardComponent implements OnInit {
     this.db.GetListeDossiers().subscribe({
       next: (data: any) => {
         this._allMesDossiers = this.prepareData(data.dossiers);
-        this.applyFilterAndSort()
-        this.loadRisqueLab(this._allMesDossiers);
+        this.applyFilterAndSort();
         this.isLoading = false;
+        // Risque LAB : d’abord la page visible, puis le reste en arrière-plan.
+        this.loadRisqueLab(this.mesDossiers);
+        const visible = new Set(this.mesDossiers.map((d) => d.code_client));
+        const rest = this._allMesDossiers.filter((d) => !visible.has(d.code_client));
+        if (rest.length) {
+          this.loadRisqueLab(rest);
+        }
       },
       error: (err) => {
         this.isLoading = false;
@@ -140,13 +146,22 @@ export class DashboardComponent implements OnInit {
 
   private loadRisqueLab(dossiers: Dossier[]) {
     if (!this.isLabUser || !dossiers.length) return;
-    const codes = dossiers.map(d => d.code_client);
-    this.labService.getDossiersRisqueLab(codes).subscribe({
-      next: (res: any) => {
-        this.risqueMap = new Map(Object.entries(res.data || {}));
-      },
-      error: () => {} // silencieux si LAB non dispo
-    });
+    // Lots de codes : découper pour éviter une requête énorme / lente.
+    const codes = dossiers.map((d) => d.code_client).filter(Boolean);
+    const chunkSize = 200;
+    for (let i = 0; i < codes.length; i += chunkSize) {
+      const chunk = codes.slice(i, i + chunkSize);
+      this.labService.getDossiersRisqueLab(chunk).subscribe({
+        next: (res: any) => {
+          const entries = Object.entries(res.data || {});
+          if (!entries.length) return;
+          const next = new Map(this.risqueMap);
+          for (const [k, v] of entries) next.set(k, v);
+          this.risqueMap = next;
+        },
+        error: () => {}, // silencieux si LAB non dispo
+      });
+    }
   }
 
   getRisqueLabel(code_client: string): string {
@@ -242,6 +257,11 @@ export class DashboardComponent implements OnInit {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     const end = start + this.itemsPerPage;
     this.mesDossiers = sourceData.slice(start, end);
+
+    const missingRisque = this.mesDossiers.filter((d) => d.code_client && !this.risqueMap.has(d.code_client));
+    if (missingRisque.length) {
+      this.loadRisqueLab(missingRisque);
+    }
   }
 
   getCollabNom(): string {

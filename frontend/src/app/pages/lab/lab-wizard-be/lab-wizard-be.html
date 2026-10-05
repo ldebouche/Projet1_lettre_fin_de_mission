@@ -1,11 +1,17 @@
-<app-lab-carte class="wizard-card form-section" id="section-be" title="Bénéficiaires effectifs" subtitle="Identité, contrôle, PEP / sanctions">
-  <p class="panel-intro">
-    Un ou plusieurs bénéficiaires effectifs conformément au registre ou aux déclarations ; tout changement devra donner lieu à un événement <strong>CHANGEMENT_BE</strong> une fois le workflow relié à la base.
-  </p>
+<app-lab-carte class="wizard-card form-section" id="section-be" title="Bénéficiaires effectifs">
   <div class="repeat-toolbar">
     <span class="repeat-toolbar-title">Bénéficiaires ({{ beneficiaires.length }})</span>
     <button type="button" class="btn btn--ghost btn--sm" (click)="addBeneficiaire()">+ Ajouter un BE</button>
   </div>
+  <label class="check check--solo be-reprendre-dirigeant">
+    <input
+      type="checkbox"
+      name="be_reprendre_dirigeant"
+      [ngModel]="reprendreDirigeant"
+      (ngModelChange)="onReprendreDirigeantChange($event)"
+    />
+    <span>Reprendre le dirigeant</span>
+  </label>
   <div class="stack">
     <div class="repeat-card" *ngFor="let be of beneficiaires; trackBy: trackById">
       <div class="repeat-card-head">

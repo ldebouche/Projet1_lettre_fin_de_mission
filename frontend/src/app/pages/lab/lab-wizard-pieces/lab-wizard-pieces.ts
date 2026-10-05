@@ -84,6 +84,41 @@ export class LabWizardPiecesComponent {
     return `${file.name} (${size})`;
   }
 
+  /**
+   * Pour une pièce d’identité / passeport : échéance = délivrance + durée légale usuelle.
+   * CNI / pièce d’identité → 15 ans ; passeport → 10 ans. Les autres types ne sont pas auto-calculés.
+   */
+  onPieceScheduleChange(piece: WizardPieceRow): void {
+    const delivrance = (piece.date_delivrance || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(delivrance)) return;
+
+    const years = this.identityValidityYears(piece.type_piece);
+    if (years == null) return;
+
+    const [year, month, day] = delivrance.split('-').map((part) => Number(part));
+    const dt = new Date(Date.UTC(year, month - 1, day));
+    if (Number.isNaN(dt.getTime())) return;
+
+    dt.setUTCFullYear(dt.getUTCFullYear() + years);
+    const yyyy = dt.getUTCFullYear();
+    const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getUTCDate()).padStart(2, '0');
+    piece.date_echeance = `${yyyy}-${mm}-${dd}`;
+    this.piecesChange.emit(this.pieces);
+  }
+
+  /** Durée de validité usuelle (années) pour une pièce d’identité, sinon null. */
+  private identityValidityYears(typePiece: string): number | null {
+    const t = String(typePiece ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    if (!t.trim()) return null;
+    if (t.includes('passeport')) return 10;
+    if (t.includes('identit') || t.includes('cni') || t.includes('carte nationale')) return 15;
+    return null;
+  }
+
   private guessPieceTypeFromFilename(filename: string): string {
     const lower = filename.toLowerCase();
     if (lower.includes('kbis') || lower.includes('insee')) return 'KBIS';

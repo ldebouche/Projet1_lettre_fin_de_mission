@@ -52,11 +52,11 @@
                 <span class="badge small"
                       [class]="
                         'badge ' +
-                        (p.statut === 'Recue' ? 'tone-ok' :
-                         p.statut === 'Manquante' ? 'tone-warn' :
-                         p.statut === 'Perimee' ? 'tone-danger' : 'tone-neutral')
+                        (effectiveStatutPiece(p.statut, p.date_echeance) === 'Recue' ? 'tone-ok' :
+                         effectiveStatutPiece(p.statut, p.date_echeance) === 'Manquante' ? 'tone-warn' :
+                         effectiveStatutPiece(p.statut, p.date_echeance) === 'Perimee' ? 'tone-danger' : 'tone-neutral')
                       ">
-                  {{ statutPieceLabel(p.statut) }}
+                  {{ statutPieceLabel(effectiveStatutPiece(p.statut, p.date_echeance)) }}
                 </span>
               </td>
               <td>{{ p.date_delivrance ? (p.date_delivrance | date:'dd/MM/yyyy') : '—' }}</td>

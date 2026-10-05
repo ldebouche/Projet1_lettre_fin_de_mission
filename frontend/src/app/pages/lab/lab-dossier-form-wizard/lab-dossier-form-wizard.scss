@@ -5,30 +5,6 @@
   color: #4f6577;
 }
 
-.lab-crumb {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #6e7b86;
-
-  a {
-    color: var(--color-blue-petrol);
-    text-decoration: none;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
-.lab-crumb-sep {
-  opacity: 0.5;
-}
-
 .hero {
   display: flex;
   gap: 14px;
@@ -103,6 +79,13 @@
 .hero-meta {
   color: #6e7b86;
   font-size: 0.95rem;
+}
+
+.hero-draft {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #2f6f4e;
 }
 
 .hero-error {
@@ -305,7 +288,7 @@
 }
 
 .form-section {
-  scroll-margin-top: 24px;
+  scroll-margin-top: 72px;
 }
 
 .form-section--collapsible {
@@ -313,7 +296,13 @@
   border-radius: var(--radius-lg);
   background: #fff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-  scroll-margin-top: 24px;
+  scroll-margin-top: 72px;
+}
+
+/* ids posés sur l’hôte des composants Angular (app-lab-carte, etc.) */
+:host ::ng-deep app-lab-carte.form-section {
+  display: block;
+  scroll-margin-top: 72px;
 }
 
 .form-section-summary {
@@ -447,7 +436,11 @@
   border: 1px solid rgba(79, 101, 119, 0.12);
   border-radius: 10px;
 
-  a {
+  .toc-link {
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
     font-size: 0.82rem;
     font-weight: 800;
     color: #4f6577;

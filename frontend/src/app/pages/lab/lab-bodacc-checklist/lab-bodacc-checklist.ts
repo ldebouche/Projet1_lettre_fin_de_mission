@@ -128,6 +128,15 @@ export class LabBodaccChecklistComponent implements OnChanges {
     return { ...this.checklist };
   }
 
+  /** Reprise d’un brouillon serveur (prioritaire sur le localStorage). */
+  importChecklistState(state: Record<string, LabBodaccChecklistEntry> | null | undefined): void {
+    if (!state || typeof state !== 'object') return;
+    this.checklist = { ...state };
+    this.ensureEntries();
+    this.persistChecklistState();
+    this.emitProgress();
+  }
+
   private ensureEntries(): void {
     for (const alerte of this.alertes) {
       if (!this.checklist[alerte.id]) {

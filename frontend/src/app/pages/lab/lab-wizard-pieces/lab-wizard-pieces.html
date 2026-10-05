@@ -1,7 +1,4 @@
-<app-lab-carte class="wizard-card form-section" id="section-pieces" title="Pièces KYC" subtitle="Documents attendus et fichiers associés">
-  <p class="panel-intro">
-    Ajoutez les pièces KYC du dossier. Vous pouvez sélectionner un PDF (ou autre document) depuis votre ordinateur pour chaque ligne.
-  </p>
+<app-lab-carte class="wizard-card form-section" id="section-pieces" title="Pièces KYC">
   <datalist id="piece-presets-lab">
     <option *ngFor="let t of pieceTypePresets" [value]="t"></option>
   </datalist>
@@ -20,7 +17,14 @@
       <div class="form-grid form-grid--2">
         <label class="field">
           <span class="field-label">Type de pièce</span>
-          <input class="field-input" type="text" [name]="'pc_type_' + p.id" [(ngModel)]="p.type_piece" list="piece-presets-lab" />
+          <input
+            class="field-input"
+            type="text"
+            [name]="'pc_type_' + p.id"
+            [(ngModel)]="p.type_piece"
+            list="piece-presets-lab"
+            (ngModelChange)="onPieceScheduleChange(p)"
+          />
         </label>
         <label class="field">
           <span class="field-label">Titulaire</span>
@@ -58,11 +62,18 @@
         </label>
         <label class="field">
           <span class="field-label">Date délivrance</span>
-          <input class="field-input" type="date" [name]="'pc_dd_' + p.id" [(ngModel)]="p.date_delivrance" />
+          <input
+            class="field-input"
+            type="date"
+            [name]="'pc_dd_' + p.id"
+            [(ngModel)]="p.date_delivrance"
+            (ngModelChange)="onPieceScheduleChange(p)"
+          />
         </label>
         <label class="field">
           <span class="field-label">Date échéance</span>
           <input class="field-input" type="date" [name]="'pc_de_' + p.id" [(ngModel)]="p.date_echeance" />
+          <span class="field-hint">Auto pour pièce d’identité (15 ans) / passeport (10 ans), modifiable.</span>
         </label>
         <label class="field field--full">
           <span class="field-label">Commentaire</span>

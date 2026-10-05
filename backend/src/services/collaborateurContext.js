@@ -26,8 +26,20 @@ export function normalizeGroupes(groupes) {
 
 /**
  * Collaborateur BDD + groupes Azure de l'appelant (même source que VerifCollaborateur).
+ * Cache court par oid/email pour éviter Graph + BDD à chaque clic LAB.
  */
+const CTX_TTL_MS = 2 * 60 * 1000;
+const ctxCache = new Map();
+
 export async function resolveCollaborateurContext(req) {
+  const cacheKey = (req.user?.oid || req.user?.unique_name || '').trim();
+  if (cacheKey) {
+    const hit = ctxCache.get(cacheKey);
+    if (hit && hit.expiresAt > Date.now()) {
+      return hit.value;
+    }
+  }
+
   const email = req.user?.unique_name;
   let collaborateur = null;
   if (email) {
@@ -58,7 +70,7 @@ export async function resolveCollaborateurContext(req) {
   const isEc = statut === 'EC';
   const canSeeProspects = canSeeAllProspects || isEc;
 
-  return {
+  const value = {
     collaborateur,
     idSellsy,
     statut,
@@ -69,4 +81,9 @@ export async function resolveCollaborateurContext(req) {
     canSeeAllProspects,
     canSeeProspects,
   };
+
+  if (cacheKey) {
+    ctxCache.set(cacheKey, { expiresAt: Date.now() + CTX_TTL_MS, value });
+  }
+  return value;
 }

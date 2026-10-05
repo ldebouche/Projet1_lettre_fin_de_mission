@@ -60,6 +60,8 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
   loadingQuestionnaire = false;
   /** true si les réponses proviennent de l'évaluation active en base (prioritaire sur le brouillon local). */
   private hydratedFromServer = false;
+  /** Brouillon wizard serveur en attente si le composant charge encore. */
+  private queuedDraft: StoredArpecState | null = null;
 
   ngOnInit(): void {
     void this.initializeComponent();
@@ -74,6 +76,10 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
   private async initializeComponent(): Promise<void> {
     await this.loadQuestionnaire();
     await this.loadState();
+    if (this.queuedDraft) {
+      this.applyDraftState(this.queuedDraft);
+      this.queuedDraft = null;
+    }
   }
 
   private async loadQuestionnaire(): Promise<void> {
@@ -343,6 +349,35 @@ export class LabEvaluationRisqueComponent implements OnInit, OnChanges {
     }
 
     return true;
+  }
+
+  /** État courant pour brouillon serveur (wizard). */
+  getDraftState(): StoredArpecState {
+    return {
+      reponses: { ...this.reponses },
+      modulation: this.modulation,
+      justification: this.justification,
+    };
+  }
+
+  /** Applique un brouillon wizard (prioritaire sur l’évaluation active / localStorage). */
+  applyDraftState(state: StoredArpecState | null | undefined): void {
+    if (!state || typeof state !== 'object') return;
+    if (this.loadingQuestionnaire || this.loadingEvaluation) {
+      this.queuedDraft = state;
+      return;
+    }
+    this.initReponses();
+    if (state.reponses) {
+      this.reponses = { ...this.reponses, ...state.reponses };
+    }
+    this.modulation = state.modulation ?? 0;
+    this.justification = state.justification ?? '';
+    this.showJustificationHint = this.modulation !== 0 && !this.justification.trim();
+    this.hydratedFromServer = false;
+    this.saveNotice = 'Brouillon serveur repris pour l’évaluation du risque.';
+    this.persistLocalState();
+    this.emitEvaluation();
   }
 
   /** Payload pour POST /api/lab/arpec/evaluation (soumission wizard). */

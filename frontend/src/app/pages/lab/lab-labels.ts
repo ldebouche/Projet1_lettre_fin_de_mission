@@ -77,6 +77,27 @@ export function statutPieceLabel(value: string | null | undefined): string {
   return lookup(PIECE_STATUT_LABELS, value);
 }
 
+/** Statut affiché : Périmée si échéance dépassée (hors Non requise). */
+export function effectiveStatutPiece(
+  statut: string | null | undefined,
+  dateEcheance: string | Date | null | undefined,
+): string {
+  const s = statut != null ? String(statut).trim() : '';
+  if (s === 'Non_requise' || s === 'Supprime') return s || 'Manquante';
+  if (s === 'Perimee') return 'Perimee';
+  if (!dateEcheance) return s || 'Manquante';
+  const raw = typeof dateEcheance === 'string'
+    ? dateEcheance
+    : dateEcheance.toISOString();
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw.trim());
+  if (!match) return s || 'Manquante';
+  const echeanceUtc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  if (echeanceUtc < todayUtc) return 'Perimee';
+  return s || 'Manquante';
+}
+
 export function criticiteLabel(value: string | null | undefined): string {
   const v = value != null ? String(value).trim() : '';
   if (!v) return '—';

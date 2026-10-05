@@ -39,6 +39,10 @@ export class NavbarComponent implements OnInit {
   activiteOptions: ActiviteOption[] = [];
   selectedActivite: ActiviteKey | '' = '';
 
+  /** Historique interne des URLs pour un Retour fiable (évite location.back hors app). */
+  private urlHistory: string[] = [];
+  private skipNextHistoryPush = false;
+
   constructor(
     private router: Router,
     private location: Location,
@@ -46,8 +50,10 @@ export class NavbarComponent implements OnInit {
     private dataService: DataService,
     private rolesService: RolesService
   ) {
-    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
-      this.currentUrl = this.router.url;
+    this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe((e) => {
+      const url = e.urlAfterRedirects || e.url;
+      this.pushHistory(url);
+      this.currentUrl = url;
       this.adminMenuOpen = false;
       this.syncSelectedActiviteFromUrl();
     });
@@ -55,6 +61,7 @@ export class NavbarComponent implements OnInit {
 
   ngOnInit() {
     this.currentUrl = this.router.url;
+    this.pushHistory(this.currentUrl);
     this.syncSelectedActiviteFromUrl();
 
     this.dataService.collaborateur$.subscribe((collab) => {
@@ -65,6 +72,19 @@ export class NavbarComponent implements OnInit {
       this.hasRole = this.hasRoleAdmin || this.hasRoleLab;
       this.activiteOptions = getActiviteOptions(this.collaborateur?.groupes_microsoft || []);
     });
+  }
+
+  private pushHistory(url: string): void {
+    if (this.skipNextHistoryPush) {
+      this.skipNextHistoryPush = false;
+      return;
+    }
+    const last = this.urlHistory[this.urlHistory.length - 1];
+    if (last === url) return;
+    this.urlHistory.push(url);
+    if (this.urlHistory.length > 40) {
+      this.urlHistory.shift();
+    }
   }
 
   /** Visible uniquement si le collaborateur a au moins un rapport autorisé. */
@@ -103,56 +123,29 @@ export class NavbarComponent implements OnInit {
   }
 
   handleReturn() {
+    // 1) Historique de navigation dans l’app → toujours la page précédente réelle
+    if (this.urlHistory.length >= 2) {
+      this.urlHistory.pop();
+      const target = this.urlHistory[this.urlHistory.length - 1];
+      this.skipNextHistoryPush = true;
+      void this.router.navigateByUrl(target);
+      return;
+    }
+
+    // 2) Entrée directe avec ?returnTo=…
     const returnTo = this.resolveReturnToFromUrl();
-    if (returnTo && this.currentUrl.startsWith('/lab/dossier')) {
-      this.router.navigate([returnTo]);
+    if (returnTo) {
+      void this.router.navigateByUrl(returnTo);
       return;
     }
 
-    // Les URLs avec query params (ex: /lab/dossier?code_client=...) ne matchent pas
-    // une clé de mapping "exacte" : on gère ce cas via un préfixe.
-    if (this.currentUrl.startsWith('/lab/dossier/formulaire')) {
-      this.router.navigate(['/lab/portefeuille']);
+    // 3) Secours navigateur, puis accueil
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      this.location.back();
       return;
     }
 
-    if (this.currentUrl.startsWith('/lab/dossier')) {
-      this.router.navigate(['/lab/portefeuille']);
-      return;
-    }
-
-    // Pages LAB avec query string éventuelle (ex: /lab/portefeuille?niveau=...)
-    if (this.currentUrl.startsWith('/lab/portefeuille')) {
-      this.router.navigate(['/lab/dashboard']);
-      return;
-    }
-
-    if (this.currentUrl.startsWith('/lab/parametrage')) {
-      this.router.navigate(['/lab/dashboard']);
-      return;
-    }
-
-    if (this.currentUrl.startsWith('/lab/dashboard')) {
-      this.router.navigate(['/accueil-intranet']);
-      return;
-    }
-
-    if (this.currentUrl.startsWith('/mon-activite')) {
-      this.router.navigate(['/dashboard']);
-      return;
-    }
-
-    const routesMap: Record<string, string> = {
-      "/ana-secto-settings": "/",
-      "/chatbot-settings": "/",
-      "/dashboard": "/",
-      "/login-dossier": "/dashboard",
-      "/accueil-mission": "/login-dossier",
-      "/lettre-fin-mission": "/accueil-mission",
-    };
-
-    const target = routesMap[this.currentUrl];
-    if (target) this.router.navigate([target]);
+    void this.router.navigate(['/accueil-intranet']);
   }
 
   /** Cible de retour explicite (?returnTo=…) — ex. depuis accueil-mission. */

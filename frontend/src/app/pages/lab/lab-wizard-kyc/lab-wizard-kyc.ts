@@ -25,4 +25,9 @@ export class LabWizardKycComponent {
   getFieldMeta(key: string): LabFieldMeta | null {
     return this.fieldMeta[key] ?? null;
   }
+
+  onOrigineFondsStatutChange(statut: string): void {
+    this.m.kyc.origine_fonds_requise =
+      statut === 'A_renseigner' || statut === 'Renseignee';
+  }
 }

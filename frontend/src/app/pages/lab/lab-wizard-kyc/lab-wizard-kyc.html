@@ -1,4 +1,4 @@
-<app-lab-carte class="wizard-card form-section" id="section-kyc" title="KYC structuré" subtitle="PEP, risques pays, complexité, origine des fonds">
+<app-lab-carte class="wizard-card form-section" id="section-kyc" title="KYC structuré">
   <div class="form-grid form-grid--2">
     <label class="field">
       <span class="field-label">Catégorie client</span>
@@ -61,17 +61,18 @@
       <span class="field-label">Détails PEP / lien PEP</span>
       <textarea class="field-input field-textarea" name="kyc_pep_det" rows="2" [(ngModel)]="m.kyc.pep_details"></textarea>
     </label>
-    <label class="check field--full check--solo">
-      <input type="checkbox" name="kyc_origine_req" [(ngModel)]="m.kyc.origine_fonds_requise" />
-      <span>Origine des fonds / richesse : collecte requise</span>
-    </label>
     <label class="field">
-      <span class="field-label">Statut origine des fonds</span>
-      <select class="field-input" name="kyc_origine_statut" [(ngModel)]="m.kyc.origine_fonds_statut">
+      <span class="field-label">Origine des fonds / richesse</span>
+      <select
+        class="field-input"
+        name="kyc_origine_statut"
+        [(ngModel)]="m.kyc.origine_fonds_statut"
+        (ngModelChange)="onOrigineFondsStatutChange($event)"
+      >
         <option value="">—</option>
-        <option value="Renseignee">Renseignée</option>
+        <option value="Non_applicable">Non requise</option>
         <option value="A_renseigner">À renseigner</option>
-        <option value="Non_applicable">Non applicable</option>
+        <option value="Renseignee">Renseignée</option>
       </select>
     </label>
     <label class="field">

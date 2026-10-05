@@ -50,6 +50,8 @@ import type {
   LabUpdateKycRequest,
   LabUpdateParametrageRequest,
   LabUpdatePieceRequest,
+  LabWizardBrouillonResponse,
+  LabWizardBrouillonUpsertRequest,
 } from './lab-models';
 
 export * from './lab-models';
@@ -84,10 +86,15 @@ export class LabService {
     });
   }
 
-  getDossierLab(codeClient: string): Observable<{ data: LabDossierResponse | null }> {
-    return this.http.get<{ data: LabDossierResponse | null }>(`/api/lab/dossier`, {
-      params: { code_client: String(codeClient).trim() }
-    });
+  getDossierLab(
+    codeClient: string,
+    options?: { view?: 'full' | 'wizard' | 'core' | 'history' },
+  ): Observable<{ data: LabDossierResponse | null }> {
+    const params: Record<string, string> = { code_client: String(codeClient).trim() };
+    if (options?.view && options.view !== 'full') {
+      params['view'] = options.view;
+    }
+    return this.http.get<{ data: LabDossierResponse | null }>(`/api/lab/dossier`, { params });
   }
 
   createDossierLab(body: LabCreateDossierRequest): Observable<{ data: LabDossierResponse }> {
@@ -422,6 +429,54 @@ export class LabService {
     return this.http.post<{ data: unknown }>(`/api/lab/revues/annuler`, {}, {
       params: { id: String(id).trim() },
     });
+  }
+
+  getWizardBrouillonLab(params: {
+    code_client: string;
+    id_revue?: string | number | null;
+    mode?: string | null;
+  }): Observable<{ data: LabWizardBrouillonResponse }> {
+    const query: Record<string, string> = {
+      code_client: String(params.code_client).trim(),
+    };
+    if (params.id_revue != null && String(params.id_revue).trim() !== '') {
+      query['id_revue'] = String(params.id_revue).trim();
+    }
+    if (params.mode != null && String(params.mode).trim() !== '') {
+      query['mode'] = String(params.mode).trim();
+    }
+    return this.http.get<{ data: LabWizardBrouillonResponse }>(`/api/lab/wizard-brouillon`, {
+      params: query,
+    });
+  }
+
+  saveWizardBrouillonLab(
+    codeClient: string,
+    body: LabWizardBrouillonUpsertRequest,
+  ): Observable<{ data: LabWizardBrouillonResponse }> {
+    return this.http.put<{ data: LabWizardBrouillonResponse }>(`/api/lab/wizard-brouillon`, body, {
+      params: { code_client: String(codeClient).trim() },
+    });
+  }
+
+  deleteWizardBrouillonLab(params: {
+    code_client: string;
+    id_revue?: string | number | null;
+    mode?: string | null;
+  }): Observable<{ data: { deleted: boolean; code_client: string; cle_brouillon: string } }> {
+    const query: Record<string, string> = {
+      code_client: String(params.code_client).trim(),
+    };
+    if (params.id_revue != null && String(params.id_revue).trim() !== '') {
+      query['id_revue'] = String(params.id_revue).trim();
+    }
+    if (params.mode != null && String(params.mode).trim() !== '') {
+      query['mode'] = String(params.mode).trim();
+    }
+    return this.http.delete<{ data: { deleted: boolean; code_client: string; cle_brouillon: string } }>(
+      `/api/lab/wizard-brouillon`,
+      { params: query },
+    );
   }
 
   /**

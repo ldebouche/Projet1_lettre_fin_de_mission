@@ -1,11 +1,4 @@
 <div class="page">
-  <nav class="lab-crumb" aria-label="Fil d’Ariane">
-    <a routerLink="/lab/dashboard">Cartographie</a>
-    <span class="lab-crumb-sep">/</span>
-    <a routerLink="/lab/portefeuille">Portefeuille</a>
-    <span class="lab-crumb-sep">/</span>
-    <span>Assistant dossier</span>
-  </nav>
   <div class="hero">
     <div class="hero-accent"></div>
     <div class="hero-main">
@@ -36,6 +29,7 @@
             — {{ bodaccPendingCritical }} annonce(s) BODACC critique(s) à traiter.
           </span>
         </span>
+        <span *ngIf="!loading && draftNotice" class="hero-draft">{{ draftNotice }}</span>
       </div>
     </div>
   </div>
@@ -80,17 +74,17 @@
       <!-- Étape 1 — Dossier client (page unique) -->
       <div class="dossier-page" *ngIf="stepIndex === 0">
         <nav class="wizard-toc" aria-label="Sections du dossier">
-          <a href="#section-identifiants">Identifiants</a>
-          <a href="#section-bodacc">BODACC</a>
-          <a href="#section-identite">Identité</a>
-          <a href="#section-coordonnees">Siège</a>
-          <a href="#section-fiscal">Fiscal</a>
-          <a href="#section-affectation">Affectation</a>
-          <a href="#section-dirigeant">Dirigeant</a>
-          <a href="#section-kyc">KYC</a>
-          <a href="#section-be">Bénéficiaires</a>
-          <a href="#section-pieces">Pièces</a>
-          <a href="#section-commentaire-etape1">Commentaire</a>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-identifiants')">Identifiants</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-bodacc')">BODACC</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-identite')">Identité</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-coordonnees')">Siège</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-fiscal')">Fiscal</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-affectation')">Affectation</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-dirigeant')">Dirigeant</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-kyc')">KYC</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-be')">Bénéficiaires</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-pieces')">Pièces</button>
+          <button type="button" class="toc-link" (click)="scrollToSection('section-commentaire-etape1')">Commentaire</button>
         </nav>
         <app-lab-wizard-identite
           [m]="m"
@@ -118,6 +112,7 @@
         />
         <app-lab-wizard-be
           [(beneficiaires)]="beneficiaires"
+          [dirigeant]="m.dirigeant"
           (removedPersistedId)="onRemovedPersistedBeneficiaire($event)"
         />
         <app-lab-wizard-pieces

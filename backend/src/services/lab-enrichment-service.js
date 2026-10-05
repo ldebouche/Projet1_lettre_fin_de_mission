@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getDossierLab } from './lab-dossier-service.js';
+import sql from 'mssql';
 import { getMsHttpsAgent } from '../utils/msHttpsAgent.js';
 import { poolPromise } from '../config/db.js';
 
@@ -265,6 +265,37 @@ function markSuggestedField(fields, field, value, fetchedAt) {
   };
 }
 
+/** Cache court du référentiel NAF / pays (évite 2 requêtes à chaque enrichissement). */
+const referentielCache = {
+  apePrefixes: null,
+  paysRows: null,
+  expiresAt: 0,
+};
+
+async function loadReferentielCache(pool) {
+  const now = Date.now();
+  if (referentielCache.expiresAt > now && referentielCache.apePrefixes && referentielCache.paysRows) {
+    return referentielCache;
+  }
+  const [apeResult, paysResult] = await Promise.all([
+    pool.request().query(`
+      SELECT ape_prefixes
+      FROM lab_arpec_questions
+      WHERE ape_prefixes IS NOT NULL
+        AND RTRIM(LTRIM(ape_prefixes)) <> N''
+        AND RTRIM(LTRIM(actif)) = N'O'
+    `),
+    pool.request().query(`
+      SELECT liste, libelle_pays
+      FROM lab_arpec_pays
+    `),
+  ]);
+  referentielCache.apePrefixes = apeResult.recordset || [];
+  referentielCache.paysRows = paysResult.recordset || [];
+  referentielCache.expiresAt = now + 10 * 60 * 1000;
+  return referentielCache;
+}
+
 async function applyKycReferentielSuggestions(merged, fields, fetchedAt) {
   if (!merged || typeof merged !== 'object') return;
   if (!merged.kyc || typeof merged.kyc !== 'object') merged.kyc = {};
@@ -290,15 +321,9 @@ async function applyKycReferentielSuggestions(merged, fields, fetchedAt) {
 
   try {
     const pool = await poolPromise;
+    const ref = await loadReferentielCache(pool);
     if (ape) {
-      const apeResult = await pool.request().query(`
-        SELECT ape_prefixes
-        FROM lab_arpec_questions
-        WHERE ape_prefixes IS NOT NULL
-          AND RTRIM(LTRIM(ape_prefixes)) <> N''
-          AND RTRIM(LTRIM(actif)) = N'O'
-      `);
-      for (const row of apeResult.recordset || []) {
+      for (const row of ref.apePrefixes) {
         if (apeMatchesPrefixes(ape, row.ape_prefixes)) {
           merged.kyc.secteur_sensible = true;
           break;
@@ -308,15 +333,11 @@ async function applyKycReferentielSuggestions(merged, fields, fetchedAt) {
 
     const paysCandidates = [paysSiege, paysImp].filter(Boolean);
     if (paysCandidates.length) {
-      const paysResult = await pool.request().query(`
-        SELECT liste, libelle_pays
-        FROM lab_arpec_pays
-      `);
       const hits = [];
       for (const pays of paysCandidates) {
         const nPays = normalizePaysLabel(pays);
         if (!nPays) continue;
-        for (const row of paysResult.recordset || []) {
+        for (const row of ref.paysRows) {
           const lib = cleanText(row.libelle_pays);
           const nLib = normalizePaysLabel(lib);
           if (!nLib) continue;
@@ -336,36 +357,74 @@ async function applyKycReferentielSuggestions(merged, fields, fetchedAt) {
   }
 }
 
-function extractBddFlatFromDossier(dossier) {
-  const client = dossier?.client ?? {};
-  const kyc = dossier?.kyc ?? {};
-  const siret = cleanText(client.siret);
-  return {
-    siren: siret.length >= 9 ? siret.slice(0, 9) : '',
-    siret,
-    raison_sociale: cleanText(client.raison_sociale),
-    forme_societe: cleanText(client.forme_societe),
-    rcs: cleanText(client.rcs),
-    ape: cleanText(client.ape),
-    activite: cleanText(client.activite),
-    nature: cleanText(client.nature),
-    tvaintracom: cleanText(client.tvaintracom),
-    montant_capital_social: client.montant_capital_social != null
-      ? String(client.montant_capital_social)
-      : '',
-    adr1_siege: cleanText(client.adr1_siege),
-    adr2_siege: cleanText(client.adr2_siege),
-    cpos_siege: cleanText(client.cpos_siege),
-    ville_siege: cleanText(client.ville_siege),
-    pays_siege: '',
-    taille_entreprise: '',
-    zone_geographique_activite: cleanText(kyc.pays_implantation),
-    volume_affaires_fourchette: '',
-    kyc: {
-      pays_implantation: cleanText(kyc.pays_implantation),
-      secteurs_text: Array.isArray(kyc.secteurs) ? kyc.secteurs.join('\n') : '',
-    },
-  };
+/** Lecture légère clients + KYC pour l’enrichissement (évite un getDossierLab complet). */
+async function getBddFlatForEnrichment(codeClient) {
+  const code = cleanText(codeClient);
+  if (!code) return {};
+  const codeSafe = code.length > 10 ? code.slice(0, 10) : code;
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input('code_client', sql.NVarChar(10), codeSafe)
+      .query(`
+        SELECT TOP 1
+          c.siret,
+          c.raison_sociale,
+          c.forme_societe,
+          c.rcs,
+          c.ape,
+          c.activite,
+          c.nature,
+          c.tvaintracom,
+          c.montant_capital_social,
+          c.adr1_siege,
+          c.adr2_siege,
+          c.cpos_siege,
+          c.ville_siege,
+          k.zone_geographique_principale,
+          k.secteur_activite
+        FROM clients c
+        LEFT JOIN lab_kyc k
+          ON RTRIM(LTRIM(k.code_client)) = RTRIM(LTRIM(c.code_client))
+        WHERE RTRIM(LTRIM(c.code_client)) = RTRIM(LTRIM(@code_client))
+      `);
+    const row = result.recordset?.[0];
+    if (!row) return {};
+    const siret = cleanText(row.siret);
+    const pays = cleanText(row.zone_geographique_principale);
+    const secteur = cleanText(row.secteur_activite);
+    return {
+      siren: siret.length >= 9 ? siret.slice(0, 9) : '',
+      siret,
+      raison_sociale: cleanText(row.raison_sociale),
+      forme_societe: cleanText(row.forme_societe),
+      rcs: cleanText(row.rcs),
+      ape: cleanText(row.ape),
+      activite: cleanText(row.activite),
+      nature: cleanText(row.nature),
+      tvaintracom: cleanText(row.tvaintracom),
+      montant_capital_social: row.montant_capital_social != null
+        ? String(row.montant_capital_social)
+        : '',
+      adr1_siege: cleanText(row.adr1_siege),
+      adr2_siege: cleanText(row.adr2_siege),
+      cpos_siege: cleanText(row.cpos_siege),
+      ville_siege: cleanText(row.ville_siege),
+      pays_siege: '',
+      taille_entreprise: '',
+      zone_geographique_activite: pays,
+      volume_affaires_fourchette: '',
+      kyc: {
+        pays_implantation: pays,
+        secteurs_text: secteur || '',
+      },
+    };
+  } catch (err) {
+    if (err?.number === 208) return {};
+    console.error('Enrichissement LAB : lecture BDD légère impossible', err);
+    return {};
+  }
 }
 
 async function fetchRechercheEntreprises(siren, siret) {
@@ -794,11 +853,12 @@ export async function getLabEnrichissement(params = {}) {
     };
   }
 
-  const [recherche, sirene, rne, bodacc] = await Promise.all([
+  const [recherche, sirene, rne, bodacc, bddFlat] = await Promise.all([
     fetchRechercheEntreprises(siren, siret),
     fetchSirene(siren),
     fetchRne(siren),
     fetchBodacc(siren),
+    codeClient ? getBddFlatForEnrichment(codeClient) : Promise.resolve({}),
   ]);
 
   let rna = { ok: false, skipped: true, fields: {}, fetchedAt };
@@ -812,14 +872,6 @@ export async function getLabEnrichissement(params = {}) {
     rne.fields,
     rna.fields,
   );
-
-  let bddFlat = {};
-  if (codeClient) {
-    const dossier = await getDossierLab(codeClient);
-    if (dossier?.client) {
-      bddFlat = extractBddFlatFromDossier(dossier);
-    }
-  }
 
   const { fields, merged } = mergeFields(bddFlat, apiFlat, fetchedAt);
   await applyKycReferentielSuggestions(merged, fields, fetchedAt);

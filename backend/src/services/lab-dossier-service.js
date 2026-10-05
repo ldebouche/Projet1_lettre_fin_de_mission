@@ -77,6 +77,7 @@ export async function getDossiersRisque(codesClients, scope = { isFull: true, id
 
     const pool = await poolPromise;
     const scopeClause = buildScopeClause(scope, 'd.code_client');
+    // Pas de COUNT corrélés : le dashboard n’affiche que le niveau de risque.
     const query = `
       SELECT
         d.code_client,
@@ -84,14 +85,7 @@ export async function getDossiersRisque(codesClients, scope = { isFull: true, id
         d.statut_kyc,
         d.date_derniere_revue,
         d.date_prochaine_revue,
-        d.statut_dossier,
-        (SELECT COUNT(*) FROM lab_evenements e
-         WHERE e.code_client = d.code_client
-         AND e.statut != 'Cloture') AS nb_evenements_ouverts,
-        (SELECT COUNT(*) FROM lab_diligences di
-         WHERE di.code_client = d.code_client
-         AND di.statut = 'A_faire'
-         AND di.date_echeance < GETDATE()) AS nb_diligences_retard
+        d.statut_dossier
       FROM lab_dossier d
       WHERE d.code_client IN (SELECT value FROM STRING_SPLIT(@codesClients, ','))
       ${scopeClause ? `AND ${scopeClause.clause}` : ''}
@@ -116,8 +110,8 @@ export async function getDossiersRisque(codesClients, scope = { isFull: true, id
         date_derniere_revue: row.date_derniere_revue ?? null,
         date_prochaine_revue: row.date_prochaine_revue ?? null,
         statut_dossier: row.statut_dossier != null ? String(row.statut_dossier).trim() : null,
-        nb_evenements_ouverts: row.nb_evenements_ouverts ?? 0,
-        nb_diligences_retard: row.nb_diligences_retard ?? 0,
+        nb_evenements_ouverts: 0,
+        nb_diligences_retard: 0,
       });
     }
 
@@ -546,7 +540,24 @@ export async function updateClientLab(codeClient, payload, userId = null) {
     assignText('rcs', sql.NChar(50), clientInput.rcs, 50);
     assignText('ape', sql.NChar(10), clientInput.ape, 10);
     assignText('activite', sql.NChar(100), clientInput.activite, 100);
-    assignText('nature', sql.NChar(50), clientInput.nature, 50);
+    // Le champ formulaire « Nature (ex. BIC) » correspond à categorie_revenu (BNC/BIC/…).
+    // clients.nature reste le couple Société / Particulier.
+    if (clientInput.nature !== undefined) {
+      const natureVal = clientInput.nature == null || String(clientInput.nature).trim() === ''
+        ? null
+        : cleanText(clientInput.nature);
+      const upper = natureVal ? natureVal.toUpperCase() : '';
+      const fiscalCats = new Set(['BIC', 'BNC', 'RFONC', 'BA', 'ASSOC']);
+      if (natureVal && fiscalCats.has(upper)) {
+        request.input('c_categorie_revenu', sql.NChar(30), upper);
+        sets.push('categorie_revenu = @c_categorie_revenu');
+      } else {
+        assignText('nature', sql.NChar(50), clientInput.nature, 50);
+      }
+    }
+    if (clientInput.categorie_revenu !== undefined) {
+      assignText('categorie_revenu', sql.NChar(30), clientInput.categorie_revenu, 30);
+    }
     assignText('tvaintracom', sql.NChar(20), clientInput.tvaintracom, 20);
     assignText('adr1_siege', sql.NChar(50), clientInput.adr1_siege, 50);
     assignText('adr2_siege', sql.NChar(50), clientInput.adr2_siege, 50);
@@ -658,14 +669,40 @@ export async function updateClientLab(codeClient, payload, userId = null) {
  * @param {string} codeClient
  * @returns {Promise<{ client: object, lab: object }|null>}
  */
-export async function getDossierLab(codeClient) {
+export async function getDossierLab(codeClient, options = {}) {
   try {
     const code = codeClient != null ? String(codeClient).trim() : '';
     if (!code) {
       return null;
     }
+    const view = ['wizard', 'core', 'history'].includes(options?.view)
+      ? options.view
+      : 'full';
 
     const pool = await poolPromise;
+    const codeSafe = code.length > 10 ? code.slice(0, 10) : code;
+
+    if (view === 'history') {
+      const [revues, risqueHistorique, audit] = await Promise.all([
+        getRevuesDossierLab(pool, codeSafe),
+        getRisqueHistoriqueDossierLab(pool, codeSafe),
+        getAuditDossierLab(pool, codeSafe),
+      ]);
+      return {
+        client: null,
+        lab: null,
+        kyc: null,
+        beneficiaires: [],
+        pieces: [],
+        evenements: [],
+        diligences: [],
+        revues,
+        risqueHistorique,
+        audit,
+        revue_en_cours: null,
+      };
+    }
+
     const query = `
       SELECT
         -- Identification
@@ -678,6 +715,7 @@ export async function getDossierLab(codeClient) {
         c.ape                       AS c_ape,
         c.activite                  AS c_activite,
         c.nature                    AS c_nature,
+        c.categorie_revenu          AS c_categorie_revenu,
         c.rcs                       AS c_rcs,
         c.tvaintracom               AS c_tvaintracom,
         c.montant_capital_social    AS c_montant_capital_social,
@@ -695,6 +733,20 @@ export async function getDossierLab(codeClient) {
         c.logiciel_compta           AS c_logiciel_compta,
         c.expert_comptable          AS c_expert_comptable,
         c.chef_de_mission           AS c_chef_de_mission,
+        c.civilite                  AS c_civilite,
+        c.nom                       AS c_nom,
+        c.prenom                    AS c_prenom,
+        c.prospect                  AS c_prospect,
+        c.nb_salaries               AS c_nb_salaries,
+        c.type_client               AS c_type_client,
+        c.assistant_comptable       AS c_assistant_comptable,
+        c.assistant_comptable_revision AS c_assistant_comptable_revision,
+        c.assistant_social          AS c_assistant_social,
+        c.chef_de_groupe_social     AS c_chef_de_groupe_social,
+        c.assistant_juridique       AS c_assistant_juridique,
+        c.chef_de_groupe_juridique  AS c_chef_de_groupe_juridique,
+        c.assistant_cac             AS c_assistant_cac,
+        c.chef_de_groupe_cac        AS c_chef_de_groupe_cac,
 
         -- Noms des collaborateurs (expert-comptable, chef de mission, responsable LAB)
         collab_exp.nom              AS c_expert_comptable_nom,
@@ -723,11 +775,11 @@ export async function getDossierLab(codeClient) {
         -- Agrégats (mêmes règles que getResumeLab)
         (SELECT COUNT(*)
          FROM lab_evenements e
-         WHERE RTRIM(LTRIM(e.code_client)) = RTRIM(LTRIM(@code_client))
+         WHERE RTRIM(LTRIM(e.code_client)) = @code_client
            AND e.statut != 'Cloture') AS l_nb_evenements_ouverts,
         (SELECT COUNT(*)
          FROM lab_diligences di
-         WHERE RTRIM(LTRIM(di.code_client)) = RTRIM(LTRIM(@code_client))
+         WHERE RTRIM(LTRIM(di.code_client)) = @code_client
            AND di.date_echeance IS NOT NULL
            AND di.date_echeance < CAST(GETDATE() AS DATE)
            AND di.statut NOT IN ('Realisee', 'Abandonnee')) AS l_nb_diligences_retard
@@ -740,10 +792,9 @@ export async function getDossierLab(codeClient) {
         ON RTRIM(LTRIM(collab_chef.id_sellsy)) = RTRIM(LTRIM(c.chef_de_mission))
       LEFT JOIN collaborateurs collab_lab
         ON RTRIM(LTRIM(collab_lab.id_sellsy)) = RTRIM(LTRIM(d.id_responsable_lab))
-      WHERE RTRIM(LTRIM(c.code_client)) = RTRIM(LTRIM(@code_client))
+      WHERE RTRIM(LTRIM(c.code_client)) = @code_client
     `;
 
-    const codeSafe = code.length > 10 ? code.slice(0, 10) : code;
     const result = await pool
       .request()
       .input('code_client', sql.NVarChar(10), codeSafe)
@@ -756,6 +807,101 @@ export async function getDossierLab(codeClient) {
 
     const key = row.code_client != null ? String(row.code_client).trim() : code;
 
+    const hasCollabId = (value) => {
+      if (value == null) return false;
+      const n = Number(value);
+      if (Number.isFinite(n)) return n !== 0;
+      const t = String(value).trim();
+      return t !== '' && t !== '0';
+    };
+    const typeClient = cleanText(row.c_type_client);
+    const prospectRaw = cleanText(row.c_prospect);
+    const isProspect = prospectRaw != null
+      && ['O', 'o', '1'].includes(String(prospectRaw).trim());
+
+    const loadAggregats = async () => {
+      try {
+        const aggRes = await pool
+          .request()
+          .input('code_client', sql.NVarChar(10), codeSafe)
+          .query(`
+            SELECT TOP 1 ca, capitalSocial, datefinex
+            FROM Aggregats_FEC
+            WHERE RTRIM(LTRIM(code_client)) = @code_client
+            ORDER BY datefinex DESC
+          `);
+        return aggRes.recordset?.[0] ?? null;
+      } catch (err) {
+        if (err?.number !== 208) throw err;
+        return null;
+      }
+    };
+
+    const secondaryLoaders = view === 'wizard'
+      ? [
+          getKycDossierLab(pool, codeSafe),
+          getBeneficiairesDossierLab(pool, codeSafe),
+          getPiecesDossierLab(pool, codeSafe),
+          getRevueEnCours(pool, codeSafe),
+          loadAggregats(),
+        ]
+      : view === 'core'
+      ? [
+          getKycDossierLab(pool, codeSafe),
+          getBeneficiairesDossierLab(pool, codeSafe),
+          getPiecesDossierLab(pool, codeSafe),
+          getEvenementsDossierLab(pool, codeSafe),
+          getDiligencesDossierLab(pool, codeSafe),
+          getRevueEnCours(pool, codeSafe),
+          loadAggregats(),
+        ]
+      : [
+          getKycDossierLab(pool, codeSafe),
+          getBeneficiairesDossierLab(pool, codeSafe),
+          getPiecesDossierLab(pool, codeSafe),
+          getEvenementsDossierLab(pool, codeSafe),
+          getDiligencesDossierLab(pool, codeSafe),
+          getRevuesDossierLab(pool, codeSafe),
+          getRisqueHistoriqueDossierLab(pool, codeSafe),
+          getAuditDossierLab(pool, codeSafe),
+          getRevueEnCours(pool, codeSafe),
+          loadAggregats(),
+        ];
+
+    const secondary = await Promise.all(secondaryLoaders);
+
+    let kyc = null;
+    let beneficiaires = [];
+    let pieces = [];
+    let evenements = [];
+    let diligences = [];
+    let revues = [];
+    let risqueHistorique = [];
+    let audit = [];
+    let revueEnCours = null;
+    let agg = null;
+
+    if (view === 'wizard') {
+      [kyc, beneficiaires, pieces, revueEnCours, agg] = secondary;
+    } else if (view === 'core') {
+      [kyc, beneficiaires, pieces, evenements, diligences, revueEnCours, agg] = secondary;
+    } else {
+      [kyc, beneficiaires, pieces, evenements, diligences, revues, risqueHistorique, audit, revueEnCours, agg] = secondary;
+    }
+
+    let aggregatCa = null;
+    let aggregatCapital = null;
+    let aggregatDatefinex = null;
+    if (agg) {
+      if (agg.ca != null && !Number.isNaN(Number(agg.ca))) {
+        aggregatCa = Number(agg.ca);
+      }
+      if (agg.capitalSocial != null && !Number.isNaN(Number(agg.capitalSocial))) {
+        aggregatCapital = Number(agg.capitalSocial);
+      }
+      aggregatDatefinex = agg.datefinex ?? null;
+    }
+
     const client = {
       code_client: key,
       raison_sociale: cleanText(row.c_raison_sociale),
@@ -764,6 +910,7 @@ export async function getDossierLab(codeClient) {
       ape: cleanText(row.c_ape),
       activite: cleanText(row.c_activite),
       nature: cleanText(row.c_nature),
+      categorie_revenu: cleanText(row.c_categorie_revenu),
       rcs: cleanText(row.c_rcs),
       tvaintracom: cleanText(row.c_tvaintracom),
       montant_capital_social: row.c_montant_capital_social ?? null,
@@ -785,6 +932,28 @@ export async function getDossierLab(codeClient) {
       chef_de_mission: cleanText(row.c_chef_de_mission),
       chef_de_mission_nom: cleanText(row.c_chef_de_mission_nom),
       chef_de_mission_prenom: cleanText(row.c_chef_de_mission_prenom),
+      civilite: cleanText(row.c_civilite),
+      nom: cleanText(row.c_nom),
+      prenom: cleanText(row.c_prenom),
+      prospect: prospectRaw,
+      is_prospect: isProspect,
+      nb_salaries: row.c_nb_salaries != null && !Number.isNaN(Number(row.c_nb_salaries))
+        ? Number(row.c_nb_salaries)
+        : null,
+      type_client: typeClient,
+      mission_comptabilite:
+        hasCollabId(row.c_assistant_comptable) || hasCollabId(row.c_assistant_comptable_revision),
+      mission_sociale:
+        hasCollabId(row.c_assistant_social) || hasCollabId(row.c_chef_de_groupe_social),
+      mission_juridique:
+        hasCollabId(row.c_assistant_juridique) || hasCollabId(row.c_chef_de_groupe_juridique),
+      mission_audit:
+        hasCollabId(row.c_assistant_cac)
+        || hasCollabId(row.c_chef_de_groupe_cac)
+        || (typeClient != null && typeClient.toUpperCase() === 'AUDIT'),
+      aggregat_ca: aggregatCa,
+      aggregat_capital_social: aggregatCapital,
+      aggregat_datefinex: aggregatDatefinex,
     };
 
     const lab = row.l_id != null ? {
@@ -808,28 +977,6 @@ export async function getDossierLab(codeClient) {
       nb_evenements_ouverts: row.l_nb_evenements_ouverts ?? 0,
       nb_diligences_retard: row.l_nb_diligences_retard ?? 0,
     } : null;
-
-    const [
-      kyc,
-      beneficiaires,
-      pieces,
-      evenements,
-      diligences,
-      revues,
-      risqueHistorique,
-      audit,
-      revueEnCours,
-    ] = await Promise.all([
-      getKycDossierLab(pool, codeSafe),
-      getBeneficiairesDossierLab(pool, codeSafe),
-      getPiecesDossierLab(pool, codeSafe),
-      getEvenementsDossierLab(pool, codeSafe),
-      getDiligencesDossierLab(pool, codeSafe),
-      getRevuesDossierLab(pool, codeSafe),
-      getRisqueHistoriqueDossierLab(pool, codeSafe),
-      getAuditDossierLab(pool, codeSafe),
-      getRevueEnCours(pool, codeSafe),
-    ]);
 
     return {
       client,
