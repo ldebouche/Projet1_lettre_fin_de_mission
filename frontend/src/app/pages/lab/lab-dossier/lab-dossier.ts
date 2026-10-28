@@ -77,6 +77,7 @@ export class LabDossierComponent implements OnInit, OnDestroy {
 
   actionBusy = false;
   actionError: string | null = null;
+  ficheDownloadBusy = false;
 
   /** Cache mémoire court pour navigation instantanée entre dossiers. */
   private static readonly dossierCache = new Map<string, { at: number; data: LabDossierResponse }>();
@@ -436,6 +437,36 @@ export class LabDossierComponent implements OnInit, OnDestroy {
 
   onLancerRevue(): void {
     this.startOrResumeRevision();
+  }
+
+  onDownloadFicheLcbft(): void {
+    const code = this.client?.code_client || this.codeClient;
+    if (!code || this.ficheDownloadBusy) return;
+
+    this.ficheDownloadBusy = true;
+    this.actionError = null;
+    const idRevue = this.revueEnCours?.id ?? this.revues[0]?.id ?? null;
+
+    this.labService.downloadFicheLcbftLab(code, idRevue).subscribe({
+      next: (blob) => {
+        this.ficheDownloadBusy = false;
+        const stamp = new Date().toISOString().slice(0, 10);
+        const filename = idRevue
+          ? `LAB_Fiche2_${code}_revue${idRevue}_${stamp}.pdf`
+          : `LAB_Fiche1_${code}_${stamp}.pdf`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Erreur téléchargement fiche LCB-FT:', err);
+        this.ficheDownloadBusy = false;
+        this.actionError = this.formatApiError(err);
+      },
+    });
   }
 
   private startOrResumeRevision(): void {

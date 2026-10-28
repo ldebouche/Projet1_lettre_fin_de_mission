@@ -35,6 +35,22 @@ export function toInputStr(value: unknown): string {
   return String(value).trim();
 }
 
+const FORME_JURIDIQUE_TOKENS = [
+  'SASU', 'SAS', 'SARL', 'EURL', 'SCI', 'SNC', 'SA', 'EI', 'EIRL', 'SCS', 'SCA',
+];
+
+/** Évite « SAS SAS SAS NOM » dans la raison sociale (registres / imports). */
+export function sanitizeRaisonSocialeClient(raw: string): string {
+  let name = toInputStr(raw);
+  if (!name) return '';
+  const tokenAlt = FORME_JURIDIQUE_TOKENS.join('|');
+  const headRepeat = new RegExp(`^((?:${tokenAlt})\\s+)+(?=(?:${tokenAlt})\\b)`, 'i');
+  name = name.replace(headRepeat, '');
+  const doubled = new RegExp(`^(${tokenAlt})(?:\\s+\\1)+\\b`, 'i');
+  name = name.replace(doubled, '$1');
+  return toInputStr(name);
+}
+
 export function extractSiren(siret: string | null | undefined): string {
   const s = toInputStr(siret).replace(/\s/g, '');
   return s.length >= 9 ? s.slice(0, 9) : s;
@@ -226,13 +242,18 @@ export function hydrateClient(
   m.code_client = toInputStr(client.code_client) || m.code_client;
   m.siret = siret;
   m.siren = extractSiren(siret);
-  m.raison_sociale = toInputStr(client.raison_sociale);
+  m.raison_sociale = sanitizeRaisonSocialeClient(toInputStr(client.raison_sociale));
   m.forme_societe = toInputStr(client.forme_societe);
   m.rcs = toInputStr(client.rcs);
   m.ape = toInputStr(client.ape);
   m.activite = toInputStr(client.activite);
-  // Formulaire « Nature (ex. BIC) » = categorie_revenu ; fallback clients.nature (Société/Particulier).
-  m.nature = toInputStr(client.categorie_revenu) || toInputStr(client.nature);
+  // « Nature (ex. BIC) » = régime fiscal (categorie_revenu). Ne pas reprendre clients.nature
+  // (souvent Société / Particulier — pas BIC/BNC/BA).
+  const categorieRevenu = toInputStr(client.categorie_revenu);
+  const natureRaw = toInputStr(client.nature);
+  const natureIsPlaceholder = /^(societe|société|particulier|personne\s*morale|personne\s*physique|pm|pp)$/i
+    .test(natureRaw);
+  m.nature = categorieRevenu || (natureIsPlaceholder ? '' : natureRaw);
   m.tvaintracom = toInputStr(client.tvaintracom);
   m.montant_capital_social = client.montant_capital_social != null
     ? String(client.montant_capital_social).trim()
@@ -316,6 +337,11 @@ export function applyClientsDbPrefill(
   if (client.mission_juridique) m.mission_juridique = true;
   if (client.mission_audit) m.mission_audit = true;
 
+  // Tenue comptable cabinet → ISACOMPTA par défaut si le logiciel n’est pas renseigné.
+  if (m.mission_comptabilite && !m.logiciel_compta.trim()) {
+    m.logiciel_compta = 'ISACOMPTA';
+  }
+
   if (!opts.hasExistingLabDossier && !m.statut_dossier.trim() && client.is_prospect) {
     m.statut_dossier = 'Prospect';
   }
@@ -334,6 +360,18 @@ export function hydrateLab(m: LabWizardFormModel, lab: LabDossierBloc): void {
   m.id_responsable_lab = toInputStr(lab.id_responsable_lab);
   if (!m.date_entree_relation) {
     m.date_entree_relation = m.date_entree_cabinet;
+  }
+}
+
+/** Préremplit le responsable LAB avec le chef de mission (ID Sellsy), sans écraser une valeur déjà saisie. */
+export function applyResponsableLabDefault(
+  m: LabWizardFormModel,
+  client: LabClientBloc,
+): void {
+  if (m.id_responsable_lab.trim()) return;
+  const chefId = toInputStr(client.chef_de_mission);
+  if (chefId) {
+    m.id_responsable_lab = chefId;
   }
 }
 
@@ -563,6 +601,7 @@ export function hydrateFromDossier(
   pieces: WizardPieceRow[] | null;
   clientExpertComptableDisplay: string;
   clientChefDeMissionDisplay: string;
+  chefDeMissionId: string | null;
 } {
   const hasExistingLabDossier = data.lab != null;
   const displays = hydrateClient(m, data.client, formatCollaborateur);
@@ -571,6 +610,7 @@ export function hydrateFromDossier(
   }
   hydrateKyc(m, data.kyc);
   applyClientsDbPrefill(m, data.client, { hasExistingLabDossier });
+  applyResponsableLabDefault(m, data.client);
   applyLocalKycPrefill(m);
   const beneficiaires = hydrateBeneficiaires(
     data.beneficiaires ?? [],
@@ -586,6 +626,7 @@ export function hydrateFromDossier(
     pieces,
     clientExpertComptableDisplay: displays.expertDisplay,
     clientChefDeMissionDisplay: displays.chefDisplay,
+    chefDeMissionId: toInputStr(data.client?.chef_de_mission) || null,
   };
 }
 

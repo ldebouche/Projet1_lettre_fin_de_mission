@@ -38,6 +38,8 @@ export class LabWizardIdentiteComponent {
   @Input() codeClient: string | null = null;
   @Input() clientExpertComptableDisplay = '—';
   @Input() clientChefDeMissionDisplay = '—';
+  /** ID Sellsy du chef de mission (pour préremplir / reprendre le responsable LAB). */
+  @Input() chefDeMissionId: string | null = null;
 
   @Output() enrich = new EventEmitter<void>();
   @Output() acceptApi = new EventEmitter<string>();
@@ -50,6 +52,19 @@ export class LabWizardIdentiteComponent {
 
   getFieldMeta(key: string): LabFieldMeta | null {
     return this.fieldMeta[key] ?? null;
+  }
+
+  useChefDeMissionAsResponsable(): void {
+    const id = (this.chefDeMissionId || '').trim();
+    if (id) {
+      this.m.id_responsable_lab = id;
+    }
+  }
+
+  onMissionComptaChange(checked: boolean): void {
+    if (checked && !(this.m.logiciel_compta || '').trim()) {
+      this.m.logiciel_compta = 'ISACOMPTA';
+    }
   }
 
   /**

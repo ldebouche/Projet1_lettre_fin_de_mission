@@ -25,6 +25,16 @@
             list="piece-presets-lab"
             (ngModelChange)="onPieceScheduleChange(p)"
           />
+          <div class="piece-preset-row" role="group" aria-label="Propositions de type de pièce">
+            <button
+              type="button"
+              class="piece-preset-btn"
+              *ngFor="let t of pieceTypePresets"
+              (click)="applyPieceType(p, t)"
+            >
+              {{ t }}
+            </button>
+          </div>
         </label>
         <label class="field">
           <span class="field-label">Titulaire</span>

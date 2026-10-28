@@ -624,21 +624,11 @@ export async function getDossiersAttenteLab(filters = {}, scope = { isFull: true
     if (pageSize > 200) pageSize = 200;
     const offset = (page - 1) * pageSize;
 
-    const applyInputs = (request) => {
-      for (const input of inputs) request.input(input.name, input.type, input.value);
-      return request;
-    };
-
-    const countResult = await applyInputs(pool.request()).query(`
-      SELECT COUNT(*) AS total
-      ${fromJoin}
-      ${whereSql}
-    `);
-    const total = countResult.recordset?.[0]?.total ?? 0;
-
-    const pageRequest = applyInputs(pool.request());
+    const pageRequest = pool.request();
+    for (const input of inputs) pageRequest.input(input.name, input.type, input.value);
     pageRequest.input('offset', sql.Int, offset);
     pageRequest.input('pageSize', sql.Int, pageSize);
+    // Une seule requête : page + total via COUNT(*) OVER() (évite 2 scans séquentiels).
     const result = await pageRequest.query(`
       SELECT
         RTRIM(LTRIM(c.code_client)) AS code_client,
@@ -651,14 +641,17 @@ export async function getDossiersAttenteLab(filters = {}, scope = { isFull: true
         c.expert_comptable,
         COALESCE(d.date_creation, c.date_entree_cabinet) AS date_creation,
         d.statut_dossier,
-        CASE WHEN d.id IS NULL THEN 0 ELSE 1 END AS has_lab_dossier
+        CASE WHEN d.id IS NULL THEN 0 ELSE 1 END AS has_lab_dossier,
+        COUNT(*) OVER() AS total_count
       ${fromJoin}
       ${whereSql}
       ORDER BY COALESCE(d.date_creation, c.date_entree_cabinet) DESC, c.raison_sociale ASC
       OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
     `);
 
-    const data = (result.recordset || []).map((row) => ({
+    const rows = result.recordset || [];
+    const total = rows.length > 0 ? Number(rows[0].total_count) || 0 : 0;
+    const data = rows.map((row) => ({
       code_client: cleanText(row.code_client),
       raison_sociale: cleanText(row.raison_sociale),
       forme_societe: cleanText(row.forme_societe),

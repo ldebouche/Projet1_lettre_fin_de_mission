@@ -52,6 +52,7 @@ import {
   mapBeToUpdate,
   mapPieceToCreate,
   mapPieceToUpdate,
+  sanitizeRaisonSocialeClient,
   toInputStr,
 } from './lab-wizard-hydrate';
 
@@ -194,6 +195,7 @@ export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
   /** Libellés équipe cabinet — lecture seule, source table clients (hors périmètre wizard). */
   clientExpertComptableDisplay = '—';
   clientChefDeMissionDisplay = '—';
+  chefDeMissionId: string | null = null;
 
   beneficiaires: WizardBeRow[] = [emptyBe(genWizardId('be'))];
   pieces: WizardPieceRow[] = [emptyPiece(genWizardId('pc'))];
@@ -350,6 +352,7 @@ export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
     if (result.pieces) this.pieces = result.pieces;
     this.clientExpertComptableDisplay = result.clientExpertComptableDisplay;
     this.clientChefDeMissionDisplay = result.clientChefDeMissionDisplay;
+    this.chefDeMissionId = result.chefDeMissionId;
     this.initFieldMetaFromForm();
     applyLocalKycPrefill(this.m);
   }
@@ -679,12 +682,23 @@ export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
     const merged = data.merged ?? {};
     this.applyMergedValue('siren', merged['siren']);
     this.applyMergedValue('siret', merged['siret']);
-    this.applyMergedValue('raison_sociale', merged['raison_sociale']);
+    this.applyMergedValue(
+      'raison_sociale',
+      sanitizeRaisonSocialeClient(String(merged['raison_sociale'] ?? '')),
+    );
     this.applyMergedValue('forme_societe', merged['forme_societe']);
     this.applyMergedValue('rcs', merged['rcs']);
     this.applyMergedValue('ape', merged['ape']);
     this.applyMergedValue('activite', merged['activite']);
-    this.applyMergedValue('nature', merged['nature']);
+    // Ne pas préremplir « nature » avec Société / objet social — champ = BIC/BNC/BA.
+    const natureCandidate = toInputStr(merged['nature']);
+    if (
+      natureCandidate
+      && !/^(societe|société|particulier|personne\s*morale|personne\s*physique|pm|pp)$/i.test(natureCandidate)
+      && natureCandidate.length <= 40
+    ) {
+      this.applyMergedValue('nature', natureCandidate);
+    }
     this.applyMergedValue('tvaintracom', merged['tvaintracom']);
     this.applyMergedValue('montant_capital_social', merged['montant_capital_social']);
     this.applyMergedValue('adr1_siege', merged['adr1_siege']);
@@ -711,8 +725,24 @@ export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
         this.m.kyc.secteur_sensible = true;
       }
     }
+
+    this.applyDirigeantFromEnrichment(data.dirigeants);
     applyLocalKycPrefill(this.m);
     this.reconcileFieldMetaWithCurrentForm();
+  }
+
+  /** Prefill représentant légal depuis registres (champs vides uniquement). */
+  private applyDirigeantFromEnrichment(
+    dirigeants: LabEnrichissementResponse['dirigeants'],
+  ): void {
+    if (!Array.isArray(dirigeants) || !dirigeants.length) return;
+    const d = this.m.dirigeant;
+    if (toInputStr(d.nom) || toInputStr(d.prenom)) return;
+
+    const first = dirigeants.find((x) => toInputStr(x?.nom) || toInputStr(x?.prenom) || toInputStr(x?.prenoms));
+    if (!first) return;
+    d.nom = toInputStr(first.nom);
+    d.prenom = toInputStr(first.prenom) || toInputStr(first.prenoms);
   }
 
   /** Ne remplit que les champs vides — ne réécrit jamais une saisie / un brouillon. */
@@ -809,21 +839,26 @@ export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
     const meta = this.fieldMeta[fieldKey];
     if (!meta?.apiValue) return;
 
+    let applied = meta.apiValue;
+    if (fieldKey === 'raison_sociale') {
+      applied = sanitizeRaisonSocialeClient(meta.apiValue);
+    }
+
     if (fieldKey === 'kyc.pays_implantation') {
-      this.m.kyc.pays_implantation = meta.apiValue;
+      this.m.kyc.pays_implantation = applied;
     } else if (fieldKey === 'kyc.secteurs_text') {
-      this.m.kyc.secteurs_text = meta.apiValue;
+      this.m.kyc.secteurs_text = applied;
     } else if (isEnrichableStringField(fieldKey)) {
-      this.m[fieldKey] = meta.apiValue;
+      this.m[fieldKey] = applied;
     }
 
     this.fieldMeta[fieldKey] = {
       ...meta,
-      value: meta.apiValue,
+      value: applied,
       source: meta.apiSource,
       sourceLabel: meta.apiSourceLabel,
       status: 'prefilled',
-      bddValue: meta.apiValue,
+      bddValue: applied,
     };
     this.divergenceCount = Object.values(this.fieldMeta).filter((f) => f.status === 'divergence').length;
     void this.flushDraft(true);
@@ -1069,7 +1104,11 @@ export class LabDossierFormWizardComponent implements OnInit, OnDestroy {
 
   private formatSubmitApiError(err: unknown): string {
     const apiErr = err as { error?: { error?: string }; message?: string };
-    return apiErr?.error?.error || apiErr?.message || 'Enregistrement impossible.';
+    const message = apiErr?.error?.error || apiErr?.message || 'Enregistrement impossible.';
+    if (/collaborateur introuvable/i.test(message)) {
+      return `${message} — Le champ Responsable LAB attend l’identifiant Sellsy du collaborateur (pas le nom). Utilisez « Reprendre le chef de mission » ou laissez le préremplissage.`;
+    }
+    return message;
   }
 
   private formatStep2SubmitError(err: unknown): string {

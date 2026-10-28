@@ -58,7 +58,14 @@ export class LoginDossierComponent {
       },
       error: (err) => {
         console.error('Erreur lors de la vérification du dossier :', err);
-        this.errorMessage = 'Dossier non trouvé. Veuillez vérifier les informations.';
+        const status = err?.status;
+        if (status === 403) {
+          this.errorMessage = 'Accès au dossier non autorisé.';
+        } else if (status === 500 || status === 0 || status === 504) {
+          this.errorMessage = 'Erreur serveur ou délai dépassé. Réessayez ou contactez l\'informatique.';
+        } else {
+          this.errorMessage = 'Dossier non trouvé. Vérifiez le code client et la date de fin d\'exercice.';
+        }
       }
     });
   }

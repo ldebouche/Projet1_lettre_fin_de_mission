@@ -62,10 +62,31 @@ export class AccueilMissionComponent implements OnInit {
     private labService: LabService
   ) {
     this.nomEntreprise = this.dataService.getNomEntreprise() || '';
-    this.db.GetDossierInfos().subscribe((dossierInfos: any) => {
-      this.anneeN1existe = dossierInfos.anneeN1existe;
-      this.millesime = dossierInfos.client.anneeN || '';
+    // Millésime dès le login (dateFinEx), sans attendre getDossierInfos (souvent lent/timeout sur 2026).
+    this.millesime = this.resolveMillesime();
+    this.db.GetDossierInfos().subscribe({
+      next: (dossierInfos: any) => {
+        this.anneeN1existe = !!(dossierInfos?.anneeN1Existe ?? dossierInfos?.anneeN1existe);
+        this.millesime = this.resolveMillesime(dossierInfos?.client?.anneeN);
+      },
+      error: (err) => {
+        console.error('GetDossierInfos (accueil-mission):', err);
+      },
     });
+  }
+
+  /** Année d'exercice pour LFM/DEPOT : API si dispo, sinon dateFinEx du login (YYYY-…). */
+  private resolveMillesime(anneeNFromApi?: string | null): string {
+    const fromApi = anneeNFromApi != null ? String(anneeNFromApi).replace(/\D/g, '') : '';
+    if (fromApi.length >= 4) {
+      return fromApi.slice(0, 4);
+    }
+    const dateFinEx = (this.dataService.getDateFinEx() || '').trim();
+    const match = /^(\d{4})/.exec(dateFinEx);
+    if (match) {
+      return match[1];
+    }
+    return this.millesime || '';
   }
 
   ngOnInit(): void {
@@ -273,6 +294,12 @@ export class AccueilMissionComponent implements OnInit {
 
   verifHistorique(action: CarteAction): boolean {
     if (!this.codeClient) return false;
+    this.millesime = this.resolveMillesime(this.millesime);
+    if (!this.millesime) {
+      console.error('Millésime manquant pour check-historique (dateFinEx / getDossierInfos).');
+      this.openMissingHistoriqueModal();
+      return false;
+    }
     this.dashboardService.checkHistorique(this.codeClient, this.millesime).subscribe({
       next: (result: any) => {
         if (!result) {

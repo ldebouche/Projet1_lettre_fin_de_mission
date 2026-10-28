@@ -101,21 +101,39 @@ class dbService {
     );
   }
 
-  async GetDossier(code_client, dateFinEx) {
-    const dossier = await this.executeQuery(
-      `SELECT code_client 
-      FROM dbo.vue_fec 
-      WHERE code_client = @code_client 
-        AND datefinex = @dateFinEx;`,
-      { code_client, dateFinEx },
-    );
+  /** Date calendaire (YYYY-MM-DD) → Date UTC à minuit, pour bind sql.Date sans décalage. */
+  parseDateOnly(value) {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()));
+    }
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value ?? '').trim());
+    if (!match) return null;
+    return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  }
 
-    const client = await this.executeQuery(
-      `SELECT *
-      FROM clients
-      WHERE code_client = @code_client;`,
-      { code_client },
-    );
+  /**
+   * Vérifie l'existence du couple code/date pour le login dossier.
+   * Aggregats_FEC (1 ligne / exercice) plutôt que vue_fec (toutes les écritures) — évite les timeouts 60s sur 2026+.
+   */
+  async GetDossier(code_client, dateFinEx) {
+    const code = String(code_client ?? '').trim();
+    const dateParam = this.parseDateOnly(dateFinEx) ?? String(dateFinEx ?? '').trim().slice(0, 10);
+
+    const [dossier, client] = await Promise.all([
+      this.executeQuery(
+        `SELECT TOP (1) code_client
+        FROM Aggregats_FEC WITH (NOLOCK)
+        WHERE code_client = @code_client
+          AND datefinex = @dateFinEx;`,
+        { code_client: code, dateFinEx: dateParam },
+      ),
+      this.executeQuery(
+        `SELECT TOP (1) *
+        FROM clients WITH (NOLOCK)
+        WHERE code_client = @code_client;`,
+        { code_client: code },
+      ),
+    ]);
 
     return { dossier, client };
   }

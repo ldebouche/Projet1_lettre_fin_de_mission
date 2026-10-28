@@ -128,6 +128,36 @@ function mapNatureJuridique(code) {
   return '';
 }
 
+/** Formes juridiques courantes — pour nettoyer les répétitions dans la raison sociale. */
+const FORME_JURIDIQUE_TOKENS = [
+  'SASU', 'SAS', 'SARL', 'EURL', 'SCI', 'SNC', 'SA', 'EI', 'EIRL', 'SCS', 'SCA',
+];
+
+/**
+ * Corrige les libellés du type « SAS SAS SAS GRAND AGE… » issus des registres
+ * (nom_complet déjà préfixé de la forme + forme_societe en champ séparé).
+ */
+export function sanitizeRaisonSociale(raw) {
+  let name = cleanText(raw);
+  if (!name) return '';
+
+  const tokenAlt = FORME_JURIDIQUE_TOKENS.join('|');
+  // Répétitions consécutives en tête : « SAS SAS SAS FOO » → « SAS FOO »
+  const headRepeat = new RegExp(`^((?:${tokenAlt})\\s+)+(?=(?:${tokenAlt})\\b)`, 'i');
+  name = name.replace(headRepeat, '');
+  // Encore une passe si la forme reste doublée sans espace parasite
+  const doubled = new RegExp(`^(${tokenAlt})(?:\\s+\\1)+\\b`, 'i');
+  name = name.replace(doubled, '$1');
+  return cleanText(name);
+}
+
+/** Valeurs fiche client « nature » = catégorie (Société/Particulier), pas le régime BIC/BNC. */
+export function isNatureFiscalePlaceholder(value) {
+  const v = cleanText(value).toLowerCase();
+  if (!v) return true;
+  return /^(societe|société|particulier|personne\s*morale|personne\s*physique|pm|pp)$/i.test(v);
+}
+
 function setNestedValue(target, path, value) {
   const parts = path.split('.');
   let cur = target;
@@ -145,8 +175,16 @@ function getNestedValue(obj, path) {
 }
 
 function addApiField(bucket, field, value, source, fetchedAt) {
-  const v = cleanText(value);
+  let v = cleanText(value);
   if (!v) return;
+  if (field === 'raison_sociale') {
+    v = sanitizeRaisonSociale(v);
+    if (!v) return;
+  }
+  // « nature » wizard = régime fiscal (BIC/BNC/BA) — ne pas y coller l’objet social.
+  if (field === 'nature' && (source === 'RNA' || isNatureFiscalePlaceholder(v) || v.length > 12)) {
+    return;
+  }
   if (!bucket[field]) bucket[field] = [];
   bucket[field].push({ value: v, source, fetchedAt });
 }
@@ -169,9 +207,19 @@ function mergeFields(bddFlat, apiFlat, fetchedAt) {
   const merged = {};
 
   for (const field of ENRICHABLE_FIELDS) {
-    const bddValue = cleanText(getNestedValue(bddFlat, field));
+    let bddValue = cleanText(getNestedValue(bddFlat, field));
     const apiCandidate = pickApiValue(apiFlat[field]);
-    const apiValue = cleanText(apiCandidate?.value);
+    let apiValue = cleanText(apiCandidate?.value);
+    if (field === 'raison_sociale') {
+      bddValue = sanitizeRaisonSociale(bddValue);
+      apiValue = sanitizeRaisonSociale(apiValue);
+    }
+    if (field === 'nature' && isNatureFiscalePlaceholder(bddValue)) {
+      bddValue = '';
+    }
+    if (field === 'nature' && isNatureFiscalePlaceholder(apiValue)) {
+      apiValue = '';
+    }
     const apiSource = apiCandidate?.source ?? null;
     const apiFetchedAt = apiCandidate?.fetchedAt ?? fetchedAt;
 
@@ -397,7 +445,7 @@ async function getBddFlatForEnrichment(codeClient) {
     return {
       siren: siret.length >= 9 ? siret.slice(0, 9) : '',
       siret,
-      raison_sociale: cleanText(row.raison_sociale),
+      raison_sociale: sanitizeRaisonSociale(row.raison_sociale),
       forme_societe: cleanText(row.forme_societe),
       rcs: cleanText(row.rcs),
       ape: cleanText(row.ape),
@@ -472,7 +520,14 @@ async function fetchRechercheEntreprises(siren, siret) {
       fetchedAt,
       fields,
       estAssociation,
-      dirigeants: Array.isArray(result.dirigeants) ? result.dirigeants : [],
+      dirigeants: Array.isArray(result.dirigeants)
+        ? result.dirigeants.map((d) => ({
+          nom: cleanText(d?.nom),
+          prenom: cleanText(d?.prenom || d?.prenoms),
+          prenoms: cleanText(d?.prenoms || d?.prenom),
+          qualite: cleanText(d?.qualite || d?.qualite_dirigeant),
+        })).filter((d) => d.nom || d.prenom)
+        : [],
       raw: {
         etat_administratif: result.etat_administratif,
         date_creation: result.date_creation,
@@ -807,7 +862,6 @@ async function fetchRna(siren) {
     const fields = {};
     const comp = result.complements ?? {};
     addApiField(fields, 'raison_sociale', result.nom_complet, 'RNA', fetchedAt);
-    addApiField(fields, 'nature', comp.objet || comp.objet_social, 'RNA', fetchedAt);
     addApiField(fields, 'activite', comp.objet || comp.objet_social, 'RNA', fetchedAt);
 
     return { ok: true, fetchedAt, fields, rnaId: comp.identifiant_association || comp.id_association };

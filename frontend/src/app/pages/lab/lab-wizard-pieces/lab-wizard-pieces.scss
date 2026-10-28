@@ -22,3 +22,28 @@
     opacity: 0.65;
   }
 }
+
+.piece-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.piece-preset-btn {
+  border: 1px solid rgba(25, 118, 210, 0.3);
+  background: #fff;
+  color: #1565c0;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.3;
+}
+
+.piece-preset-btn:hover {
+  background: rgba(25, 118, 210, 0.08);
+  border-color: rgba(25, 118, 210, 0.5);
+}

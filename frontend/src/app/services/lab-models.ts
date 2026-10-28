@@ -898,6 +898,13 @@ export interface LabBodaccChecklistEntry {
   traiteLe: string | null;
 }
 
+export interface LabEnrichissementDirigeant {
+  nom?: string | null;
+  prenom?: string | null;
+  prenoms?: string | null;
+  qualite?: string | null;
+}
+
 export interface LabEnrichissementResponse {
   ok: boolean;
   fetchedAt: string;
@@ -907,6 +914,7 @@ export interface LabEnrichissementResponse {
   merged: Record<string, unknown>;
   divergences: Array<LabFieldMeta & { field: string }>;
   alertesBodacc: LabBodaccAlerte[];
+  dirigeants?: LabEnrichissementDirigeant[];
   sources: Record<string, {
     ok?: boolean;
     skipped?: boolean;

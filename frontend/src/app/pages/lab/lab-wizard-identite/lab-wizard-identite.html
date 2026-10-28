@@ -89,7 +89,8 @@
     </label>
     <label class="field">
       <span class="field-label">Nature (ex. BIC)</span>
-      <input class="field-input" type="text" name="nature" [(ngModel)]="m.nature" />
+      <input class="field-input" type="text" name="nature" [(ngModel)]="m.nature" placeholder="BIC, BNC, BA…" />
+      <span class="field-hint">Régime d’imposition des bénéfices (BIC / BNC / BA) — pas la forme juridique.</span>
       <app-lab-wizard-field-meta [meta]="getFieldMeta('nature')" (acceptApi)="acceptApi.emit('nature')" />
     </label>
     <label class="field">
@@ -175,6 +176,7 @@
     <label class="field">
       <span class="field-label">Logiciel comptable</span>
       <input class="field-input" type="text" name="logiciel_compta" [(ngModel)]="m.logiciel_compta" />
+      <span class="field-hint">ISACOMPTA proposé par défaut pour les missions de tenue.</span>
     </label>
     <label class="field">
       <span class="field-label">Taille entreprise</span>
@@ -205,7 +207,12 @@
     <div class="subsection-title">Nature des missions avec le cabinet</div>
     <div class="checkbox-grid">
       <label class="check">
-        <input type="checkbox" name="mission_compta" [(ngModel)]="m.mission_comptabilite" />
+        <input
+          type="checkbox"
+          name="mission_compta"
+          [(ngModel)]="m.mission_comptabilite"
+          (ngModelChange)="onMissionComptaChange($event)"
+        />
         <span>Comptabilité</span>
       </label>
       <label class="check">
@@ -280,8 +287,27 @@
     </label>
     <label class="field">
       <span class="field-label">Responsable LAB</span>
-      <input class="field-input" type="text" name="id_responsable_lab" [(ngModel)]="m.id_responsable_lab" />
-      <span class="field-hint">Collaborateur responsable de ce dossier.</span>
+      <input
+        class="field-input"
+        type="text"
+        name="id_responsable_lab"
+        [(ngModel)]="m.id_responsable_lab"
+        autocomplete="off"
+      />
+      <span class="field-hint">
+        Identifiant collaborateur (Sellsy), pas le nom.
+        <ng-container *ngIf="clientChefDeMissionDisplay && clientChefDeMissionDisplay !== '—'">
+          Prérempli avec le chef de mission ({{ clientChefDeMissionDisplay }}).
+        </ng-container>
+      </span>
+      <button
+        type="button"
+        class="field-meta-btn"
+        *ngIf="chefDeMissionId"
+        (click)="useChefDeMissionAsResponsable()"
+      >
+        Reprendre le chef de mission
+      </button>
     </label>
     <div class="field">
       <span class="field-label">Expert-comptable réf.</span>

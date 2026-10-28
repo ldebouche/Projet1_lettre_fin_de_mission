@@ -378,7 +378,21 @@
                   : (lancerRevueDisabledReason || 'Crée la session revue et ouvre le formulaire de révision.') }}
               </span>
             </button>
+            <button
+              type="button"
+              class="action-link"
+              (click)="onDownloadFicheLcbft()"
+              [disabled]="actionBusy || !codeClient"
+            >
+              <span class="action-link-title">
+                {{ ficheDownloadBusy ? 'Génération PDF…' : 'Télécharger la fiche LCB-FT' }}
+              </span>
+              <span class="action-link-desc">
+                Export PDF de la fiche risque / LCB-FT pour archivage GED ou signature entrée client.
+              </span>
+            </button>
           </div>
+          <p class="section-note" *ngIf="actionError" style="color:#c62828;margin-top:0.75rem">{{ actionError }}</p>
         </section>
 
         <app-lab-dossier-audit [audit]="audit"></app-lab-dossier-audit>

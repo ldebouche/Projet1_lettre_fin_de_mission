@@ -41,26 +41,30 @@ export async function resolveCollaborateurContext(req) {
   }
 
   const email = req.user?.unique_name;
-  let collaborateur = null;
-  if (email) {
-    collaborateur = await dbService.GetCollaborateur(email);
+  const oid = req.user?.oid;
+  const demoAuth = process.env.DEMO_AUTH === 'true' && Array.isArray(req.user?.roles);
+
+  const collaborateurPromise = email
+    ? dbService.GetCollaborateur(email)
+    : Promise.resolve(null);
+
+  let groupesPromise;
+  if (demoAuth) {
+    groupesPromise = Promise.resolve(req.user.roles);
+  } else if (oid) {
+    groupesPromise = getUserGroupsByOid(oid).catch((err) => {
+      console.error('resolveCollaborateurContext: échec getUserGroupsByOid', err);
+      return [];
+    });
+  } else {
+    groupesPromise = Promise.resolve([]);
   }
+
+  const [collaborateur, groupes] = await Promise.all([collaborateurPromise, groupesPromise]);
 
   const rawId = collaborateur?.id_sellsy != null ? String(collaborateur.id_sellsy).trim() : '';
   const idSellsy = rawId === '' ? null : rawId;
   const statut = collaborateur?.statut != null ? String(collaborateur.statut).trim().toUpperCase() : '';
-
-  let groupes = [];
-  if (process.env.DEMO_AUTH === 'true' && Array.isArray(req.user?.roles)) {
-    groupes = req.user.roles;
-  } else if (req.user?.oid) {
-    try {
-      groupes = await getUserGroupsByOid(req.user.oid);
-    } catch (err) {
-      console.error('resolveCollaborateurContext: échec getUserGroupsByOid', err);
-      groupes = [];
-    }
-  }
 
   const normalized = normalizeGroupes(groupes);
   const canAccessCartographie = normalized.some((g) => GROUPS_CARTOGRAPHIE.has(g));

@@ -88,6 +88,12 @@ export class LabWizardPiecesComponent {
    * Pour une pièce d’identité / passeport : échéance = délivrance + durée légale usuelle.
    * CNI / pièce d’identité → 15 ans ; passeport → 10 ans. Les autres types ne sont pas auto-calculés.
    */
+  applyPieceType(piece: WizardPieceRow, type: string): void {
+    piece.type_piece = type;
+    this.onPieceScheduleChange(piece);
+    this.piecesChange.emit(this.pieces);
+  }
+
   onPieceScheduleChange(piece: WizardPieceRow): void {
     const delivrance = (piece.date_delivrance || '').trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(delivrance)) return;
