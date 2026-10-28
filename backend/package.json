@@ -7,8 +7,8 @@
     "dev": "nodemon --watch src src/server.js",
     "build": "tsc",
     "start": "node src/server.js",
-    "lint": "eslint \"src/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.{ts,md,json}\"",
+    "lint": "eslint \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.{js,md,json}\"",
     "lab:pieces-perimees": "node src/jobs/labPiecesPerimeesJob.js",
     "lab:revue-annuelle": "node src/jobs/labRevueAnnuelleJob.js"
   },
