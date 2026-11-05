@@ -59,6 +59,7 @@ import {
   annulerRevueLab as labAnnulerRevueLab,
   scanRevueAnnuelleLab as labScanRevueAnnuelleLab,
 } from '../services/lab-revues-service.js';
+import { runDetectionJ14Job as labRunDetectionJ14Job } from '../services/lab-detection-service.js';
 import {
   getTransactionsLab as labGetTransactionsLab,
   getTracfinLab as labGetTracfinLab,
@@ -1197,6 +1198,41 @@ export async function postJobsRevueAnnuelleLab(req, res) {
       return res.status(err.statusCode).json({ error: err.message });
     }
     console.error('Erreur postJobsRevueAnnuelleLab:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+/**
+ * POST /api/lab/jobs/detection-j14 — scan cabinet (isFull / équipe LAB).
+ * Détection opérations atypiques pour dossiers à J-14 avant revue.
+ * Body optionnel : { dryRun?, codeClient?, codeClients?, datefinex? }
+ * Si codeClient(s) fourni → ignore le filtre J-14 (test ciblé).
+ */
+export async function postJobsDetectionJ14Lab(req, res) {
+  try {
+    const scope = await resolveLabScope(req);
+    if (!scope.canAccessTracfin) {
+      return res.status(403).json({ error: 'Job détection J-14 réservé à l\'équipe LAB' });
+    }
+    const userId = await resolveUserId(req);
+    const dryRun = Boolean(req.body?.dryRun ?? req.query?.dryRun);
+    const rawCodes = req.body?.codeClients ?? req.body?.codeClient ?? req.query?.codeClient;
+    const codeClients = Array.isArray(rawCodes)
+      ? rawCodes
+      : (rawCodes != null && String(rawCodes).trim() !== '' ? [String(rawCodes).trim()] : null);
+    const datefinex = req.body?.datefinex ?? req.query?.datefinex ?? null;
+    const data = await labRunDetectionJ14Job({
+      userId: userId || 'JOB_LAB',
+      dryRun,
+      codeClients,
+      datefinex,
+    });
+    return res.json({ data });
+  } catch (err) {
+    if (err instanceof LabDossierError) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
+    console.error('Erreur postJobsDetectionJ14Lab:', err);
     return res.status(500).json({ error: 'Erreur serveur' });
   }
 }

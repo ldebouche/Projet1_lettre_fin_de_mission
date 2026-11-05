@@ -10,7 +10,8 @@
     "lint": "eslint \"src/**/*.js\"",
     "format": "prettier --write \"src/**/*.{js,md,json}\"",
     "lab:pieces-perimees": "node src/jobs/labPiecesPerimeesJob.js",
-    "lab:revue-annuelle": "node src/jobs/labRevueAnnuelleJob.js"
+    "lab:revue-annuelle": "node src/jobs/labRevueAnnuelleJob.js",
+    "lab:detection-j14": "node src/jobs/labDetectionJ14Job.js"
   },
   "keywords": [],
   "author": "",

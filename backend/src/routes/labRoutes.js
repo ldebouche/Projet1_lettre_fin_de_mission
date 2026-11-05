@@ -47,6 +47,7 @@ import {
   getEnrichissementLab,
   postJobsPiecesPerimeesLab,
   postJobsRevueAnnuelleLab,
+  postJobsDetectionJ14Lab,
   getConversationLab,
   getMessagesLab,
   postMessageLab,
@@ -108,6 +109,7 @@ router.get('/parametrage', authMiddlewareCollaborateur, getParametrageLab);
 router.put('/parametrage', authMiddlewareCollaborateur, putParametrageLab);
 router.post('/jobs/pieces-perimees', authMiddlewareCollaborateur, postJobsPiecesPerimeesLab);
 router.post('/jobs/revue-annuelle', authMiddlewareCollaborateur, postJobsRevueAnnuelleLab);
+router.post('/jobs/detection-j14', authMiddlewareCollaborateur, postJobsDetectionJ14Lab);
 router.get('/enrichissement', authMiddlewareCollaborateur, getEnrichissementLab);
 router.get('/conversation', authMiddlewareCollaborateur, getConversationLab);
 router.get('/messages', authMiddlewareCollaborateur, getMessagesLab);
