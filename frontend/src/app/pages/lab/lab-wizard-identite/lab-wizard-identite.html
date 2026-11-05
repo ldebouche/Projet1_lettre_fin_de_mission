@@ -134,7 +134,10 @@
     </label>
     <label class="field">
       <span class="field-label">Pays</span>
-      <input class="field-input" type="text" name="pays" [(ngModel)]="m.pays_siege" />
+      <select class="field-input" name="pays" [(ngModel)]="m.pays_siege">
+        <option value="">—</option>
+        <option *ngFor="let p of paysIsoOptions" [value]="p.libelle">{{ p.libelle }}</option>
+      </select>
       <app-lab-wizard-field-meta [meta]="getFieldMeta('pays_siege')" (acceptApi)="acceptApi.emit('pays_siege')" />
     </label>
     <label class="field">

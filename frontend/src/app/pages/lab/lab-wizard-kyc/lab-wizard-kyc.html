@@ -27,17 +27,34 @@
     </label>
     <label class="field">
       <span class="field-label">Pays résidence fiscale</span>
-      <input class="field-input" type="text" name="kyc_pays_fisc" [(ngModel)]="m.kyc.pays_residence_fiscale" />
+      <select class="field-input" name="kyc_pays_fisc" [(ngModel)]="m.kyc.pays_residence_fiscale">
+        <option value="">—</option>
+        <option *ngFor="let p of paysIsoOptions" [value]="p.libelle">{{ p.libelle }}</option>
+      </select>
     </label>
     <label class="field">
       <span class="field-label">Pays implantation principale</span>
-      <input class="field-input" type="text" name="kyc_pays_imp" [(ngModel)]="m.kyc.pays_implantation" />
+      <select class="field-input" name="kyc_pays_imp" [(ngModel)]="m.kyc.pays_implantation">
+        <option value="">—</option>
+        <option *ngFor="let p of paysIsoOptions" [value]="p.libelle">{{ p.libelle }}</option>
+      </select>
       <app-lab-wizard-field-meta [meta]="getFieldMeta('kyc.pays_implantation')" (acceptApi)="acceptApi.emit('kyc.pays_implantation')" />
     </label>
     <label class="field field--full">
       <span class="field-label">Pays / zones à risque (LCB‑FT)</span>
-      <textarea class="field-input field-textarea" name="kyc_pays_risque" rows="3" [(ngModel)]="m.kyc.pays_a_risque_text"></textarea>
-      <span class="field-hint">Une ligne ou une entrée par pays / zone surveillée.</span>
+      <select
+        class="field-input field-select--multi"
+        name="kyc_pays_risque"
+        multiple
+        [ngModel]="paysRisqueSelected"
+        (ngModelChange)="onPaysRisqueChange($event)"
+        size="6"
+      >
+        <option *ngFor="let p of paysRisqueOptions" [value]="p.libelle">
+          {{ p.libelle }} ({{ p.liste === 'PAYS_D3-2' ? 'D3-2' : 'D3-1' }})
+        </option>
+      </select>
+      <span class="field-hint">Listes D3-1 / D3-2 (trame CNOEC). Ctrl+clic pour multi-sélection. Valeur conservée pour cartographie / requêtes.</span>
     </label>
     <label class="field field--full">
       <span class="field-label">Secteurs d’activité (liste ou précisions)</span>

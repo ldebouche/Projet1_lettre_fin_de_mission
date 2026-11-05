@@ -10,6 +10,7 @@ import type {
   LabFieldMeta,
   LabWizardFormModel,
 } from '../../../services/lab-service';
+import { LAB_PAYS_ISO, ensurePaysInOptions, type LabPaysOption } from '../lab-pays-data';
 
 @Component({
   selector: 'app-lab-wizard-identite',
@@ -29,6 +30,10 @@ import type {
 })
 export class LabWizardIdentiteComponent {
   @Input({ required: true }) m!: LabWizardFormModel;
+
+  get paysIsoOptions(): LabPaysOption[] {
+    return ensurePaysInOptions(LAB_PAYS_ISO, this.m?.pays_siege);
+  }
   @Input() fieldMeta: Record<string, LabFieldMeta> = {};
   @Input() enriching = false;
   @Input() enrichmentError: string | null = null;

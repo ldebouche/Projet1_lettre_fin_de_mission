@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { LabCarteComponent } from '../lab-carte/lab-carte';
 import type { LabWizardFormModel, WizardBeRow } from '../../../services/lab-service';
 import { emptyBe, genWizardId, isPersistedId } from '../lab-dossier-form-wizard/lab-wizard-hydrate';
+import { LAB_PAYS_ISO, ensurePaysInOptions, type LabPaysOption } from '../lab-pays-data';
 
 type WizardDirigeant = LabWizardFormModel['dirigeant'];
 
@@ -25,6 +26,10 @@ export class LabWizardBeComponent {
   @Output() removedPersistedId = new EventEmitter<string>();
 
   reprendreDirigeant = false;
+
+  paysOptionsFor(current: string | null | undefined): LabPaysOption[] {
+    return ensurePaysInOptions(LAB_PAYS_ISO, current);
+  }
 
   addBeneficiaire(): void {
     const rows = [...this.beneficiaires, emptyBe(genWizardId('be'))];
